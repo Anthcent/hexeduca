@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-17T00:00:00Z",
+  "title": "Design System: EDUCATIVO",
+  "extensions": {
+    "colorMeta": {
+      "blue": { "role": "primary", "displayName": "Google Blue", "canonical": "oklch(0.57 0.19 258)", "tonalRamp": ["#0b3d91", "#1257b0", "#1765cc", "#1a73e8", "#4285f4", "#7baaf7", "#aecbfa", "#e8f0fe"] },
+      "green": { "role": "secondary", "displayName": "Google Green", "canonical": "oklch(0.53 0.14 152)", "tonalRamp": ["#0d4d20", "#146c2e", "#1e8e3e", "#34a853", "#5bb974", "#81c995", "#a8dab5", "#e6f4ea"] },
+      "yellow": { "role": "tertiary", "displayName": "Google Yellow", "canonical": "oklch(0.75 0.15 75)", "tonalRamp": ["#7f5600", "#a15c00", "#c17e06", "#f9ab00", "#fbbc04", "#fcc934", "#fdd663", "#fef7e0"] },
+      "red": { "role": "error", "displayName": "Google Red", "canonical": "oklch(0.55 0.20 26)", "tonalRamp": ["#7a1a13", "#a52714", "#c5221f", "#d93025", "#ea4335", "#f28b82", "#f6aea9", "#fce8e6"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (Google Sans)", "purpose": "Page-level titles, UI chrome only." },
+      "body": { "displayName": "Body (Roboto)", "purpose": "Content: running text, table data, form values." }
+    },
+    "shadows": [
+      { "name": "hover", "value": "0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15)", "purpose": "Interactive card hover, filled button hover." },
+      { "name": "raised", "value": "0 1px 2px 0 rgba(60,64,67,0.30), 0 2px 6px 2px rgba(60,64,67,0.15)", "purpose": "Menus, dropdowns, dialogs." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Google's standard Material easing." },
+      { "name": "duration-fast", "value": "120ms", "purpose": "Hover/focus." },
+      { "name": "duration-base", "value": "200ms", "purpose": "Menu/dialog open-close." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Filled Button",
+      "kind": "button",
+      "refersTo": "button-filled",
+      "description": "Primary action, Google Blue, fully rounded.",
+      "html": "<button class=\"ds-btn-filled\">Iniciar sesión</button>",
+      "css": ".ds-btn-filled { background: #1a73e8; color: #ffffff; padding: 9px 24px; border-radius: 999px; border: none; font-family: 'Google Sans', Roboto, Arial, sans-serif; font-weight: 500; font-size: 0.8125rem; letter-spacing: 0.01em; transition: background 140ms cubic-bezier(0.4,0,0.2,1), box-shadow 140ms; } .ds-btn-filled:hover { background: #1765cc; box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15); }"
+    },
+    {
+      "name": "Outlined Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Floating-label outlined field, the Gmail/Drive pattern.",
+      "html": "<div class=\"ds-field\"><input class=\"ds-input\" id=\"ds-email\" type=\"email\" value=\"nombre@escuela.edu\" /><label class=\"ds-label\" for=\"ds-email\">Email</label></div>",
+      "css": ".ds-field { position: relative; } .ds-input { width: 100%; font-family: Roboto, Arial, sans-serif; font-size: 0.9rem; background: transparent; border: 1px solid #bdc1c6; border-radius: 4px; padding: 15px 13px 7px; color: #202124; } .ds-input:focus-visible { outline: none; border: 2px solid #1a73e8; padding: 14px 12px 6px; } .ds-label { position: absolute; left: 11px; top: -8px; background: #ffffff; padding: 0 4px; font-size: 0.7rem; font-weight: 500; color: #5f6368; }"
+    },
+    {
+      "name": "Nav Rail Item (active)",
+      "kind": "nav",
+      "refersTo": "nav-rail-active",
+      "description": "Signature component: icon + label with a selection pill, Google's own pattern.",
+      "html": "<a class=\"ds-rail-item ds-rail-item--active\"><span class=\"ds-rail-pill\">●</span><span class=\"ds-rail-label\">Matrículas</span></a>",
+      "css": ".ds-rail-item { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #5f6368; font-family: 'Google Sans', Roboto, sans-serif; } .ds-rail-pill { width: 52px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; } .ds-rail-item--active .ds-rail-pill { background: #e8f0fe; color: #1a73e8; } .ds-rail-label { font-size: 0.67rem; font-weight: 500; } .ds-rail-item--active .ds-rail-label { color: #1a73e8; font-weight: 600; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Status chip, flat tint fill, fully rounded.",
+      "html": "<span class=\"ds-chip\">Confirmada</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 500; font-family: Roboto, sans-serif; background: #e6f4ea; color: #1e8e3e; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Bordered, flat, white — shadow only on hover if interactive.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">3° Grado B</h3><p class=\"ds-card-body\">24 estudiantes · Prof. Marta Ibáñez</p></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #dadce0; border-radius: 8px; padding: 20px; } .ds-card:hover { box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15); } .ds-card-title { font-family: 'Google Sans', sans-serif; font-weight: 500; font-size: 1rem; margin: 0 0 6px; color: #202124; } .ds-card-body { font-family: Roboto, sans-serif; font-size: 0.83rem; color: #5f6368; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Google Workspace for Schools",
+    "overview": "After three discarded directions (warm-terracotta product system, school-registry/ledger concept, colorful modern-SaaS), the confirmed direction is a literal Google Workspace replica: same blue, same neutral grays, same Google Sans + Roboto pairing, same component shapes. Staff, teachers, and students already know how Gmail/Drive/Classroom work — familiarity beats originality for a daily-use internal tool. Background is #ffffff everywhere, with zero exceptions; this was the single most-corrected point across every iteration.",
+    "keyCharacteristics": [
+      "Background is #ffffff everywhere, no exceptions — not even a 2% gray tint on hover or table headers.",
+      "Google's own palette: Blue #1a73e8 for every primary action, Red/Yellow/Green reserved for status only.",
+      "Google Sans for headings and UI chrome, Roboto for body/data.",
+      "Fully-rounded buttons and chips, outlined inputs with a floating label, nav rail with icon + label + selection pill.",
+      "No custom brand color — the identity is behavioral familiarity, not visual distinctiveness."
+    ],
+    "rules": [
+      { "name": "The Pure White Rule", "body": "Every background in this system is #ffffff. No gray fill anywhere. Use Blue Tint (#e8f0fe) or a border for hover/selected feedback instead.", "section": "colors" },
+      { "name": "The One Accent Rule", "body": "Blue is the only brand/action color. Red, yellow, and green exist solely to report state, never decoratively.", "section": "colors" },
+      { "name": "The Chrome/Content Split Rule", "body": "Google Sans is reserved for UI chrome (titles, nav, buttons). Roboto handles everything that is data or content.", "section": "typography" },
+      { "name": "The Border-Not-Shadow Rule", "body": "At rest, every container is separated by a 1px border, not a shadow. Shadow only on hover or for floating elements.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every background #ffffff, including table headers, hover states, and skeleton loaders.",
+      "Do use Google Blue (#1a73e8) as the only brand/action color.",
+      "Do use Google Sans for chrome and Roboto for content, never swapped.",
+      "Do use the nav-rail selection pill pattern for active navigation state.",
+      "Do use shadcn-vue primitives restyled to match these exact Material specs."
+    ],
+    "donts": [
+      "Don't introduce any custom brand hue outside Google's blue/red/yellow/green.",
+      "Don't use a tinted/warm/cream/beige background anywhere, even subtly.",
+      "Don't use gradient fills, colored icon chips, or a gradient hero-metric stat tile.",
+      "Don't box stats inside generic SaaS card grids with icon badges.",
+      "Don't replicate Google's logo/wordmark — only the color system, typography, and component shapes."
+    ]
+  }
+}
