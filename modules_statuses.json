@@ -1,0 +1,9 @@
+{
+    "Users": true,
+    "Academic": true,
+    "Schedule": true,
+    "Grades": true,
+    "Files": true,
+    "Admin": true,
+    "Notifications": true
+}
