@@ -1,7 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
+import { CheckCircle2, PencilLine, Plus, Trash2 } from 'lucide-vue-next';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
+import UiButton from '@/Components/UiButton.vue';
+import UiBadge from '@/Components/UiBadge.vue';
+import UiModal from '@/Components/UiModal.vue';
 
 const props = defineProps({
     niveles: { type: Array, default: () => [] },
@@ -115,29 +119,31 @@ function activatePeriodo(id) {
 
 <template>
     <DashboardLayout active="academico">
-        <div class="mb-1 flex items-start justify-between gap-5">
+        <div class="mb-5 flex items-start justify-between gap-4 sm:items-center">
             <div>
-                <h1 class="text-[1.75rem] font-semibold text-ink">Catálogos académicos</h1>
-                <p class="mt-1 max-w-[60ch] text-sm text-ink-muted">
-                    Niveles, grados y secciones son la base con la que se arman las ofertas académicas y matrículas.
-                </p>
+                <p class="muted mb-1 text-xs font-bold uppercase tracking-[.14em]">Gestión escolar</p>
+                <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Base académica</h1>
+                <p class="muted mt-1 text-sm">Niveles, grados y secciones son la base con la que se arman las ofertas académicas y matrículas.</p>
             </div>
         </div>
 
-        <div
-            v-if="flash.success || flash.error"
-            class="mt-5 flex items-center gap-3 rounded-g2 px-4 py-3 text-sm"
-            :class="flash.success ? 'bg-green-tint text-green' : 'bg-red-tint text-red'"
-        >
-            {{ flash.success || flash.error }}
-        </div>
+        <Transition name="fade">
+            <div
+                v-if="flash.success || flash.error"
+                class="mb-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold"
+                :class="flash.success ? 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-200' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'"
+            >
+                <CheckCircle2 class="size-4 shrink-0" />
+                {{ flash.success || flash.error }}
+            </div>
+        </Transition>
 
-        <div class="mb-5 mt-6 flex gap-1 border-b border-outline">
+        <div class="mb-5 flex gap-1 overflow-x-auto border-b">
             <button
                 v-for="tab in tabs"
                 :key="tab.key"
-                class="border-b-2 px-4 py-3 text-sm font-medium"
-                :class="activeTab === tab.key ? 'border-blue text-blue' : 'border-transparent text-ink-muted hover:text-ink'"
+                class="whitespace-nowrap border-b-2 px-4 py-3 text-sm font-bold transition"
+                :class="activeTab === tab.key ? 'border-brand-500 text-brand-700 dark:text-brand-300' : 'muted border-transparent hover:text-[rgb(var(--text))]'"
                 @click="activeTab = tab.key"
             >
                 {{ tab.label }}
@@ -145,288 +151,203 @@ function activatePeriodo(id) {
         </div>
 
         <!-- NIVELES -->
-        <div v-if="activeTab === 'niveles'">
-            <div class="mb-3.5 flex justify-end">
-                <button
-                    class="inline-flex items-center gap-2 rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover"
-                    @click="openNivel()"
-                >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-                    Nuevo nivel
-                </button>
+        <div v-if="activeTab === 'niveles'" class="section-card">
+            <div class="flex items-center justify-between border-b p-4 sm:p-5">
+                <div>
+                    <h2 class="font-display text-lg font-extrabold">Niveles académicos</h2>
+                    <p class="muted mt-1 text-sm">{{ niveles.length }} registrados</p>
+                </div>
+                <UiButton size="sm" @click="openNivel()"><template #icon><Plus class="size-4" /></template>Nuevo nivel</UiButton>
             </div>
-            <div class="overflow-hidden rounded-g2 border border-outline bg-white">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-outline">
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nombre</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Grados</th>
-                            <th class="w-20 px-4.5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="niveles.length === 0"><td colspan="3" class="px-4.5 py-8 text-center text-ink-muted">Todavía no hay niveles académicos.</td></tr>
-                        <tr v-for="row in niveles" :key="row.id" class="group border-t border-outline hover:bg-blue-light/40">
-                            <td class="px-4.5 py-3">{{ row.name }}</td>
-                            <td class="px-4.5 py-3">
-                                <span class="rounded-pill bg-blue-light px-3 py-1 text-xs font-medium text-blue">{{ row.grados_count }} {{ row.grados_count === 1 ? 'grado' : 'grados' }}</span>
-                            </td>
-                            <td class="px-2 py-3">
-                                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-black/[0.06]" @click="openNivel(row)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                                    </button>
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-red-tint hover:text-red" @click="destroyRow('academic.niveles.destroy', row.id, row.name)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <table class="w-full text-left">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                    <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Grados</th><th class="px-5 py-3"></th></tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-if="niveles.length === 0"><td colspan="3" class="muted px-5 py-8 text-center text-sm">Todavía no hay niveles académicos.</td></tr>
+                    <tr v-for="row in niveles" :key="row.id" class="group transition hover:bg-brand-50/40 dark:hover:bg-brand-950/20">
+                        <td class="px-5 py-4 text-sm font-bold">{{ row.name }}</td>
+                        <td class="px-5 py-4"><UiBadge tone="brand">{{ row.grados_count }} {{ row.grados_count === 1 ? 'grado' : 'grados' }}</UiBadge></td>
+                        <td class="px-5 py-4">
+                            <div class="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
+                                <button class="muted rounded-lg p-2 hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]" @click="openNivel(row)"><PencilLine class="size-4" /></button>
+                                <button class="rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40" @click="destroyRow('academic.niveles.destroy', row.id, row.name)"><Trash2 class="size-4" /></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- GRADOS -->
-        <div v-if="activeTab === 'grados'">
-            <div class="mb-3.5 flex justify-end">
-                <button
-                    class="inline-flex items-center gap-2 rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover disabled:opacity-40"
-                    :disabled="niveles.length === 0"
-                    @click="openGrado()"
-                >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-                    Nuevo grado
-                </button>
+        <div v-if="activeTab === 'grados'" class="section-card">
+            <div class="flex items-center justify-between border-b p-4 sm:p-5">
+                <div>
+                    <h2 class="font-display text-lg font-extrabold">Grados</h2>
+                    <p class="muted mt-1 text-sm">{{ grados.length }} registrados</p>
+                </div>
+                <UiButton size="sm" :disabled="niveles.length === 0" @click="openGrado()"><template #icon><Plus class="size-4" /></template>Nuevo grado</UiButton>
             </div>
-            <p v-if="niveles.length === 0" class="mb-3.5 text-sm text-ink-muted">Creá un nivel académico primero para poder agregar grados.</p>
-            <div class="overflow-hidden rounded-g2 border border-outline bg-white">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-outline">
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Orden</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nombre</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nivel</th>
-                            <th class="w-20 px-4.5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="grados.length === 0"><td colspan="4" class="px-4.5 py-8 text-center text-ink-muted">Todavía no hay grados.</td></tr>
-                        <tr v-for="row in grados" :key="row.id" class="group border-t border-outline hover:bg-blue-light/40">
-                            <td class="px-4.5 py-3 tabular-nums">{{ row.order }}</td>
-                            <td class="px-4.5 py-3">{{ row.name }}</td>
-                            <td class="px-4.5 py-3">
-                                <span class="rounded-pill bg-blue-light px-3 py-1 text-xs font-medium text-blue">{{ row.nivel_academico?.name }}</span>
-                            </td>
-                            <td class="px-2 py-3">
-                                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-black/[0.06]" @click="openGrado(row)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                                    </button>
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-red-tint hover:text-red" @click="destroyRow('academic.grados.destroy', row.id, row.name)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <p v-if="niveles.length === 0" class="muted px-5 pt-4 text-sm">Creá un nivel académico primero para poder agregar grados.</p>
+            <table class="w-full text-left">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                    <tr><th class="px-5 py-3">Orden</th><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Nivel</th><th class="px-5 py-3"></th></tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-if="grados.length === 0"><td colspan="4" class="muted px-5 py-8 text-center text-sm">Todavía no hay grados.</td></tr>
+                    <tr v-for="row in grados" :key="row.id" class="group transition hover:bg-brand-50/40 dark:hover:bg-brand-950/20">
+                        <td class="px-5 py-4 text-sm font-semibold tabular-nums">{{ row.order }}</td>
+                        <td class="px-5 py-4 text-sm font-bold">{{ row.name }}</td>
+                        <td class="px-5 py-4"><UiBadge tone="brand">{{ row.nivel_academico?.name }}</UiBadge></td>
+                        <td class="px-5 py-4">
+                            <div class="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
+                                <button class="muted rounded-lg p-2 hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]" @click="openGrado(row)"><PencilLine class="size-4" /></button>
+                                <button class="rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40" @click="destroyRow('academic.grados.destroy', row.id, row.name)"><Trash2 class="size-4" /></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- SECCIONES -->
-        <div v-if="activeTab === 'secciones'">
-            <div class="mb-3.5 flex justify-end">
-                <button
-                    class="inline-flex items-center gap-2 rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover"
-                    @click="openSeccion()"
-                >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-                    Nueva sección
-                </button>
+        <div v-if="activeTab === 'secciones'" class="section-card">
+            <div class="flex items-center justify-between border-b p-4 sm:p-5">
+                <div>
+                    <h2 class="font-display text-lg font-extrabold">Secciones</h2>
+                    <p class="muted mt-1 text-sm">{{ secciones.length }} registradas</p>
+                </div>
+                <UiButton size="sm" @click="openSeccion()"><template #icon><Plus class="size-4" /></template>Nueva sección</UiButton>
             </div>
-            <div class="overflow-hidden rounded-g2 border border-outline bg-white">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-outline">
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nombre</th>
-                            <th class="w-20 px-4.5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="secciones.length === 0"><td colspan="2" class="px-4.5 py-8 text-center text-ink-muted">Todavía no hay secciones.</td></tr>
-                        <tr v-for="row in secciones" :key="row.id" class="group border-t border-outline hover:bg-blue-light/40">
-                            <td class="px-4.5 py-3">{{ row.name }}</td>
-                            <td class="px-2 py-3">
-                                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-black/[0.06]" @click="openSeccion(row)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                                    </button>
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-red-tint hover:text-red" @click="destroyRow('academic.secciones.destroy', row.id, row.name)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <table class="w-full text-left">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                    <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3"></th></tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-if="secciones.length === 0"><td colspan="2" class="muted px-5 py-8 text-center text-sm">Todavía no hay secciones.</td></tr>
+                    <tr v-for="row in secciones" :key="row.id" class="group transition hover:bg-brand-50/40 dark:hover:bg-brand-950/20">
+                        <td class="px-5 py-4 text-sm font-bold">{{ row.name }}</td>
+                        <td class="px-5 py-4">
+                            <div class="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
+                                <button class="muted rounded-lg p-2 hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]" @click="openSeccion(row)"><PencilLine class="size-4" /></button>
+                                <button class="rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40" @click="destroyRow('academic.secciones.destroy', row.id, row.name)"><Trash2 class="size-4" /></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- PERIODOS -->
-        <div v-if="activeTab === 'periodos'">
-            <div class="mb-3.5 flex justify-end">
-                <button
-                    class="inline-flex items-center gap-2 rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover"
-                    @click="openPeriodo()"
-                >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14" /></svg>
-                    Nuevo período
-                </button>
+        <div v-if="activeTab === 'periodos'" class="section-card">
+            <div class="flex items-center justify-between border-b p-4 sm:p-5">
+                <div>
+                    <h2 class="font-display text-lg font-extrabold">Períodos académicos</h2>
+                    <p class="muted mt-1 text-sm">{{ periodos.length }} registrados</p>
+                </div>
+                <UiButton size="sm" @click="openPeriodo()"><template #icon><Plus class="size-4" /></template>Nuevo período</UiButton>
             </div>
-            <div class="overflow-hidden rounded-g2 border border-outline bg-white">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-outline">
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nombre</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Inicio</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Fin</th>
-                            <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Estado</th>
-                            <th class="w-28 px-4.5 py-3"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="periodos.length === 0"><td colspan="5" class="px-4.5 py-8 text-center text-ink-muted">Todavía no hay períodos académicos.</td></tr>
-                        <tr v-for="row in periodos" :key="row.id" class="group border-t border-outline hover:bg-blue-light/40">
-                            <td class="px-4.5 py-3">{{ row.name }}</td>
-                            <td class="px-4.5 py-3">{{ row.starts_on }}</td>
-                            <td class="px-4.5 py-3">{{ row.ends_on }}</td>
-                            <td class="px-4.5 py-3">
-                                <button
-                                    v-if="!row.is_active"
-                                    class="rounded-pill bg-outline px-3 py-1 text-xs font-medium text-ink-muted hover:bg-blue-light hover:text-blue"
-                                    @click="activatePeriodo(row.id)"
-                                >
-                                    Activar
-                                </button>
-                                <span v-else class="rounded-pill bg-green-tint px-3 py-1 text-xs font-medium text-green">Activo</span>
-                            </td>
-                            <td class="px-2 py-3">
-                                <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100">
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-black/[0.06]" @click="openPeriodo(row)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-                                    </button>
-                                    <button class="rounded-full p-1.5 text-ink-muted hover:bg-red-tint hover:text-red" @click="destroyRow('academic.periodos.destroy', row.id, row.name)">
-                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <table class="w-full text-left">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                    <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Inicio</th><th class="px-5 py-3">Fin</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3"></th></tr>
+                </thead>
+                <tbody class="divide-y">
+                    <tr v-if="periodos.length === 0"><td colspan="5" class="muted px-5 py-8 text-center text-sm">Todavía no hay períodos académicos.</td></tr>
+                    <tr v-for="row in periodos" :key="row.id" class="group transition hover:bg-brand-50/40 dark:hover:bg-brand-950/20">
+                        <td class="px-5 py-4 text-sm font-bold">{{ row.name }}</td>
+                        <td class="muted px-5 py-4 text-sm">{{ row.starts_on }}</td>
+                        <td class="muted px-5 py-4 text-sm">{{ row.ends_on }}</td>
+                        <td class="px-5 py-4">
+                            <button v-if="!row.is_active" class="rounded-full border px-3 py-1 text-xs font-bold hover:border-brand-300 hover:bg-brand-50" @click="activatePeriodo(row.id)">Activar</button>
+                            <UiBadge v-else tone="success" dot>Activo</UiBadge>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="flex justify-end gap-1 opacity-0 transition group-hover:opacity-100">
+                                <button class="muted rounded-lg p-2 hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]" @click="openPeriodo(row)"><PencilLine class="size-4" /></button>
+                                <button class="rounded-lg p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40" @click="destroyRow('academic.periodos.destroy', row.id, row.name)"><Trash2 class="size-4" /></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
 
         <!-- Dialog: Nivel -->
-        <div v-if="dialog === 'nivel'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5" @click.self="closeDialog">
-            <form class="w-full max-w-[420px] rounded-g2 bg-white shadow-e4" @submit.prevent="submitNivel">
-                <div class="px-6 pb-1 pt-5">
-                    <h2 class="text-xl font-normal text-ink">{{ editing ? 'Editar nivel' : 'Nuevo nivel académico' }}</h2>
-                </div>
-                <div class="px-6 py-4">
-                    <div class="relative">
-                        <input id="nivel-name" v-model="nivelForm.name" placeholder=" " class="peer w-full rounded border bg-white px-3.5 pb-2 pt-4 text-sm text-ink outline-none focus:border-2 focus:border-blue focus:px-[13px] focus:pb-[7px] focus:pt-[15px]" :class="nivelForm.errors.name ? 'border-red' : 'border-outline-strong'" />
-                        <label for="nivel-name" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-ink-muted transition-all peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-blue peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:font-medium">Nombre</label>
-                        <p v-if="nivelForm.errors.name" class="mt-1.5 text-xs text-red">{{ nivelForm.errors.name }}</p>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2 px-4 pb-4">
-                    <button type="button" class="rounded-pill px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-black/[0.06]" @click="closeDialog">Cancelar</button>
-                    <button type="submit" :disabled="nivelForm.processing" class="rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover disabled:opacity-40">Guardar</button>
-                </div>
+        <UiModal :open="dialog === 'nivel'" :title="editing ? 'Editar nivel' : 'Nuevo nivel académico'" @close="closeDialog">
+            <form :id="'form-nivel'" @submit.prevent="submitNivel">
+                <label for="nivel-name" class="label">Nombre</label>
+                <input id="nivel-name" v-model="nivelForm.name" class="control" :class="nivelForm.errors.name && '!border-red-400'" />
+                <p v-if="nivelForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ nivelForm.errors.name }}</p>
             </form>
-        </div>
+            <template #footer>
+                <UiButton variant="ghost" @click="closeDialog">Cancelar</UiButton>
+                <UiButton type="submit" form="form-nivel" :loading="nivelForm.processing">Guardar</UiButton>
+            </template>
+        </UiModal>
 
         <!-- Dialog: Grado -->
-        <div v-if="dialog === 'grado'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5" @click.self="closeDialog">
-            <form class="w-full max-w-[420px] rounded-g2 bg-white shadow-e4" @submit.prevent="submitGrado">
-                <div class="px-6 pb-1 pt-5">
-                    <h2 class="text-xl font-normal text-ink">{{ editing ? 'Editar grado' : 'Nuevo grado' }}</h2>
+        <UiModal :open="dialog === 'grado'" :title="editing ? 'Editar grado' : 'Nuevo grado'" @close="closeDialog">
+            <form id="form-grado" class="space-y-4" @submit.prevent="submitGrado">
+                <div>
+                    <label for="grado-name" class="label">Nombre (ej: 3ro)</label>
+                    <input id="grado-name" v-model="gradoForm.name" class="control" :class="gradoForm.errors.name && '!border-red-400'" />
+                    <p v-if="gradoForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.name }}</p>
                 </div>
-                <div class="flex flex-col gap-5 px-6 py-4">
-                    <div class="relative">
-                        <input id="grado-name" v-model="gradoForm.name" placeholder=" " class="peer w-full rounded border bg-white px-3.5 pb-2 pt-4 text-sm text-ink outline-none focus:border-2 focus:border-blue focus:px-[13px] focus:pb-[7px] focus:pt-[15px]" :class="gradoForm.errors.name ? 'border-red' : 'border-outline-strong'" />
-                        <label for="grado-name" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-ink-muted transition-all peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-blue peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:font-medium">Nombre (ej: 3ro)</label>
-                        <p v-if="gradoForm.errors.name" class="mt-1.5 text-xs text-red">{{ gradoForm.errors.name }}</p>
-                    </div>
-                    <div>
-                        <label for="grado-nivel" class="mb-1.5 block text-xs font-medium text-ink-muted">Nivel académico</label>
-                        <select id="grado-nivel" v-model="gradoForm.nivel_academico_id" class="w-full rounded border bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-2 focus:border-blue" :class="gradoForm.errors.nivel_academico_id ? 'border-red' : 'border-outline-strong'">
-                            <option v-for="nivel in niveles" :key="nivel.id" :value="nivel.id">{{ nivel.name }}</option>
-                        </select>
-                        <p v-if="gradoForm.errors.nivel_academico_id" class="mt-1.5 text-xs text-red">{{ gradoForm.errors.nivel_academico_id }}</p>
-                    </div>
-                    <div class="relative">
-                        <input id="grado-order" v-model="gradoForm.order" type="number" min="1" placeholder=" " class="peer w-full rounded border bg-white px-3.5 pb-2 pt-4 text-sm text-ink outline-none focus:border-2 focus:border-blue focus:px-[13px] focus:pb-[7px] focus:pt-[15px]" :class="gradoForm.errors.order ? 'border-red' : 'border-outline-strong'" />
-                        <label for="grado-order" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-ink-muted transition-all peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-blue peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:font-medium">Orden</label>
-                        <p v-if="gradoForm.errors.order" class="mt-1.5 text-xs text-red">{{ gradoForm.errors.order }}</p>
-                    </div>
+                <div>
+                    <label for="grado-nivel" class="label">Nivel académico</label>
+                    <select id="grado-nivel" v-model="gradoForm.nivel_academico_id" class="control" :class="gradoForm.errors.nivel_academico_id && '!border-red-400'">
+                        <option v-for="nivel in niveles" :key="nivel.id" :value="nivel.id">{{ nivel.name }}</option>
+                    </select>
+                    <p v-if="gradoForm.errors.nivel_academico_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.nivel_academico_id }}</p>
                 </div>
-                <div class="flex justify-end gap-2 px-4 pb-4">
-                    <button type="button" class="rounded-pill px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-black/[0.06]" @click="closeDialog">Cancelar</button>
-                    <button type="submit" :disabled="gradoForm.processing" class="rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover disabled:opacity-40">Guardar</button>
+                <div>
+                    <label for="grado-order" class="label">Orden</label>
+                    <input id="grado-order" v-model="gradoForm.order" type="number" min="1" class="control" :class="gradoForm.errors.order && '!border-red-400'" />
+                    <p v-if="gradoForm.errors.order" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.order }}</p>
                 </div>
             </form>
-        </div>
+            <template #footer>
+                <UiButton variant="ghost" @click="closeDialog">Cancelar</UiButton>
+                <UiButton type="submit" form="form-grado" :loading="gradoForm.processing">Guardar</UiButton>
+            </template>
+        </UiModal>
 
         <!-- Dialog: Sección -->
-        <div v-if="dialog === 'seccion'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5" @click.self="closeDialog">
-            <form class="w-full max-w-[420px] rounded-g2 bg-white shadow-e4" @submit.prevent="submitSeccion">
-                <div class="px-6 pb-1 pt-5">
-                    <h2 class="text-xl font-normal text-ink">{{ editing ? 'Editar sección' : 'Nueva sección' }}</h2>
-                </div>
-                <div class="px-6 py-4">
-                    <div class="relative">
-                        <input id="seccion-name" v-model="seccionForm.name" placeholder=" " class="peer w-full rounded border bg-white px-3.5 pb-2 pt-4 text-sm text-ink outline-none focus:border-2 focus:border-blue focus:px-[13px] focus:pb-[7px] focus:pt-[15px]" :class="seccionForm.errors.name ? 'border-red' : 'border-outline-strong'" />
-                        <label for="seccion-name" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-ink-muted transition-all peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-blue peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:font-medium">Nombre (ej: C)</label>
-                        <p v-if="seccionForm.errors.name" class="mt-1.5 text-xs text-red">{{ seccionForm.errors.name }}</p>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2 px-4 pb-4">
-                    <button type="button" class="rounded-pill px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-black/[0.06]" @click="closeDialog">Cancelar</button>
-                    <button type="submit" :disabled="seccionForm.processing" class="rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover disabled:opacity-40">Guardar</button>
-                </div>
+        <UiModal :open="dialog === 'seccion'" :title="editing ? 'Editar sección' : 'Nueva sección'" @close="closeDialog">
+            <form id="form-seccion" @submit.prevent="submitSeccion">
+                <label for="seccion-name" class="label">Nombre (ej: C)</label>
+                <input id="seccion-name" v-model="seccionForm.name" class="control" :class="seccionForm.errors.name && '!border-red-400'" />
+                <p v-if="seccionForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ seccionForm.errors.name }}</p>
             </form>
-        </div>
+            <template #footer>
+                <UiButton variant="ghost" @click="closeDialog">Cancelar</UiButton>
+                <UiButton type="submit" form="form-seccion" :loading="seccionForm.processing">Guardar</UiButton>
+            </template>
+        </UiModal>
 
         <!-- Dialog: Período -->
-        <div v-if="dialog === 'periodo'" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-5" @click.self="closeDialog">
-            <form class="w-full max-w-[420px] rounded-g2 bg-white shadow-e4" @submit.prevent="submitPeriodo">
-                <div class="px-6 pb-1 pt-5">
-                    <h2 class="text-xl font-normal text-ink">{{ editing ? 'Editar período' : 'Nuevo período académico' }}</h2>
+        <UiModal :open="dialog === 'periodo'" :title="editing ? 'Editar período' : 'Nuevo período académico'" @close="closeDialog">
+            <form id="form-periodo" class="space-y-4" @submit.prevent="submitPeriodo">
+                <div>
+                    <label for="periodo-name" class="label">Nombre (ej: 2026-2027)</label>
+                    <input id="periodo-name" v-model="periodoForm.name" class="control" :class="periodoForm.errors.name && '!border-red-400'" />
+                    <p v-if="periodoForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.name }}</p>
                 </div>
-                <div class="flex flex-col gap-5 px-6 py-4">
-                    <div class="relative">
-                        <input id="periodo-name" v-model="periodoForm.name" placeholder=" " class="peer w-full rounded border bg-white px-3.5 pb-2 pt-4 text-sm text-ink outline-none focus:border-2 focus:border-blue focus:px-[13px] focus:pb-[7px] focus:pt-[15px]" :class="periodoForm.errors.name ? 'border-red' : 'border-outline-strong'" />
-                        <label for="periodo-name" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 bg-white px-1 text-sm text-ink-muted transition-all peer-focus:top-0 peer-focus:-translate-y-1/2 peer-focus:text-xs peer-focus:font-medium peer-focus:text-blue peer-[&:not(:placeholder-shown)]:top-0 peer-[&:not(:placeholder-shown)]:-translate-y-1/2 peer-[&:not(:placeholder-shown)]:text-xs peer-[&:not(:placeholder-shown)]:font-medium">Nombre (ej: 2026-2027)</label>
-                        <p v-if="periodoForm.errors.name" class="mt-1.5 text-xs text-red">{{ periodoForm.errors.name }}</p>
-                    </div>
-                    <div>
-                        <label for="periodo-start" class="mb-1.5 block text-xs font-medium text-ink-muted">Inicio</label>
-                        <input id="periodo-start" v-model="periodoForm.starts_on" type="date" class="w-full rounded border bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-2 focus:border-blue" :class="periodoForm.errors.starts_on ? 'border-red' : 'border-outline-strong'" />
-                        <p v-if="periodoForm.errors.starts_on" class="mt-1.5 text-xs text-red">{{ periodoForm.errors.starts_on }}</p>
-                    </div>
-                    <div>
-                        <label for="periodo-end" class="mb-1.5 block text-xs font-medium text-ink-muted">Fin</label>
-                        <input id="periodo-end" v-model="periodoForm.ends_on" type="date" class="w-full rounded border bg-white px-3.5 py-2.5 text-sm text-ink outline-none focus:border-2 focus:border-blue" :class="periodoForm.errors.ends_on ? 'border-red' : 'border-outline-strong'" />
-                        <p v-if="periodoForm.errors.ends_on" class="mt-1.5 text-xs text-red">{{ periodoForm.errors.ends_on }}</p>
-                    </div>
+                <div>
+                    <label for="periodo-start" class="label">Inicio</label>
+                    <input id="periodo-start" v-model="periodoForm.starts_on" type="date" class="control" :class="periodoForm.errors.starts_on && '!border-red-400'" />
+                    <p v-if="periodoForm.errors.starts_on" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.starts_on }}</p>
                 </div>
-                <div class="flex justify-end gap-2 px-4 pb-4">
-                    <button type="button" class="rounded-pill px-4 py-2.5 text-sm font-medium text-ink-muted hover:bg-black/[0.06]" @click="closeDialog">Cancelar</button>
-                    <button type="submit" :disabled="periodoForm.processing" class="rounded-pill bg-blue px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-hover disabled:opacity-40">Guardar</button>
+                <div>
+                    <label for="periodo-end" class="label">Fin</label>
+                    <input id="periodo-end" v-model="periodoForm.ends_on" type="date" class="control" :class="periodoForm.errors.ends_on && '!border-red-400'" />
+                    <p v-if="periodoForm.errors.ends_on" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.ends_on }}</p>
                 </div>
             </form>
-        </div>
+            <template #footer>
+                <UiButton variant="ghost" @click="closeDialog">Cancelar</UiButton>
+                <UiButton type="submit" form="form-periodo" :loading="periodoForm.processing">Guardar</UiButton>
+            </template>
+        </UiModal>
     </DashboardLayout>
 </template>

@@ -1,14 +1,14 @@
 <script setup>
-import AppLayout from '@/Layouts/AppLayout.vue';
+import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 </script>
 
 <template>
-    <AppLayout title="Welcome">
-        <div class="rounded-lg bg-white p-6 shadow dark:bg-gray-800">
-            <p class="text-gray-700 dark:text-gray-300">
+    <DashboardLayout active="resumen">
+        <div class="section-card p-6">
+            <p class="text-sm text-[rgb(var(--muted))]">
                 Educativo foundation scaffold — base layout is rendering
                 successfully via Inertia + Vue 3.
             </p>
         </div>
-    </AppLayout>
+    </DashboardLayout>
 </template>

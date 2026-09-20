@@ -3,6 +3,7 @@ import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: 'class',
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',
@@ -14,60 +15,38 @@ export default {
     ],
     theme: {
         extend: {
-            fontFamily: {
-                sans: ['Roboto', ...defaultTheme.fontFamily.sans],
-            },
             colors: {
-                brand: '#4285f4',
-                blue: {
-                    DEFAULT: '#0b57d0',
-                    hover: '#0842a0',
-                    light: '#c2e7ff',
+                brand: {
+                    50: '#edfdf6', 100: '#d4f8e8', 200: '#acf0d4', 300: '#76e2b9',
+                    400: '#3ccb98', 500: '#18a879', 600: '#0f8561', 700: '#0b6b50',
+                    800: '#0a5541', 900: '#094637', 950: '#04271f',
                 },
-                red: {
-                    DEFAULT: '#ea4335',
-                    tint: '#fce8e6',
-                },
-                yellow: {
-                    DEFAULT: '#fbbc04',
-                    tint: '#fef7e0',
-                },
-                green: {
-                    DEFAULT: '#34a853',
-                    tint: '#e6f4ea',
-                },
-                canvas: '#f2f2f2',
-                outline: {
-                    DEFAULT: '#dadce0',
-                    strong: '#bdc1c6',
-                },
-                ink: {
-                    DEFAULT: '#1f1f1f',
-                    muted: '#747775',
-                    dark: '#131314',
-                },
+                ink: '#0c1814',
+                lime: '#b7e35b',
+                amber: '#f0a63b',
+                sky: '#4ba6c8',
             },
-            borderRadius: {
-                g1: '8px',
-                g2: '12px',
-                g3: '16px',
-                g4: '24px',
-                pill: '999px',
-            },
-            spacing: {
-                g1: '4px',
-                g2: '8px',
-                g3: '16px',
-                g4: '24px',
-                g5: '32px',
-                g6: '48px',
-                g7: '64px',
+            fontFamily: {
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                display: ['Manrope', 'Inter', ...defaultTheme.fontFamily.sans],
             },
             boxShadow: {
-                e1: '0 1px 2px 0 rgba(31,31,31,0.15), 0 1px 3px 1px rgba(31,31,31,0.10)',
-                e2: '0 1px 2px 0 rgba(31,31,31,0.20), 0 2px 6px 2px rgba(31,31,31,0.12)',
-                e3: '0 4px 8px 3px rgba(31,31,31,0.12), 0 1px 3px rgba(31,31,31,0.20)',
-                e4: '0 6px 10px 4px rgba(31,31,31,0.12), 0 2px 3px rgba(31,31,31,0.24)',
+                soft: '0 10px 30px rgba(7, 62, 45, 0.08)',
+                lift: '0 22px 55px rgba(5, 45, 34, 0.16)',
+                focus: '0 0 0 4px rgba(24, 168, 121, 0.18)',
+            },
+            borderRadius: { '2xl': '1.25rem', '3xl': '1.75rem' },
+            keyframes: {
+                'float-in': { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+                'pop-in': { '0%': { opacity: '0', transform: 'scale(.94)' }, '100%': { opacity: '1', transform: 'scale(1)' } },
+                'progress-in': { '0%': { transform: 'scaleX(0)' }, '100%': { transform: 'scaleX(1)' } },
+                'soft-pulse': { '0%,100%': { opacity: '.45' }, '50%': { opacity: '1' } },
+            },
+            animation: {
+                'float-in': 'float-in .38s cubic-bezier(.2,.8,.2,1) both',
+                'pop-in': 'pop-in .22s cubic-bezier(.2,.8,.2,1) both',
+                'progress-in': 'progress-in .8s cubic-bezier(.2,.8,.2,1) both',
+                'soft-pulse': 'soft-pulse 1.8s ease-in-out infinite',
             },
         },
     },

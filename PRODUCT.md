@@ -17,22 +17,21 @@ A multi-tenant school management system: enrollment, academic offerings, grading
 
 ## Brand Personality
 
-Confiable, clara, familiar (trustworthy, clear, familiar). After three discarded custom directions, the confirmed direction is a deliberate Google Workspace replica (colors, typography, components) — the reasoning is that staff, teachers, and students already know how Gmail/Drive/Classroom work, and for a daily-use internal tool, familiarity beats a distinct visual identity. See DESIGN.md for the full rationale and exact specs.
+Confiable, cálida, con carácter propio (trustworthy, warm, distinctly its own). After three discarded custom directions (warm-terracotta system, "school registry/ledger" concept, then a literal Google Workspace clone), the final and current direction is **Nova UI Kit** — a purpose-built Vue 3 + Inertia + Tailwind component library for school management, provided as a complete reference implementation and adopted wholesale. Deep emerald identity, persistent academic context, a real component library (not a from-scratch design system this project has to invent and maintain alone). See DESIGN.md for the full rationale and exact specs.
 
 ## Anti-references
 
-- Any custom brand hue outside Google's own blue/red/yellow/green — tried and explicitly rejected twice (a warm terracotta system, then a mixed modern-SaaS palette).
-- Any tinted/warm/cream/beige background, even subtly — every draft that had one was rejected specifically for it. Background is `#ffffff` everywhere, no exceptions.
-- Gradient hero-metric tiles, colored icon chips, generic identical card grids.
-- Anything that reads as a bare Bootstrap/Tailwind default with no system behind it.
+- Any of the three prior discarded directions (terracotta product system, ledger/registry concept, Google Workspace blue/white clone) — all fully superseded, not layered underneath.
+- Hand-rolled modals/toasts/switches/dialogs when the Nova kit's `Ui*` components already solve them.
+- Per-component `dark:` override sprawl — the CSS-custom-property token system (`--canvas`/`--surface`/`--text`/`--muted`) already handles light/dark automatically; don't bypass it.
+- A flat, single-layer neutral background — Nova's canvas/surface distinction is what gives the UI depth without heavy shadows.
 
 ## Design Principles
 
 - **Clarity over cleverness**: staff using this daily should never have to guess what an action does; label verbs plainly, keep forms and tables scannable.
-- **Warm, not sterile**: color and type carry the "cálida" personality — this is not a cold enterprise tool, without tipping into playful/consumer.
-- **Context is always visible**: because the app is multi-tenant (landlord vs. a specific school) and role-gated, the UI must always make it obvious which school/role context the user is currently in.
-- **Own the components, don't fight a framework look**: use accessible headless primitives (shadcn-vue) styled with the project's own tokens, not an off-the-shelf themed component kit.
-- **Consistency compounds**: every new module (academic, grades, schedule, notifications) reuses the same layout shell, components, and tokens rather than inventing its own patterns.
+- **Context is always visible**: because the app is multi-tenant (landlord vs. a specific school) and role-gated, the persistent `SchoolContextBar` (period/moment/section) and role-aware navigation always make it obvious which school/role context the user is currently in.
+- **Don't reinvent the kit**: Nova UI Kit is the source of truth for components and tokens. Extend it (as `UiButton`'s `type` prop was extended for Inertia form integration) rather than working around it or building parallel one-off components.
+- **Consistency compounds**: every new module (academic, grades, schedule, notifications) reuses the same `DashboardLayout` shell, `Ui*`/`school/*` components, and CSS-var tokens rather than inventing its own patterns.
 
 ## Accessibility & Inclusion
 

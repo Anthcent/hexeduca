@@ -1,7 +1,9 @@
 <script setup>
 import { computed } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
+import { CheckCircle2, PencilLine } from 'lucide-vue-next';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
+import UiBadge from '@/Components/UiBadge.vue';
 
 defineProps({
     users: { type: Array, default: () => [] },
@@ -11,59 +13,54 @@ const page = usePage();
 const flash = computed(() => page.props.flash ?? {});
 const currentUserId = computed(() => page.props.auth?.user?.id);
 
-function roleChipClass(role) {
-    if (role === 'super-admin') return 'bg-blue-light text-blue';
-    if (role === 'staff/admin') return 'bg-green-tint text-green';
-    if (role === 'teacher') return 'bg-yellow-tint text-[#a15c00]';
-    return 'bg-outline text-ink-muted';
+function roleTone(role) {
+    if (role === 'super-admin') return 'brand';
+    if (role === 'staff/admin') return 'success';
+    if (role === 'teacher') return 'warning';
+    return 'neutral';
 }
 </script>
 
 <template>
     <DashboardLayout active="usuarios">
-        <div class="mb-1">
-            <h1 class="text-[1.75rem] font-semibold text-ink">Usuarios</h1>
-            <p class="mt-1 max-w-[60ch] text-sm text-ink-muted">
-                Personal, docentes y estudiantes con acceso al sistema.
-            </p>
+        <div class="mb-5">
+            <p class="muted mb-1 text-xs font-bold uppercase tracking-[.14em]">Gestión escolar</p>
+            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Usuarios</h1>
+            <p class="muted mt-1 max-w-[60ch] text-sm">Personal, docentes y estudiantes con acceso al sistema.</p>
         </div>
 
-        <div
-            v-if="flash.success || flash.error"
-            class="mt-5 rounded-g2 px-4 py-3 text-sm"
-            :class="flash.success ? 'bg-green-tint text-green' : 'bg-red-tint text-red'"
-        >
-            {{ flash.success || flash.error }}
-        </div>
+        <Transition name="fade">
+            <div
+                v-if="flash.success || flash.error"
+                class="mb-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold"
+                :class="flash.success ? 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-200' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'"
+            >
+                <CheckCircle2 class="size-4 shrink-0" />
+                {{ flash.success || flash.error }}
+            </div>
+        </Transition>
 
-        <div class="mt-6 overflow-hidden rounded-g2 border border-outline bg-white">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-outline">
-                        <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Nombre</th>
-                        <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Email</th>
-                        <th class="px-4.5 py-3 text-left text-xs font-medium text-ink">Rol</th>
-                        <th class="w-20 px-4.5 py-3"></th>
-                    </tr>
+        <div class="section-card">
+            <table class="w-full text-left">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                    <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Email</th><th class="px-5 py-3">Rol</th><th class="px-5 py-3"></th></tr>
                 </thead>
-                <tbody>
-                    <tr v-if="users.length === 0"><td colspan="4" class="px-4.5 py-8 text-center text-ink-muted">No hay usuarios todavía.</td></tr>
-                    <tr v-for="row in users" :key="row.id" class="group border-t border-outline hover:bg-blue-light/40">
-                        <td class="px-4.5 py-3">
+                <tbody class="divide-y">
+                    <tr v-if="users.length === 0"><td colspan="4" class="muted px-5 py-8 text-center text-sm">No hay usuarios todavía.</td></tr>
+                    <tr v-for="row in users" :key="row.id" class="group transition hover:bg-brand-50/40 dark:hover:bg-brand-950/20">
+                        <td class="px-5 py-4 text-sm font-bold">
                             {{ row.name }}
-                            <span v-if="row.id === currentUserId" class="ml-1.5 text-xs text-ink-muted">(vos)</span>
+                            <span v-if="row.id === currentUserId" class="muted ml-1.5 text-xs font-medium">(vos)</span>
                         </td>
-                        <td class="px-4.5 py-3 text-ink-muted">{{ row.email }}</td>
-                        <td class="px-4.5 py-3">
-                            <span class="rounded-pill px-3 py-1 text-xs font-medium" :class="roleChipClass(row.role)">{{ row.role ?? 'sin rol' }}</span>
-                        </td>
-                        <td class="px-2 py-3">
+                        <td class="muted px-5 py-4 text-sm">{{ row.email }}</td>
+                        <td class="px-5 py-4"><UiBadge :tone="roleTone(row.role)">{{ row.role ?? 'sin rol' }}</UiBadge></td>
+                        <td class="px-5 py-4">
                             <Link
                                 :href="route('users.edit', row.id)"
-                                class="inline-flex rounded-full p-1.5 text-ink-muted opacity-0 hover:bg-black/[0.06] group-hover:opacity-100"
+                                class="muted inline-flex rounded-lg p-2 opacity-0 transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))] group-hover:opacity-100"
                                 title="Editar rol"
                             >
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                                <PencilLine class="size-4" />
                             </Link>
                         </td>
                     </tr>

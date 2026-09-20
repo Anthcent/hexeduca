@@ -1,3 +1,96 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        --canvas: 244 248 246;
+        --surface: 255 255 255;
+        --surface-muted: 237 244 240;
+        --line: 216 228 222;
+        --text: 12 30 24;
+        --muted: 94 113 104;
+        --brand: 11 107 80;
+    }
+
+    .dark {
+        --canvas: 5 18 14;
+        --surface: 11 31 24;
+        --surface-muted: 16 45 34;
+        --line: 35 69 56;
+        --text: 235 247 241;
+        --muted: 151 180 165;
+        --brand: 60 203 152;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        @apply m-0 min-w-[320px] bg-[rgb(var(--canvas))] font-sans text-[rgb(var(--text))] antialiased;
+    }
+    * {
+        @apply border-[rgb(var(--line))];
+    }
+    button, input, select, textarea {
+        font: inherit;
+    }
+    button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+        @apply outline-none ring-4 ring-brand-500/20;
+    }
+}
+
+@layer components {
+    .surface {
+        @apply border bg-[rgb(var(--surface))] shadow-soft;
+    }
+    .subtle-surface {
+        @apply border bg-[rgb(var(--surface-muted))];
+    }
+    .muted {
+        @apply text-[rgb(var(--muted))];
+    }
+    .section-card {
+        @apply surface overflow-hidden rounded-[24px];
+    }
+    .control {
+        @apply h-11 w-full rounded-xl border bg-[rgb(var(--surface))] px-3.5 text-sm text-[rgb(var(--text))] placeholder:text-[rgb(var(--muted))] transition hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15;
+    }
+    .label {
+        @apply mb-2 block text-sm font-semibold text-[rgb(var(--text))];
+    }
+    .kbd {
+        @apply rounded-md border bg-[rgb(var(--surface-muted))] px-1.5 py-0.5 text-[11px] font-semibold text-[rgb(var(--muted))] shadow-sm;
+    }
+}
+
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line)) transparent;
+}
+.grid-dots {
+    background-image: radial-gradient(circle at 1px 1px, rgba(24, 168, 121, .16) 1px, transparent 0);
+    background-size: 22px 22px;
+}
+.fade-enter-active, .fade-leave-active { transition: opacity .18s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+.slide-enter-active, .slide-leave-active { transition: transform .25s ease, opacity .25s ease; }
+.slide-enter-from, .slide-leave-to { transform: translateX(1rem); opacity: 0; }
+.sheet-enter-active, .sheet-leave-active { transition: transform .3s cubic-bezier(.2,.8,.2,1), opacity .3s ease; }
+.sheet-enter-from, .sheet-leave-to { transform: translateY(1.25rem); opacity: 0; }
+.bubble-enter-active, .bubble-leave-active { transition: transform .28s cubic-bezier(.2,.9,.2,1), opacity .22s ease; transform-origin: right top; }
+.bubble-enter-from, .bubble-leave-to { transform: translateY(.75rem) scale(.96); opacity: 0; }
+.list-move, .list-enter-active, .list-leave-active { transition: all .3s ease; }
+.list-enter-from, .list-leave-to { opacity: 0; transform: translateY(8px); }
+.list-leave-active { position: absolute; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+}
+
+@media (max-width: 639px) {
+    .bubble-enter-from, .bubble-leave-to { transform: translateY(1rem) scale(.97); }
+}
