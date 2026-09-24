@@ -123,6 +123,16 @@ return [
             'handler' => NullHandler::class,
         ],
 
+        // Dedicated channel for integration-event listener failures (plan
+        // §9/§11/§23) — a queued listener failing must never fail silently
+        // into the generic app log.
+        'integration-events' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/integration-events.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'replace_placeholders' => true,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
