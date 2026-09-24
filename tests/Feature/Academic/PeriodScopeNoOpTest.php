@@ -32,17 +32,17 @@ test('no active period bound: PeriodoScope adds no where, but TenantScope still 
     $periodoTwoSchoolOne = PeriodoAcademico::factory()->create(['school_id' => $schoolOne->id]);
     $periodoSchoolTwo = PeriodoAcademico::factory()->create(['school_id' => $schoolTwo->id]);
 
-    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodoScope()->create([
+    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodScope()->create([
         'school_id' => $schoolOne->id,
         'periodo_academico_id' => $periodoOneSchoolOne->id,
         'name' => 'school one period one',
     ]);
-    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodoScope()->create([
+    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodScope()->create([
         'school_id' => $schoolOne->id,
         'periodo_academico_id' => $periodoTwoSchoolOne->id,
         'name' => 'school one period two',
     ]);
-    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodoScope()->create([
+    PeriodScopedFixture::withoutTenantScope()->withoutActivePeriodScope()->create([
         'school_id' => $schoolTwo->id,
         'periodo_academico_id' => $periodoSchoolTwo->id,
         'name' => 'school two',

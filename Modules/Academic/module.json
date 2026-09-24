@@ -4,6 +4,18 @@
     "description": "",
     "keywords": [],
     "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "Enrollments",
+        "GradeLevels",
+        "Sections",
+        "Users"
+    ],
+    "permissions": [
+        "academic.view",
+        "academic.manage"
+    ],
     "providers": [
         "Modules\\Academic\\Infrastructure\\Providers\\AcademicServiceProvider"
     ],

@@ -96,7 +96,7 @@ test('a student\'s progression across 3 cycles is derivable purely from Matricul
         'oferta_academica_id' => $ofertaTwo->id, 'student_id' => $student->id,
     ]);
 
-    $progression = Matricula::withoutTenantScope()->withoutActivePeriodoScope()
+    $progression = Matricula::withoutTenantScope()->withoutActivePeriodScope()
         ->where('student_id', $student->id)
         ->join('periodos_academicos', 'periodos_academicos.id', '=', 'matriculas.periodo_academico_id')
         ->join('ofertas_academicas', 'ofertas_academicas.id', '=', 'matriculas.oferta_academica_id')

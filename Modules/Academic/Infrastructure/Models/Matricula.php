@@ -2,12 +2,12 @@
 
 namespace Modules\Academic\Infrastructure\Models;
 
+use App\AcademicPeriod\Concerns\BelongsToActivePeriod;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Database\Factories\MatriculaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Academic\Infrastructure\Period\Concerns\BelongsToActivePeriodo;
 use Modules\Users\Infrastructure\Models\User;
 
 /**
@@ -17,7 +17,7 @@ use Modules\Users\Infrastructure\Models\User;
 class Matricula extends Model
 {
     /** @use HasFactory<MatriculaFactory> */
-    use BelongsToActivePeriodo, BelongsToTenant, HasFactory;
+    use BelongsToActivePeriod, BelongsToTenant, HasFactory;
 
     /**
      * Create a new factory instance for the model.
@@ -46,6 +46,7 @@ class Matricula extends Model
         'oferta_academica_id',
         'student_id',
         'status',
+        'source_version',
         'enrolled_at',
     ];
 
@@ -53,6 +54,7 @@ class Matricula extends Model
     {
         return [
             'enrolled_at' => 'datetime',
+            'source_version' => 'integer',
         ];
     }
 

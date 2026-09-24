@@ -1,5 +1,6 @@
 <?php
 
+use App\AcademicPeriod\Http\Middleware\ResolveActivePeriod;
 use App\Http\Middleware\AddStrictTransportSecurity;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Support\SecurityPolicy;
@@ -9,7 +10,6 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
-use Modules\Academic\Infrastructure\Http\Middleware\ResolveActivePeriodo;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
@@ -30,7 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->group('api', [
             EnsureFrontendRequestsAreStateful::class,
             ResolveTenant::class,
-            ResolveActivePeriodo::class,
+            ResolveActivePeriod::class,
             'throttle:api',
             SubstituteBindings::class,
         ]);
@@ -38,7 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             HandleInertiaRequests::class,
             ResolveTenant::class,
-            ResolveActivePeriodo::class,
+            ResolveActivePeriod::class,
         ]);
 
         $middleware->alias([

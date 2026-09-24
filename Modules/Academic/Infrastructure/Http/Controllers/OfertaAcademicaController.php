@@ -2,6 +2,7 @@
 
 namespace Modules\Academic\Infrastructure\Http\Controllers;
 
+use App\AcademicPeriod\Context\AcademicPeriodContext;
 use App\Http\Controllers\Controller;
 use App\Tenancy\TenantContext;
 use DomainException;
@@ -14,7 +15,6 @@ use Modules\Academic\Application\UseCases\CreateOfertaAcademica;
 use Modules\Academic\Infrastructure\Http\Requests\StoreOfertaRequest;
 use Modules\Academic\Infrastructure\Models\Grado;
 use Modules\Academic\Infrastructure\Models\Seccion;
-use Modules\Academic\Infrastructure\Period\PeriodoContext;
 use Modules\Users\Infrastructure\Models\User;
 
 /**
@@ -25,15 +25,15 @@ use Modules\Users\Infrastructure\Models\User;
  */
 class OfertaAcademicaController extends Controller
 {
-    public function create(TenantContext $tenantContext, PeriodoContext $periodoContext): Response
+    public function create(TenantContext $tenantContext, AcademicPeriodContext $periodContext): Response
     {
-        $periodo = $periodoContext->current();
+        $periodo = $periodContext->current();
 
         return Inertia::render('Academic::OfertaCreate', [
             'grados' => Grado::orderBy('name')->get(['id', 'name']),
             'secciones' => Seccion::orderBy('name')->get(['id', 'name']),
             'teachers' => User::role('teacher')->orderBy('name')->get(['id', 'name']),
-            'hasActivePeriodo' => $periodoContext->hasPeriodo(),
+            'hasActivePeriodo' => $periodContext->hasPeriod(),
             'periodoName' => $periodo?->name,
         ]);
     }
@@ -42,9 +42,9 @@ class OfertaAcademicaController extends Controller
         StoreOfertaRequest $request,
         CreateOfertaAcademica $createOfertaAcademica,
         TenantContext $tenantContext,
-        PeriodoContext $periodoContext,
+        AcademicPeriodContext $periodContext,
     ): RedirectResponse {
-        if (! $periodoContext->hasPeriodo()) {
+        if (! $periodContext->hasPeriod()) {
             throw ValidationException::withMessages([
                 'grado_id' => 'There is no active academic period for this school.',
             ]);
@@ -52,7 +52,7 @@ class OfertaAcademicaController extends Controller
 
         $data = new CreateOfertaAcademicaData(
             schoolId: $tenantContext->current()->id,
-            periodoAcademicoId: $periodoContext->current()->id,
+            periodoAcademicoId: $periodContext->current()->id,
             gradoId: (int) $request->validated('grado_id'),
             seccionId: (int) $request->validated('seccion_id'),
             teacherId: $request->validated('teacher_id') !== null ? (int) $request->validated('teacher_id') : null,
@@ -62,8 +62,15 @@ class OfertaAcademicaController extends Controller
         try {
             $createOfertaAcademica->handle($data);
         } catch (DomainException $e) {
+            $field = match ($e->getMessage()) {
+                'The grade level must belong to this school.' => 'grado_id',
+                'The section must belong to this school.' => 'seccion_id',
+                'The assigned teacher must be a teacher in this school.' => 'teacher_id',
+                default => 'grado_id',
+            };
+
             throw ValidationException::withMessages([
-                'grado_id' => $e->getMessage(),
+                $field => $e->getMessage(),
             ]);
         }
 

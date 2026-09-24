@@ -10,7 +10,6 @@ use Modules\Academic\Domain\Repositories\NivelAcademicoRepositoryInterface;
 use Modules\Academic\Domain\Repositories\OfertaAcademicaRepositoryInterface;
 use Modules\Academic\Domain\Repositories\PeriodoAcademicoRepositoryInterface;
 use Modules\Academic\Domain\Repositories\SeccionRepositoryInterface;
-use Modules\Academic\Infrastructure\Period\PeriodoContext;
 use Modules\Academic\Infrastructure\Persistence\EloquentGradoRepository;
 use Modules\Academic\Infrastructure\Persistence\EloquentMatriculaRepository;
 use Modules\Academic\Infrastructure\Persistence\EloquentMomentoAcademicoRepository;
@@ -68,8 +67,6 @@ class AcademicServiceProvider extends ServiceProvider
         $this->app->bind(MomentoAcademicoRepositoryInterface::class, EloquentMomentoAcademicoRepository::class);
         $this->app->bind(OfertaAcademicaRepositoryInterface::class, EloquentOfertaAcademicaRepository::class);
         $this->app->bind(MatriculaRepositoryInterface::class, EloquentMatriculaRepository::class);
-
-        $this->app->scoped(PeriodoContext::class);
 
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);

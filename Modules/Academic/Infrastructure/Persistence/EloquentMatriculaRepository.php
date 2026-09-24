@@ -3,6 +3,7 @@
 namespace Modules\Academic\Infrastructure\Persistence;
 
 use DateTimeImmutable;
+use Illuminate\Support\Facades\DB;
 use Modules\Academic\Domain\Entities\Matricula as MatriculaEntity;
 use Modules\Academic\Domain\Repositories\MatriculaRepositoryInterface;
 use Modules\Academic\Infrastructure\Models\Matricula as MatriculaModel;
@@ -34,19 +35,22 @@ final class EloquentMatriculaRepository implements MatriculaRepositoryInterface
 
     public function save(MatriculaEntity $matricula): MatriculaEntity
     {
-        $model = $matricula->id()
-            ? MatriculaModel::findOrFail($matricula->id())
-            : new MatriculaModel;
+        return DB::transaction(function () use ($matricula): MatriculaEntity {
+            $model = $matricula->id()
+                ? MatriculaModel::query()->lockForUpdate()->findOrFail($matricula->id())
+                : new MatriculaModel;
 
-        $model->school_id = $matricula->schoolId();
-        $model->periodo_academico_id = $matricula->periodoAcademicoId();
-        $model->oferta_academica_id = $matricula->ofertaAcademicaId();
-        $model->student_id = $matricula->studentId();
-        $model->status = $matricula->status();
-        $model->enrolled_at = $matricula->enrolledAt();
-        $model->save();
+            $model->school_id = $matricula->schoolId();
+            $model->periodo_academico_id = $matricula->periodoAcademicoId();
+            $model->oferta_academica_id = $matricula->ofertaAcademicaId();
+            $model->student_id = $matricula->studentId();
+            $model->status = $matricula->status();
+            $model->enrolled_at = $matricula->enrolledAt();
+            $model->source_version = $model->exists ? $model->source_version + 1 : 1;
+            $model->save();
 
-        return $this->toEntity($model);
+            return $this->toEntity($model);
+        });
     }
 
     private function toEntity(MatriculaModel $model): MatriculaEntity
@@ -59,6 +63,7 @@ final class EloquentMatriculaRepository implements MatriculaRepositoryInterface
             studentId: $model->student_id,
             status: $model->status,
             enrolledAt: new DateTimeImmutable($model->enrolled_at->toDateTimeString()),
+            version: $model->source_version,
         );
     }
 }

@@ -1,0 +1,21 @@
+{
+    "name": "Enrollments",
+    "alias": "enrollments",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "AcademicOffers",
+        "Users"
+    ],
+    "permissions": [
+        "enrollments.view",
+        "enrollments.manage"
+    ],
+    "providers": [
+        "Modules\\Enrollments\\Infrastructure\\Providers\\EnrollmentsServiceProvider"
+    ],
+    "files": []
+}

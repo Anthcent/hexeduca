@@ -1,14 +1,25 @@
 <?php
 
+use App\AcademicPeriod\Context\AcademicPeriodContext;
+use App\AcademicPeriod\Contracts\ActivePeriod;
 use App\Tenancy\Models\School;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Academic\Infrastructure\Models\MomentoAcademico;
 use Modules\Academic\Infrastructure\Models\OfertaAcademica;
 use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
-use Modules\Academic\Infrastructure\Period\PeriodoContext;
 
 uses(RefreshDatabase::class);
+
+function setActivePeriodMSAO(PeriodoAcademico $periodo): void
+{
+    app(AcademicPeriodContext::class)->set(new ActivePeriod(
+        id: $periodo->id,
+        name: $periodo->name,
+        startsOn: $periodo->starts_on,
+        endsOn: $periodo->ends_on,
+    ));
+}
 
 test('the same MomentoAcademico records are referenced by every OfertaAcademica within a period', function () {
     $school = School::factory()->create();
@@ -19,7 +30,7 @@ test('the same MomentoAcademico records are referenced by every OfertaAcademica 
     ]);
 
     app(TenantContext::class)->set($school);
-    app(PeriodoContext::class)->set($periodo);
+    setActivePeriodMSAO($periodo);
 
     $ofertaOne = OfertaAcademica::factory()->create([
         'school_id' => $school->id,

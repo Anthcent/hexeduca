@@ -1,15 +1,24 @@
 <?php
 
 use App\Tenancy\Models\School;
+use Database\Seeders\RoleAndPermissionSeeder;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Modules\Academic\Application\DTOs\MatricularEstudianteData;
 use Modules\Academic\Application\UseCases\MatricularEstudiante;
+use Modules\Academic\Domain\Events\EstudianteMatriculado;
 use Modules\Academic\Domain\Repositories\MatriculaRepositoryInterface;
 use Modules\Academic\Infrastructure\Models\OfertaAcademica;
 use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
 use Modules\Users\Infrastructure\Models\User;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->seed(RoleAndPermissionSeeder::class);
+});
 
 test('rejects enrollment past capacity', function () {
     $school = School::factory()->create();
@@ -21,15 +30,19 @@ test('rejects enrollment past capacity', function () {
     ]);
 
     $useCase = app(MatricularEstudiante::class);
+    $firstStudent = User::factory()->create(['school_id' => $school->id]);
+    $firstStudent->assignRole('student');
+    $secondStudent = User::factory()->create(['school_id' => $school->id]);
+    $secondStudent->assignRole('student');
 
     $useCase->handle(new MatricularEstudianteData(
         ofertaAcademicaId: $oferta->id,
-        studentId: User::factory()->create()->id,
+        studentId: $firstStudent->id,
     ));
 
     expect(fn () => $useCase->handle(new MatricularEstudianteData(
         ofertaAcademicaId: $oferta->id,
-        studentId: User::factory()->create()->id,
+        studentId: $secondStudent->id,
     )))->toThrow(DomainException::class, 'The OfertaAcademica has reached its enrollment capacity.');
 });
 
@@ -41,7 +54,8 @@ test('rejects a duplicate (oferta, student) enrollment', function () {
         'periodo_academico_id' => $periodo->id,
         'capacity' => 10,
     ]);
-    $student = User::factory()->create();
+    $student = User::factory()->create(['school_id' => $school->id]);
+    $student->assignRole('student');
 
     $useCase = app(MatricularEstudiante::class);
     $data = new MatricularEstudianteData(ofertaAcademicaId: $oferta->id, studentId: $student->id);
@@ -60,7 +74,8 @@ test('succeeds and stamps school_id and periodo_academico_id from the offering',
         'periodo_academico_id' => $periodo->id,
         'capacity' => 10,
     ]);
-    $student = User::factory()->create();
+    $student = User::factory()->create(['school_id' => $school->id]);
+    $student->assignRole('student');
 
     $matricula = app(MatricularEstudiante::class)->handle(new MatricularEstudianteData(
         ofertaAcademicaId: $oferta->id,
@@ -81,8 +96,10 @@ test('a withdrawn matricula does not count toward capacity, freeing the seat for
         'capacity' => 1,
     ]);
 
-    $firstStudent = User::factory()->create();
-    $secondStudent = User::factory()->create();
+    $firstStudent = User::factory()->create(['school_id' => $school->id]);
+    $firstStudent->assignRole('student');
+    $secondStudent = User::factory()->create(['school_id' => $school->id]);
+    $secondStudent->assignRole('student');
 
     $useCase = app(MatricularEstudiante::class);
 
@@ -105,4 +122,33 @@ test('a withdrawn matricula does not count toward capacity, freeing the seat for
     ));
 
     expect($second->studentId())->toBe($secondStudent->id);
+});
+
+test('legacy enrollment rolls back source and domain event when outbox recording fails', function () {
+    $school = School::factory()->create();
+    $period = PeriodoAcademico::factory()->create(['school_id' => $school->id]);
+    $offer = OfertaAcademica::factory()->create([
+        'school_id' => $school->id,
+        'periodo_academico_id' => $period->id,
+    ]);
+    $student = User::factory()->create(['school_id' => $school->id]);
+    $student->assignRole('student');
+    Event::fake([EstudianteMatriculado::class]);
+    DB::statement(<<<'SQL'
+        CREATE TRIGGER fail_legacy_enrollment_outbox
+        BEFORE INSERT ON integration_outbox_events
+        WHEN NEW.event_name = 'enrollment.created'
+        BEGIN
+            SELECT RAISE(ABORT, 'forced outbox failure');
+        END
+    SQL);
+
+    expect(fn () => app(MatricularEstudiante::class)->handle(new MatricularEstudianteData(
+        ofertaAcademicaId: $offer->id,
+        studentId: $student->id,
+    )))->toThrow(QueryException::class);
+
+    $this->assertDatabaseCount('matriculas', 0);
+    $this->assertDatabaseCount('integration_outbox_events', 0);
+    Event::assertNotDispatched(EstudianteMatriculado::class);
 });

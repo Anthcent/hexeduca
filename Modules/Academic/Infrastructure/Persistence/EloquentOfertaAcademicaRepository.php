@@ -16,6 +16,13 @@ final class EloquentOfertaAcademicaRepository implements OfertaAcademicaReposito
         return $model ? $this->toEntity($model) : null;
     }
 
+    public function findByIdForEnrollment(int $id): ?OfertaAcademicaEntity
+    {
+        $model = OfertaAcademicaModel::query()->lockForUpdate()->find($id);
+
+        return $model ? $this->toEntity($model) : null;
+    }
+
     public function findByPeriodoGradoSeccion(int $periodoAcademicoId, int $gradoId, int $seccionId): ?OfertaAcademicaEntity
     {
         $model = OfertaAcademicaModel::where('periodo_academico_id', $periodoAcademicoId)

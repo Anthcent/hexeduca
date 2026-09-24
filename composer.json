@@ -42,7 +42,8 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/Tenancy/helpers.php"
+            "app/Tenancy/helpers.php",
+            "app/AcademicPeriod/helpers.php"
         ]
     },
     "autoload-dev": {

@@ -1,0 +1,18 @@
+{
+    "name": "AcademicPeriods",
+    "alias": "academicperiods",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [],
+    "permissions": [
+        "academic-periods.view",
+        "academic-periods.manage"
+    ],
+    "providers": [
+        "Modules\\AcademicPeriods\\Infrastructure\\Providers\\AcademicPeriodsServiceProvider"
+    ],
+    "files": []
+}

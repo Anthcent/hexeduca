@@ -2,13 +2,13 @@
 
 namespace Modules\Academic\Infrastructure\Models;
 
+use App\AcademicPeriod\Concerns\BelongsToActivePeriod;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Database\Factories\OfertaAcademicaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Modules\Academic\Infrastructure\Period\Concerns\BelongsToActivePeriodo;
 use Modules\Users\Infrastructure\Models\User;
 
 /**
@@ -18,7 +18,7 @@ use Modules\Users\Infrastructure\Models\User;
 class OfertaAcademica extends Model
 {
     /** @use HasFactory<OfertaAcademicaFactory> */
-    use BelongsToActivePeriodo, BelongsToTenant, HasFactory;
+    use BelongsToActivePeriod, BelongsToTenant, HasFactory;
 
     /**
      * Create a new factory instance for the model.

@@ -64,3 +64,41 @@ test('the same catalog Grado+Seccion pair reused across two periods yields two d
         ->and($ofertaPeriodoOne->capacity()->limit())->toBe(20)
         ->and($ofertaPeriodoTwo->capacity()->limit())->toBe(35);
 });
+
+test('rejects a grade level owned by another school without persistence', function () {
+    $school = School::factory()->create();
+    $otherSchool = School::factory()->create();
+    $period = PeriodoAcademico::factory()->create(['school_id' => $school->id]);
+    $gradeLevel = Grado::factory()->create(['school_id' => $otherSchool->id]);
+    $section = Seccion::factory()->create(['school_id' => $school->id]);
+
+    expect(fn () => app(CreateOfertaAcademica::class)->handle(new CreateOfertaAcademicaData(
+        schoolId: $school->id,
+        periodoAcademicoId: $period->id,
+        gradoId: $gradeLevel->id,
+        seccionId: $section->id,
+        teacherId: null,
+        capacity: 30,
+    )))->toThrow(DomainException::class, 'The grade level must belong to this school.');
+
+    $this->assertDatabaseCount('ofertas_academicas', 0);
+});
+
+test('rejects a section owned by another school without persistence', function () {
+    $school = School::factory()->create();
+    $otherSchool = School::factory()->create();
+    $period = PeriodoAcademico::factory()->create(['school_id' => $school->id]);
+    $gradeLevel = Grado::factory()->create(['school_id' => $school->id]);
+    $section = Seccion::factory()->create(['school_id' => $otherSchool->id]);
+
+    expect(fn () => app(CreateOfertaAcademica::class)->handle(new CreateOfertaAcademicaData(
+        schoolId: $school->id,
+        periodoAcademicoId: $period->id,
+        gradoId: $gradeLevel->id,
+        seccionId: $section->id,
+        teacherId: null,
+        capacity: 30,
+    )))->toThrow(DomainException::class, 'The section must belong to this school.');
+
+    $this->assertDatabaseCount('ofertas_academicas', 0);
+});

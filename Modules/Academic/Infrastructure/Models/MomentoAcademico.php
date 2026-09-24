@@ -2,11 +2,11 @@
 
 namespace Modules\Academic\Infrastructure\Models;
 
+use App\AcademicPeriod\Concerns\BelongsToActivePeriod;
 use Database\Factories\MomentoAcademicoFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Modules\Academic\Infrastructure\Period\Concerns\BelongsToActivePeriodo;
 
 /**
  * Global-within-period tier: NO school_id column. Tenant isolation is
@@ -15,7 +15,7 @@ use Modules\Academic\Infrastructure\Period\Concerns\BelongsToActivePeriodo;
 class MomentoAcademico extends Model
 {
     /** @use HasFactory<MomentoAcademicoFactory> */
-    use BelongsToActivePeriodo, HasFactory;
+    use BelongsToActivePeriod, HasFactory;
 
     /**
      * Create a new factory instance for the model.

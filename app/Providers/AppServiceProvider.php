@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\AcademicPeriod\Context\AcademicPeriodContext;
+use App\IntegrationEvents\Console\Commands\PublishOutboxEvents;
 use App\Tenancy\TenantContext;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -17,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(TenantContext::class);
+        $this->app->scoped(AcademicPeriodContext::class);
     }
 
     /**
@@ -24,10 +27,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([PublishOutboxEvents::class]);
+        }
+
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(config('security.rate_limits.login_per_minute'))->by(
                 mb_strtolower((string) $request->input('email')).'|'.$request->ip()
             );
+        });
+
+        RateLimiter::for('registration', function (Request $request) {
+            return Limit::perMinute(config('security.rate_limits.registration_per_minute'))->by($request->ip());
         });
 
         RateLimiter::for('api', function (Request $request) {

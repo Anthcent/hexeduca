@@ -1,6 +1,13 @@
 {
     "Users": true,
     "Academic": true,
+    "AcademicPeriods": true,
+    "AcademicLevels": true,
+    "GradeLevels": true,
+    "Sections": true,
+    "AcademicMoments": true,
+    "AcademicOffers": true,
+    "Enrollments": true,
     "Schedule": true,
     "Grades": true,
     "Files": true,

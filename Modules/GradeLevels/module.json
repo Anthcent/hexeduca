@@ -1,0 +1,20 @@
+{
+    "name": "GradeLevels",
+    "alias": "gradelevels",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "AcademicLevels"
+    ],
+    "permissions": [
+        "grade-levels.view",
+        "grade-levels.manage"
+    ],
+    "providers": [
+        "Modules\\GradeLevels\\Infrastructure\\Providers\\GradeLevelsServiceProvider"
+    ],
+    "files": []
+}

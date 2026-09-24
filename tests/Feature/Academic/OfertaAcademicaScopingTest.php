@@ -1,5 +1,7 @@
 <?php
 
+use App\AcademicPeriod\Context\AcademicPeriodContext;
+use App\AcademicPeriod\Contracts\ActivePeriod;
 use App\Tenancy\Models\School;
 use App\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -8,10 +10,19 @@ use Modules\Academic\Infrastructure\Models\Matricula;
 use Modules\Academic\Infrastructure\Models\OfertaAcademica;
 use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
 use Modules\Academic\Infrastructure\Models\Seccion;
-use Modules\Academic\Infrastructure\Period\PeriodoContext;
 use Modules\Users\Infrastructure\Models\User;
 
 uses(RefreshDatabase::class);
+
+function setActivePeriodOAS(PeriodoAcademico $periodo): void
+{
+    app(AcademicPeriodContext::class)->set(new ActivePeriod(
+        id: $periodo->id,
+        name: $periodo->name,
+        startsOn: $periodo->starts_on,
+        endsOn: $periodo->ends_on,
+    ));
+}
 
 test('scope stacking on the real OfertaAcademica model: query returns only current school and current period rows', function () {
     $schoolOne = School::factory()->create();
@@ -35,7 +46,7 @@ test('scope stacking on the real OfertaAcademica model: query returns only curre
     ]);
 
     app(TenantContext::class)->set($schoolOne);
-    app(PeriodoContext::class)->set($periodoOneSchoolOne);
+    setActivePeriodOAS($periodoOneSchoolOne);
 
     expect(OfertaAcademica::all())->toHaveCount(1)
         ->and(OfertaAcademica::first()->id)->toBe($match->id);
@@ -63,9 +74,9 @@ test('independent bypass on the real Matricula model: opting out of the period s
     ]);
 
     app(TenantContext::class)->set($schoolOne);
-    app(PeriodoContext::class)->set($periodoOne);
+    setActivePeriodOAS($periodoOne);
 
-    expect(Matricula::withoutActivePeriodoScope()->count())->toBe(2);
+    expect(Matricula::withoutActivePeriodScope()->count())->toBe(2);
 });
 
 test('independent bypass on the real Matricula model: opting out of the tenant scope still period-filters', function () {
@@ -79,10 +90,10 @@ test('independent bypass on the real Matricula model: opting out of the tenant s
         'school_id' => $schoolOne->id,
         'periodo_academico_id' => $periodoOne->id,
     ]);
-    Matricula::withoutTenantScope()->withoutActivePeriodoScope()->create([
+    Matricula::withoutTenantScope()->withoutActivePeriodScope()->create([
         'school_id' => $schoolTwo->id,
         'periodo_academico_id' => $periodoOne->id,
-        'oferta_academica_id' => OfertaAcademica::withoutTenantScope()->withoutActivePeriodoScope()->create([
+        'oferta_academica_id' => OfertaAcademica::withoutTenantScope()->withoutActivePeriodScope()->create([
             'school_id' => $schoolTwo->id,
             'periodo_academico_id' => $periodoOne->id,
             'grado_id' => Grado::factory()->create(['school_id' => $schoolTwo->id])->id,
@@ -99,7 +110,7 @@ test('independent bypass on the real Matricula model: opting out of the tenant s
     ]);
 
     app(TenantContext::class)->set($schoolOne);
-    app(PeriodoContext::class)->set($periodoOne);
+    setActivePeriodOAS($periodoOne);
 
     // Rows from both schools sharing periodo_academico_id = $periodoOne->id
     // are visible once the tenant scope alone is dropped; the third row
@@ -142,7 +153,7 @@ test('auto-stamp on create: OfertaAcademica inherits school_id and periodo_acade
     $seccion = Seccion::factory()->create(['school_id' => $school->id]);
 
     app(TenantContext::class)->set($school);
-    app(PeriodoContext::class)->set($periodo);
+    setActivePeriodOAS($periodo);
 
     $oferta = OfertaAcademica::create([
         'grado_id' => $grado->id,
@@ -164,7 +175,7 @@ test('auto-stamp on create: Matricula inherits school_id and periodo_academico_i
     $student = User::factory()->create();
 
     app(TenantContext::class)->set($school);
-    app(PeriodoContext::class)->set($periodo);
+    setActivePeriodOAS($periodo);
 
     $matricula = Matricula::create([
         'oferta_academica_id' => $oferta->id,

@@ -82,3 +82,44 @@ test('a submission against a full-capacity offering surfaces as a form error', f
         ])
         ->assertSessionHasErrors('oferta_academica_id');
 });
+
+test('a cross-school student is rejected on student_id without creating a legacy enrollment', function () {
+    $school = School::factory()->create();
+    $otherSchool = School::factory()->create();
+    $periodo = PeriodoAcademico::factory()->active()->create(['school_id' => $school->id]);
+    $oferta = OfertaAcademica::factory()->create([
+        'school_id' => $school->id,
+        'periodo_academico_id' => $periodo->id,
+    ]);
+    $student = User::factory()->create(['school_id' => $otherSchool->id]);
+    $student->assignRole('student');
+
+    $this->actingAs(matriculaStaffAdminFor($school))
+        ->post(matriculaAcademicUrl($school, '/academic/matriculas'), [
+            'oferta_academica_id' => $oferta->id,
+            'student_id' => $student->id,
+        ])
+        ->assertSessionHasErrors('student_id');
+
+    $this->assertDatabaseCount('matriculas', 0);
+});
+
+test('a same-school non-student is rejected on student_id without creating a legacy enrollment', function () {
+    $school = School::factory()->create();
+    $periodo = PeriodoAcademico::factory()->active()->create(['school_id' => $school->id]);
+    $oferta = OfertaAcademica::factory()->create([
+        'school_id' => $school->id,
+        'periodo_academico_id' => $periodo->id,
+    ]);
+    $teacher = User::factory()->create(['school_id' => $school->id]);
+    $teacher->assignRole('teacher');
+
+    $this->actingAs(matriculaStaffAdminFor($school))
+        ->post(matriculaAcademicUrl($school, '/academic/matriculas'), [
+            'oferta_academica_id' => $oferta->id,
+            'student_id' => $teacher->id,
+        ])
+        ->assertSessionHasErrors('student_id');
+
+    $this->assertDatabaseCount('matriculas', 0);
+});

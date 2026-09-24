@@ -1,0 +1,22 @@
+{
+    "name": "AcademicOffers",
+    "alias": "academicoffers",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "GradeLevels",
+        "Sections",
+        "Users"
+    ],
+    "permissions": [
+        "academic-offers.view",
+        "academic-offers.manage"
+    ],
+    "providers": [
+        "Modules\\AcademicOffers\\Infrastructure\\Providers\\AcademicOffersServiceProvider"
+    ],
+    "files": []
+}

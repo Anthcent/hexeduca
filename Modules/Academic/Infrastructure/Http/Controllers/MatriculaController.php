@@ -41,7 +41,7 @@ class MatriculaController extends Controller
             $matricularEstudiante->handle($data);
         } catch (DomainException $e) {
             throw ValidationException::withMessages([
-                'oferta_academica_id' => $e->getMessage(),
+                $e->getMessage() === 'The enrolled user must be a student in the OfertaAcademica school.' ? 'student_id' : 'oferta_academica_id' => $e->getMessage(),
             ]);
         }
 

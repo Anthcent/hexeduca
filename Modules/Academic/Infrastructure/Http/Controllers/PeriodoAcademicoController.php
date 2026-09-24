@@ -3,12 +3,12 @@
 namespace Modules\Academic\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Tenancy\TenantContext;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\DB;
 use Modules\Academic\Infrastructure\Http\Requests\StorePeriodoAcademicoRequest;
 use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
+use Modules\AcademicPeriods\Application\UseCases\ActivateAcademicPeriod;
+use Modules\AcademicPeriods\Infrastructure\Models\AcademicPeriod;
 
 class PeriodoAcademicoController extends Controller
 {
@@ -41,20 +41,13 @@ class PeriodoAcademicoController extends Controller
     }
 
     /**
-     * Marks this period as the school's single active period, deactivating
-     * any other active period in the same transaction — only one period
-     * may be active per school (see the migration's
-     * `[school_id, is_active]` index and `PeriodoContext::current()`).
+     * Backward-compatible route adapter. Activation policy, serialization,
+     * outbox recording and domain event dispatch belong to AcademicPeriods.
      */
-    public function activate(PeriodoAcademico $periodo, TenantContext $tenantContext): RedirectResponse
+    public function activate(PeriodoAcademico $periodo, ActivateAcademicPeriod $useCase): RedirectResponse
     {
-        DB::transaction(function () use ($periodo, $tenantContext): void {
-            PeriodoAcademico::where('school_id', $tenantContext->current()->id)
-                ->where('is_active', true)
-                ->update(['is_active' => false]);
-
-            $periodo->update(['is_active' => true]);
-        });
+        $authoritativePeriod = AcademicPeriod::findOrFail($periodo->id);
+        $useCase->handle($authoritativePeriod);
 
         return back()->with('success', "\"{$periodo->name}\" es ahora el período activo.");
     }

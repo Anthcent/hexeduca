@@ -21,6 +21,7 @@ final class Matricula
         private readonly int $studentId,
         private string $status,
         private readonly DateTimeImmutable $enrolledAt,
+        private readonly int $version = 1,
     ) {}
 
     public function id(): ?int
@@ -56,6 +57,11 @@ final class Matricula
     public function enrolledAt(): DateTimeImmutable
     {
         return $this->enrolledAt;
+    }
+
+    public function version(): int
+    {
+        return $this->version;
     }
 
     public function changeStatusTo(string $status): void
