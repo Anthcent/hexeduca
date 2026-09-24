@@ -46,7 +46,7 @@ test('Users and Admin are the only core modules', function () {
     expect($core)->toBe(['Admin', 'Users']);
 });
 
-test('Schedule, Files, and Notifications are skeleton maturity', function () {
+test('Schedule and Files are skeleton maturity', function () {
     $skeletons = [];
 
     foreach (moduleManifestFiles() as $file) {
@@ -59,5 +59,5 @@ test('Schedule, Files, and Notifications are skeleton maturity', function () {
 
     sort($skeletons);
 
-    expect($skeletons)->toBe(['Files', 'Notifications', 'Schedule']);
+    expect($skeletons)->toBe(['Files', 'Schedule']);
 });

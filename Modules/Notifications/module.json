@@ -1,13 +1,21 @@
 {
     "name": "Notifications",
     "alias": "notifications",
-    "description": "",
+    "description": "Internal school notices: staff publish announcements to teachers, students, or both, and each user reads them in their own inbox.",
     "keywords": [],
     "priority": 0,
     "core": false,
-    "maturity": "skeleton",
-    "dependencies": [],
-    "permissions": [],
+    "maturity": "mature",
+    "dependencies": [
+        "Users"
+    ],
+    "permissions": [
+        {"name": "notifications.view", "roles": ["staff/admin", "teacher", "student"]},
+        {"name": "notifications.send", "roles": ["staff/admin"]}
+    ],
+    "navigation": [
+        {"label": "Notificaciones", "route": "notifications.index", "icon": "Bell", "permission": "notifications.view"}
+    ],
     "providers": [
         "Modules\\Notifications\\Infrastructure\\Providers\\NotificationsServiceProvider"
     ],

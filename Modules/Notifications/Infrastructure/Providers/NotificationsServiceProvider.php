@@ -2,7 +2,12 @@
 
 namespace Modules\Notifications\Infrastructure\Providers;
 
+use App\ModulePlatform\Services\ModuleAccess;
+use App\Tenancy\TenantContext;
 use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
+use Modules\Notifications\Domain\Repositories\NotificationRepositoryInterface;
+use Modules\Notifications\Infrastructure\Persistence\EloquentNotificationRepository;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -25,6 +30,8 @@ class NotificationsServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->loadMigrationsFrom(module_path($this->name, 'Infrastructure/Database/Migrations'));
+        $this->registerInertiaPages();
+        $this->shareUnreadCount();
     }
 
     /**
@@ -32,8 +39,45 @@ class NotificationsServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(NotificationRepositoryInterface::class, EloquentNotificationRepository::class);
+
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+    }
+
+    protected function registerInertiaPages(): void
+    {
+        $this->app->afterResolving('inertia.view-finder', function ($finder): void {
+            $finder->addNamespace($this->name, module_path($this->name, 'Resources/js/Pages'));
+        });
+    }
+
+    /**
+     * Shares `notifications: {unreadCount, inboxUrl}` with every Inertia page
+     * so the header bell can show a badge. The closure is lazy (it runs when
+     * the page renders, after the tenant is resolved) and yields null when
+     * the user is a guest, the module is unavailable to the current school,
+     * or the user cannot view notifications; the layout then hides the badge.
+     */
+    protected function shareUnreadCount(): void
+    {
+        Inertia::share('notifications', function (): ?array {
+            $user = request()->user();
+            $school = $this->app->make(TenantContext::class)->current();
+
+            if ($user === null || $school === null) {
+                return null;
+            }
+
+            if (! $this->app->make(ModuleAccess::class)->allows($this->nameLower, $school) || ! $user->can('notifications.view')) {
+                return null;
+            }
+
+            return [
+                'unreadCount' => $this->app->make(NotificationRepositoryInterface::class)->unreadCountFor($user->id, $school->id),
+                'inboxUrl' => route('notifications.index'),
+            ];
+        });
     }
 
     /**
@@ -49,10 +93,7 @@ class NotificationsServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        //
     }
 
     /**

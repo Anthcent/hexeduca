@@ -14,6 +14,5 @@ test('skeleton modules expose no HTTP routes', function (string $module, string 
     expect($routes)->toHaveCount(0);
 })->with([
     'Files' => ['Files', 'files'],
-    'Notifications' => ['Notifications', 'notifications'],
     'Schedule' => ['Schedule', 'schedule'],
 ]);

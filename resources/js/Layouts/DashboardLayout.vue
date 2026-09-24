@@ -18,6 +18,10 @@ const page = usePage();
 const user = computed(() => page.props.auth?.user ?? null);
 const isLandlord = computed(() => user.value?.role === 'super-admin');
 const availableModules = computed(() => page.props.modules ?? []);
+// Shared by the Notifications module only when it is usable for this user;
+// absent or null otherwise.
+const notificationsBell = computed(() => page.props.notifications ?? null);
+const unreadNotifications = computed(() => notificationsBell.value?.unreadCount ?? 0);
 
 // Icons declared in a module's manifest `navigation` entries are looked up
 // by name here; unknown names fall back to the generic module icon.
@@ -99,7 +103,22 @@ onMounted(() => {
                         <Sun v-if="dark" class="size-[18px]" />
                         <Moon v-else class="size-[18px]" />
                     </button>
-                    <button class="relative grid size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))]" aria-label="Notificaciones">
+                    <Link
+                        v-if="notificationsBell"
+                        :href="notificationsBell.inboxUrl"
+                        class="relative grid size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))]"
+                        :aria-label="unreadNotifications > 0 ? `Notificaciones: ${unreadNotifications} sin leer` : 'Notificaciones'"
+                        :title="unreadNotifications > 0 ? `${unreadNotifications} sin leer` : 'Notificaciones'"
+                    >
+                        <Bell class="size-[18px]" />
+                        <span
+                            v-if="unreadNotifications > 0"
+                            class="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[rgb(var(--surface))]"
+                            aria-hidden="true"
+                        >{{ unreadNotifications > 99 ? '99+' : unreadNotifications }}</span>
+                    </Link>
+                    <!-- Without the Notifications module there is no inbox to open. -->
+                    <button v-else class="relative grid size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))]" aria-label="Notificaciones" disabled>
                         <Bell class="size-[18px]" />
                     </button>
                     <div v-if="user" class="ml-0.5 hidden items-center gap-2 rounded-xl p-1 pr-2 sm:flex">
