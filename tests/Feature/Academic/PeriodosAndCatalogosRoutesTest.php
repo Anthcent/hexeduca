@@ -25,6 +25,7 @@ use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
 use Modules\AcademicPeriods\Domain\Events\AcademicPeriodActivated;
 use Modules\AcademicPeriods\Public\Events\AcademicPeriodActivated as IntegrationAcademicPeriodActivated;
 use Modules\Users\Infrastructure\Models\User;
+use Tests\Support\ForcedInsertFailure;
 
 uses(RefreshDatabase::class);
 
@@ -150,14 +151,7 @@ test('legacy period activation rolls back period state and event when authoritat
     $currentlyActive = PeriodoAcademico::factory()->create(['school_id' => $school->id, 'is_active' => true]);
     $toActivate = PeriodoAcademico::factory()->create(['school_id' => $school->id, 'is_active' => false]);
     Event::fake([AcademicPeriodActivated::class]);
-    DB::statement(<<<'SQL'
-        CREATE TRIGGER fail_legacy_period_activation_outbox
-        BEFORE INSERT ON integration_outbox_events
-        WHEN NEW.event_name = 'academic_period.activated'
-        BEGIN
-            SELECT RAISE(ABORT, 'forced outbox failure');
-        END
-    SQL);
+    ForcedInsertFailure::install('fail_legacy_period_activation_outbox', 'integration_outbox_events', 'forced outbox failure', 'academic_period.activated');
 
     expect(fn () => $this->withoutExceptionHandling()
         ->actingAs($staff)

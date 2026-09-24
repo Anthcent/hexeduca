@@ -85,7 +85,7 @@ test('role removal leaves a versioned tombstone that rejects duplicate and reord
 
     $row = DB::table('enrollments_student_projection')->where('source_student_id', 11)->sole();
 
-    expect($row->is_active)->toBe(0)
+    expect((bool) $row->is_active)->toBeFalse()
         ->and($row->last_event_version)->toBe(4)
         ->and($row->name)->toBe('Grace')
         ->and((new LocalProjectionStudentReader)->find(11))->toBeNull();

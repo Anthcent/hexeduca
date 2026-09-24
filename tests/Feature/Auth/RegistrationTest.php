@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Modules\Users\Domain\Events\UserRegistered;
 use Modules\Users\Infrastructure\Models\User;
 use Modules\Users\Public\Events\UserCreated;
+use Tests\Support\ForcedInsertFailure;
 
 uses(RefreshDatabase::class);
 
@@ -110,13 +111,7 @@ test('HTTP registration publishes only to the student projection', function () {
 test('role assignment failure rolls back user role outbox and domain event', function () {
     $school = School::factory()->create();
     Event::fake([UserRegistered::class]);
-    DB::statement(<<<'SQL'
-        CREATE TRIGGER fail_registration_role
-        BEFORE INSERT ON model_has_roles
-        BEGIN
-            SELECT RAISE(ABORT, 'forced role assignment failure');
-        END
-    SQL);
+    ForcedInsertFailure::install('fail_registration_role', 'model_has_roles', 'forced role assignment failure');
 
     expect(fn () => $this->withoutExceptionHandling()->post('/register', [
         'school_id' => $school->id,
@@ -135,14 +130,7 @@ test('role assignment failure rolls back user role outbox and domain event', fun
 test('outbox recording failure rolls back user role outbox and domain event', function () {
     $school = School::factory()->create();
     Event::fake([UserRegistered::class]);
-    DB::statement(<<<'SQL'
-        CREATE TRIGGER fail_registration_outbox
-        BEFORE INSERT ON integration_outbox_events
-        WHEN NEW.event_name = 'user.created'
-        BEGIN
-            SELECT RAISE(ABORT, 'forced outbox recording failure');
-        END
-    SQL);
+    ForcedInsertFailure::install('fail_registration_outbox', 'integration_outbox_events', 'forced outbox recording failure', 'user.created');
 
     expect(fn () => $this->withoutExceptionHandling()->post('/register', [
         'school_id' => $school->id,

@@ -178,7 +178,7 @@ test('a fresh claim is owned exclusively and a stale claim is recovered', functi
     app(OutboxEventRecorder::class)->record(new SectionCreated(1, 2, 'A'));
     DB::table('integration_outbox_events')->update([
         'status' => 'processing',
-        'claim_token' => 'first-worker',
+        'claim_token' => '11111111-1111-4111-8111-111111111111',
         'claimed_at' => now(),
     ]);
 
@@ -195,7 +195,7 @@ test('a fresh claim is owned exclusively and a stale claim is recovered', functi
 test('conditional finalization cannot overwrite a replacement owner', function () {
     app(OutboxEventRecorder::class)->record(new SectionCreated(1, 2, 'A'));
     Event::listen(SectionCreated::class, function (): void {
-        DB::table('integration_outbox_events')->update(['claim_token' => 'replacement-owner']);
+        DB::table('integration_outbox_events')->update(['claim_token' => '22222222-2222-4222-8222-222222222222']);
     });
 
     $result = app(OutboxWorker::class)->run();
@@ -204,7 +204,7 @@ test('conditional finalization cannot overwrite a replacement owner', function (
         ->and($result['ownership_lost'])->toBe(1);
     $row = DB::table('integration_outbox_events')->sole();
     expect($row->status)->toBe('processing')
-        ->and($row->claim_token)->toBe('replacement-owner');
+        ->and($row->claim_token)->toBe('22222222-2222-4222-8222-222222222222');
 });
 
 test('publish command exits non-zero and reports terminal failures separately', function () {

@@ -25,6 +25,7 @@ use Modules\Enrollments\Domain\Events\EnrollmentCreated;
 use Modules\GradeLevels\Infrastructure\Models\GradeLevel;
 use Modules\Sections\Infrastructure\Models\Section;
 use Modules\Users\Infrastructure\Models\User;
+use Tests\Support\ForcedInsertFailure;
 
 uses(RefreshDatabase::class);
 
@@ -35,14 +36,7 @@ beforeEach(function () {
 function failOutboxEvent(string $eventName): void
 {
     $trigger = str_replace('.', '_', $eventName);
-    DB::statement(<<<SQL
-        CREATE TRIGGER fail_{$trigger}_outbox
-        BEFORE INSERT ON integration_outbox_events
-        WHEN NEW.event_name = '{$eventName}'
-        BEGIN
-            SELECT RAISE(ABORT, 'forced outbox failure');
-        END
-    SQL);
+    ForcedInsertFailure::install("fail_{$trigger}_outbox", 'integration_outbox_events', 'forced outbox failure', $eventName);
 }
 
 test('CreateAcademicPeriod records academic_period.created in the outbox', function () {

@@ -36,7 +36,7 @@ test('teacher projection rebuild backfills existing teachers and tombstones stal
 
     expect((new LocalProjectionTeacherReader)->find($teacher->id)?->schoolId)->toBe($school->id)
         ->and((new LocalProjectionTeacherReader)->find(999))->toBeNull();
-    expect(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', 999)->value('is_active'))->toBe(0)
+    expect((bool) DB::table('academic_offers_teacher_projection')->where('source_teacher_id', 999)->value('is_active'))->toBeFalse()
         ->and(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', 999)->value('last_event_version'))->toBe(7);
 });
 
@@ -62,6 +62,6 @@ test('student projection rebuild backfills existing students and tombstones stal
 
     expect((new LocalProjectionStudentReader)->find($student->id)?->schoolId)->toBe($school->id)
         ->and((new LocalProjectionStudentReader)->find(999))->toBeNull();
-    expect(DB::table('enrollments_student_projection')->where('source_student_id', 999)->value('is_active'))->toBe(0)
+    expect((bool) DB::table('enrollments_student_projection')->where('source_student_id', 999)->value('is_active'))->toBeFalse()
         ->and(DB::table('enrollments_student_projection')->where('source_student_id', 999)->value('last_event_version'))->toBe(9);
 });

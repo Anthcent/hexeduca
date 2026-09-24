@@ -4,7 +4,6 @@ use App\Tenancy\Models\School;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Modules\Academic\Application\DTOs\MatricularEstudianteData;
 use Modules\Academic\Application\UseCases\MatricularEstudiante;
@@ -13,6 +12,7 @@ use Modules\Academic\Domain\Repositories\MatriculaRepositoryInterface;
 use Modules\Academic\Infrastructure\Models\OfertaAcademica;
 use Modules\Academic\Infrastructure\Models\PeriodoAcademico;
 use Modules\Users\Infrastructure\Models\User;
+use Tests\Support\ForcedInsertFailure;
 
 uses(RefreshDatabase::class);
 
@@ -134,14 +134,7 @@ test('legacy enrollment rolls back source and domain event when outbox recording
     $student = User::factory()->create(['school_id' => $school->id]);
     $student->assignRole('student');
     Event::fake([EstudianteMatriculado::class]);
-    DB::statement(<<<'SQL'
-        CREATE TRIGGER fail_legacy_enrollment_outbox
-        BEFORE INSERT ON integration_outbox_events
-        WHEN NEW.event_name = 'enrollment.created'
-        BEGIN
-            SELECT RAISE(ABORT, 'forced outbox failure');
-        END
-    SQL);
+    ForcedInsertFailure::install('fail_legacy_enrollment_outbox', 'integration_outbox_events', 'forced outbox failure', 'enrollment.created');
 
     expect(fn () => app(MatricularEstudiante::class)->handle(new MatricularEstudianteData(
         ofertaAcademicaId: $offer->id,

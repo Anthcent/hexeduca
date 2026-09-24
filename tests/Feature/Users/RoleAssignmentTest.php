@@ -11,6 +11,7 @@ use Modules\Enrollments\Infrastructure\Listeners\ProjectStudentListener;
 use Modules\Users\Infrastructure\Models\User;
 use Modules\Users\Public\Events\UserCreated;
 use Modules\Users\Public\Events\UserUpdated;
+use Tests\Support\ForcedInsertFailure;
 
 uses(RefreshDatabase::class);
 
@@ -126,7 +127,7 @@ test('student to teacher HTTP reassignment updates both projections through the 
     expect($row->event_class)->toBe(UserUpdated::class)
         ->and(json_decode($row->payload, true)['roles'])->toBe(['teacher']);
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 1, 'failed' => 0]);
-    expect(DB::table('enrollments_student_projection')->where('source_student_id', $target->id)->value('is_active'))->toBe(0)
+    expect(DB::table('enrollments_student_projection')->where('source_student_id', $target->id)->where('is_active', false)->count())->toBe(1)
         ->and(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', $target->id)->count())->toBe(1);
 });
 
@@ -151,7 +152,7 @@ test('teacher to student HTTP reassignment updates both projections through the 
     $row = DB::table('integration_outbox_events')->where('event_name', 'user.updated')->sole();
     expect(json_decode($row->payload, true)['roles'])->toBe(['student']);
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 1, 'failed' => 0]);
-    expect(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', $target->id)->value('is_active'))->toBe(0)
+    expect(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', $target->id)->where('is_active', false)->count())->toBe(1)
         ->and(DB::table('enrollments_student_projection')->where('source_student_id', $target->id)->count())->toBe(1);
 });
 
@@ -161,14 +162,7 @@ test('role reassignment rolls back when the UserUpdated outbox write fails', fun
     $admin->assignRole('staff/admin');
     $target = User::factory()->create(['school_id' => $school->id]);
     $target->assignRole('student');
-    DB::statement(<<<'SQL'
-        CREATE TRIGGER fail_role_update_outbox
-        BEFORE INSERT ON integration_outbox_events
-        WHEN NEW.event_name = 'user.updated'
-        BEGIN
-            SELECT RAISE(ABORT, 'forced role update outbox failure');
-        END
-    SQL);
+    ForcedInsertFailure::install('fail_role_update_outbox', 'integration_outbox_events', 'forced role update outbox failure', 'user.updated');
 
     expect(fn () => $this->withoutExceptionHandling()
         ->actingAs($admin)
