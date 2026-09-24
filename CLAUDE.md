@@ -9,6 +9,7 @@ Multi-tenant school management system: one school per subdomain. Laravel 12, nwi
 - Fresh Linux container: `bash scripts/cloud-setup.sh` (installs PHP 8.3, Composer, and dependencies, and creates `.env` + `APP_KEY`).
 - Tests: `php vendor/bin/pest --testsuite=Unit,Feature,Architecture`. They use in-memory SQLite (forced in `phpunit.xml`), so no database server is needed.
 - Style: `php vendor/bin/pint --test`. Frontend build: `npm run build`.
+- Secret scanning: CI job `secrets` runs gitleaks over the full history on every push and PR and blocks on any finding. To check locally before committing, run `gitleaks git --redact .`.
 - Local Windows machine only: `php` on PATH is 8.0 — use the WinGet PHP 8.3 binary.
 
 ## Architecture rules (enforced by tests/Architecture)
