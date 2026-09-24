@@ -18,6 +18,16 @@ const page = usePage();
 const user = computed(() => page.props.auth?.user ?? null);
 const isLandlord = computed(() => user.value?.role === 'super-admin');
 const availableModules = computed(() => page.props.modules ?? []);
+
+// Icons declared in a module's manifest `navigation` entries are looked up
+// by name here; unknown names fall back to the generic module icon.
+const moduleNavIcons = { Bell, Blocks, GraduationCap, LayoutDashboard, ListChecks, Search, Users };
+const moduleNavItems = computed(() => (page.props.moduleNav ?? []).map((item) => ({
+    key: `module:${item.key}`,
+    label: item.label,
+    icon: moduleNavIcons[item.icon] ?? Blocks,
+    href: item.href,
+})));
 const initials = computed(() => {
     if (!user.value?.name) return '?';
     return user.value.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
@@ -41,6 +51,7 @@ const navItems = computed(() => {
     }
 
     items.push({ key: 'usuarios', label: 'Usuarios', icon: Users, href: route('users.index') });
+    items.push(...moduleNavItems.value);
 
     return items.filter((item) => !item.moduleKey || availableModules.value.includes(item.moduleKey));
 });

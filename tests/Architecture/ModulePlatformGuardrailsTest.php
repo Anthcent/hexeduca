@@ -120,6 +120,16 @@ test('ingress diagnostics reject unguarded routes and HTTP deployment-state writ
             $status = $activatorAlias->{$operation}($module);
             PHP,
         'Modules/Alpha/Application/DeploymentWriter.php' => '<?php File::put(base_path("modules_"."statuses.json"), "{}");',
+        'app/Http/Controllers/RegistryTypedController.php' => <<<'PHP'
+            <?php
+            use App\ModulePlatform\Services\ModuleRegistry;
+            class RegistryTypedController {
+                public function toggle(ModuleRegistry $registry, string $module): void {
+                    $registry->enable($module);
+                    $registry->disable($module);
+                }
+            }
+            PHP,
     ]);
 
     try {
@@ -131,6 +141,7 @@ test('ingress diagnostics reject unguarded routes and HTTP deployment-state writ
             ->and($validator->httpFileActivatorWriteViolations())->not->toContain(
                 'app/Http/Controllers/ReadOnlyActivatorController.php -> non-console deployment state mutation',
                 'app/Http/Controllers/DynamicReadOnlyActivatorController.php -> non-console deployment state mutation',
+                'app/Http/Controllers/RegistryTypedController.php -> non-console deployment state mutation',
             );
     } finally {
         removeArchitectureFixture($root);

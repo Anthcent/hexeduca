@@ -45,11 +45,14 @@ class MakeProjectModuleCommand extends Command
             ->setType('web')
             ->setInertia(true)
             ->setAuthor(null, null)
-            // New modules start disabled in the file activator and as
-            // maturity: skeleton in module.json. They are not registered
-            // or entitled anywhere until an operator runs `modules:sync`
-            // and explicitly enables them.
-            ->setActive(false)
+            // The file activator (modules_statuses.json) is left active —
+            // R4 makes the DB registry (`modules.active` + entitlements +
+            // the `module:{key}` middleware) the only real runtime switch.
+            // A new module's routes are still gated by `module:{key}`, and
+            // maturity: skeleton keeps `modules:enable` from activating it
+            // in the DB until an operator explicitly promotes it. See
+            // sdd/module-developer-platform R4.1.
+            ->setActive(true)
             ->generate();
 
         if ($code === E_ERROR) {
@@ -60,7 +63,7 @@ class MakeProjectModuleCommand extends Command
 
         $this->refreshAutoloader();
 
-        $this->components->info("Module [{$name}] generated. Run `composer dump-autoload` yourself if the warning above fired, then `php artisan modules:sync` once R3 lands it.");
+        $this->components->info("Module [{$name}] generated. Run `composer dump-autoload` yourself if the warning above fired, then `php artisan modules:sync` and `php artisan modules:enable {$name} --promote` when it's ready.");
 
         return self::SUCCESS;
     }

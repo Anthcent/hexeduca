@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use Nwidart\Modules\Facades\Module as NwidartModule;
 use Nwidart\Modules\Module as NwidartModuleInstance;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Keeps the `modules`/`school_modules` DB tables in sync with the
@@ -46,12 +48,42 @@ class ModuleRegistry
                 $this->upsert($module);
 
                 foreach ((array) $module->get('permissions', []) as $permission) {
-                    Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+                    $this->syncPermission($permission);
                 }
             }
         });
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         $this->moduleAccess->forget();
+    }
+
+    /**
+     * Accepts either the plain-string permission format (kept for backward
+     * compatibility) or `{"name": "...", "roles": ["..."]}`, which also
+     * grants the permission to those existing Spatie roles. Manual grants
+     * on other roles are never touched — this only ever adds, never revokes.
+     */
+    private function syncPermission(string|array $permission): void
+    {
+        if (is_string($permission)) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+
+            return;
+        }
+
+        $name = $permission['name'] ?? null;
+
+        if ($name === null) {
+            return;
+        }
+
+        $record = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+
+        foreach ((array) ($permission['roles'] ?? []) as $roleName) {
+            $role = Role::where('name', $roleName)->where('guard_name', 'web')->first();
+
+            $role?->givePermissionTo($record);
+        }
     }
 
     /**

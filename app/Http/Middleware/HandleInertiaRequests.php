@@ -5,7 +5,9 @@ namespace App\Http\Middleware;
 use App\ModulePlatform\Services\ModuleAccess;
 use App\Tenancy\TenantContext;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
+use Nwidart\Modules\Facades\Module as NwidartModule;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -56,6 +58,49 @@ class HandleInertiaRequests extends Middleware
             'modules' => fn () => app(ModuleAccess::class)->availableKeys(
                 app(TenantContext::class)->current()
             ),
+            // Manifest-declared nav entries (module.json `navigation`) for
+            // every module the current request may use. DashboardLayout.vue
+            // renders these after its hardcoded items. See
+            // sdd/module-developer-platform R4.3.
+            'moduleNav' => fn () => $this->moduleNavigation($request),
         ]);
+    }
+
+    /**
+     * @return list<array{key: string, label: string, icon: ?string, href: string}>
+     */
+    private function moduleNavigation(Request $request): array
+    {
+        $keys = app(ModuleAccess::class)->availableKeys(app(TenantContext::class)->current());
+        $user = $request->user();
+
+        $entries = [];
+
+        foreach ($keys as $key) {
+            $manifest = NwidartModule::find($key);
+
+            if ($manifest === null) {
+                continue;
+            }
+
+            foreach ((array) $manifest->get('navigation', []) as $item) {
+                if (! isset($item['label'], $item['route']) || ! Route::has($item['route'])) {
+                    continue;
+                }
+
+                if (isset($item['permission']) && ($user === null || ! $user->can($item['permission']))) {
+                    continue;
+                }
+
+                $entries[] = [
+                    'key' => $key.':'.$item['route'],
+                    'label' => $item['label'],
+                    'icon' => $item['icon'] ?? null,
+                    'href' => route($item['route']),
+                ];
+            }
+        }
+
+        return $entries;
     }
 }

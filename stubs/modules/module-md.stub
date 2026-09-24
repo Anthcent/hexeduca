@@ -22,7 +22,41 @@ Generated with `php artisan make:project-module $STUDLY_NAME$`.
 - `maturity` — `skeleton` until the module has real behavior, then `mature`.
 - `dependencies` — sibling module keys this module's `Public\` imports are
   allowed to reference.
-- `permissions` — Spatie permission strings this module owns.
+- `permissions` — either Spatie permission strings this module owns, or
+  objects `{"name": "...", "roles": ["..."]}` to auto-assign the permission
+  to existing roles when `modules:sync` runs (manual grants are never
+  revoked). Example:
+  ```json
+  "permissions": [
+      "$LOWER_NAME$.manage",
+      {"name": "$LOWER_NAME$.view", "roles": ["admin", "teacher"]}
+  ]
+  ```
+- `navigation` — optional sidebar entries added to `DashboardLayout.vue`.
+  Each entry is `{"label": "...", "route": "...", "icon": "...", "permission": "..."}`
+  (`icon` is a `lucide-vue-next` icon name; `permission` is optional — omit
+  it to show the entry to every user who can access the module). Starts
+  empty (`[]`); JSON has no comments, so this file is the reference. Example:
+  ```json
+  "navigation": [
+      {"label": "$STUDLY_NAME$", "route": "$LOWER_NAME$.index", "icon": "Blocks", "permission": "$LOWER_NAME$.view"}
+  ]
+  ```
+
+## How to enable this module
+
+1. Write the module's code and set `"maturity": "mature"` in `module.json`
+   once it's ready for real use (or run
+   `php artisan modules:enable $LOWER_NAME$ --promote`, which does it for you).
+2. `php artisan modules:sync` — upserts the `modules` table row and syncs
+   any declared `permissions` (creating them and, for the `{name, roles}`
+   form, assigning them to the listed roles).
+3. `php artisan modules:enable $LOWER_NAME$` (add `--all-schools` to
+   entitle every existing school immediately; schools created afterwards
+   are auto-entitled regardless of this flag).
+4. That's it — no core file needs hand-editing. Routes are already gated by
+   `module:$LOWER_NAME$`, the sidebar picks up `navigation` automatically,
+   and schools without entitlement get a 404, not a broken link.
 
 ## Activation
 

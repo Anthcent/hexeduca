@@ -101,7 +101,7 @@ final class ModuleArchitectureValidator
 
             [$code, $literalText] = $this->normalizedPhp($file);
             $activatorReference = preg_match('/(?:FileActivator|ActivatorInterface)/i', $code) === 1;
-            $activationCall = preg_match('/(?:->|::)(?:enable|disable)\(/i', $code) === 1;
+            $activationCall = $this->activationCallOutsideRegistry($code);
             $deploymentPathWrite = str_contains($literalText, 'modulesstatusesjson')
                 && preg_match('/(?:file_put_contents|fopen)\(|(?:File|Storage)::(?:put|replace)\(/i', $code) === 1;
 
@@ -113,6 +113,29 @@ final class ModuleArchitectureValidator
         sort($violations);
 
         return array_values(array_unique($violations));
+    }
+
+    /**
+     * `->enable(`/`->disable(` flags any deployment-state mutation, but
+     * `App\ModulePlatform\Services\ModuleRegistry::enable()/disable()` are
+     * DB row flips, not the nwidart file-activator's `enable()/disable()`
+     * (which rewrites modules_statuses.json). A call is excluded here only
+     * when it's made on a variable that this same file type-hints as
+     * `ModuleRegistry` (constructor or method injection) — nwidart's
+     * `FileActivator`/`Module` facade calls are never typed that way, so
+     * they still get caught.
+     */
+    private function activationCallOutsideRegistry(string $code): bool
+    {
+        preg_match_all('/ModuleRegistry\$([A-Za-z_][A-Za-z0-9_]*)/', $code, $matches);
+        $registryVariables = array_unique($matches[1]);
+
+        $sanitized = $code;
+        foreach ($registryVariables as $variable) {
+            $sanitized = preg_replace('/\$'.preg_quote($variable, '/').'(?:->|::)(?:enable|disable)\(/i', '', $sanitized);
+        }
+
+        return preg_match('/(?:->|::)(?:enable|disable)\(/i', $sanitized) === 1;
     }
 
     private function hasContainerResolvedDynamicActivation(string $code, string $literalText): bool

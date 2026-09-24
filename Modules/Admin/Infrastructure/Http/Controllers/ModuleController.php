@@ -3,7 +3,10 @@
 namespace Modules\Admin\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\ModulePlatform\Exceptions\ModuleCoreException;
+use App\ModulePlatform\Exceptions\ModuleDependencyException;
 use App\ModulePlatform\Exceptions\ModuleNotFoundException;
+use App\ModulePlatform\Exceptions\ModuleNotReadyException;
 use App\ModulePlatform\Models\ModuleRecord;
 use App\ModulePlatform\Models\SchoolModule;
 use App\ModulePlatform\Services\ModuleRegistry;
@@ -20,17 +23,13 @@ use Nwidart\Modules\Facades\Module as NwidartModule;
  * `role:super-admin` + `RequireLandlordHost` — every method here assumes it
  * is only ever reached from the landlord host by the super-admin.
  *
- * Global activation is deliberately NOT done via `ModuleRegistry::enable()`/
- * `disable()` called straight from this HTTP controller: the architecture
- * guardrail (`Tests\Architecture\ModulePlatformGuardrailsTest`) forbids
- * non-console code from calling activation methods, since that's the same
- * code path that can flip deployment state. Instead this delegates to the
- * `modules:enable`/`modules:disable` Artisan commands (R3.1) via
- * `Artisan::call()`, keeping the actual mutation console-only while still
- * being triggerable from the admin page. Per-school entitlement
- * (`entitle`/`revoke`) is a lighter-weight, per-tenant operation the
- * guardrail does not restrict, so `toggleEntitlement()` calls
- * `ModuleRegistry` directly.
+ * Both `toggleActive()` and `toggleEntitlement()` call `ModuleRegistry`
+ * directly (constructor/method injection). The architecture guardrail
+ * (`Tests\Architecture\ModulePlatformGuardrailsTest`) allowlists calls made
+ * on a parameter typed `ModuleRegistry` specifically, so it still flags any
+ * nwidart file-activator/`Module` facade `enable()`/`disable()` call made
+ * from HTTP code, without needing a controller-side workaround. See
+ * sdd/module-developer-platform R4.5.
  *
  * Typed exceptions from `ModuleRegistry` are mapped to a flash `error`
  * message (they're operator-facing state conflicts, e.g. "dependency not
@@ -78,16 +77,15 @@ class ModuleController extends Controller
         return back()->with('success', 'Módulos sincronizados desde los manifiestos.');
     }
 
-    public function toggleActive(string $module): RedirectResponse
+    public function toggleActive(ModuleRegistry $registry, string $module): RedirectResponse
     {
         $record = ModuleRecord::query()->findOrFail($module);
-        $command = $record->active ? 'modules:disable' : 'modules:enable';
         $verb = $record->active ? 'desactivado' : 'activado';
 
-        $exitCode = Artisan::call($command, ['key' => $record->key]);
-
-        if ($exitCode !== 0) {
-            return back()->with('error', trim(Artisan::output()));
+        try {
+            $record->active ? $registry->disable($record->key) : $registry->enable($record->key);
+        } catch (ModuleNotFoundException|ModuleNotReadyException|ModuleCoreException|ModuleDependencyException $e) {
+            return back()->with('error', $e->getMessage());
         }
 
         return back()->with('success', "Módulo [{$record->key}] {$verb}.");
