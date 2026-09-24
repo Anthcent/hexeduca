@@ -57,9 +57,3 @@ Generated with `php artisan make:project-module $STUDLY_NAME$`.
 4. That's it — no core file needs hand-editing. Routes are already gated by
    `module:$LOWER_NAME$`, the sidebar picks up `navigation` automatically,
    and schools without entitlement get a 404, not a broken link.
-
-## Activation
-
-This module starts as `maturity: skeleton` and is not wired into the module
-registry yet. Module registration, activation, and per-school entitlements
-are introduced in a later slice (see `sdd/module-developer-platform`).
