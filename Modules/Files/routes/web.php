@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Files\Infrastructure\Http\Controllers\FilesController;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,7 +10,3 @@ use Modules\Files\Infrastructure\Http\Controllers\FilesController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-Route::group([], function () {
-    Route::resource('files', FilesController::class)->names('files');
-});

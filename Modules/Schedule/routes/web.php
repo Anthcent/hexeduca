@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Schedule\Infrastructure\Http\Controllers\ScheduleController;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,7 +10,3 @@ use Modules\Schedule\Infrastructure\Http\Controllers\ScheduleController;
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-Route::group([], function () {
-    Route::resource('schedule', ScheduleController::class)->names('schedule');
-});

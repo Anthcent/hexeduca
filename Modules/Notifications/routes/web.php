@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Notifications\Infrastructure\Http\Controllers\NotificationsController;
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,7 +10,3 @@ use Modules\Notifications\Infrastructure\Http\Controllers\NotificationsControlle
 | contains the "web" middleware group. Now create something great!
 |
 */
-
-Route::group([], function () {
-    Route::resource('notifications', NotificationsController::class)->names('notifications');
-});

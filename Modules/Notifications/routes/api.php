@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Notifications\Infrastructure\Http\Controllers\NotificationsController;
-
 /*
  *--------------------------------------------------------------------------
  * API Routes
@@ -13,7 +10,3 @@ use Modules\Notifications\Infrastructure\Http\Controllers\NotificationsControlle
  * is assigned the "api" middleware group. Enjoy building your API!
  *
 */
-
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('notifications', NotificationsController::class)->names('notifications');
-});

@@ -1,8 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Modules\Schedule\Infrastructure\Http\Controllers\ScheduleController;
-
 /*
  *--------------------------------------------------------------------------
  * API Routes
@@ -13,7 +10,3 @@ use Modules\Schedule\Infrastructure\Http\Controllers\ScheduleController;
  * is assigned the "api" middleware group. Enjoy building your API!
  *
 */
-
-Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
-    Route::apiResource('schedule', ScheduleController::class)->names('schedule');
-});

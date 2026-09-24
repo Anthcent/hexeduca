@@ -4,6 +4,10 @@
     "description": "",
     "keywords": [],
     "priority": 0,
+    "core": false,
+    "maturity": "skeleton",
+    "dependencies": [],
+    "permissions": [],
     "providers": [
         "Modules\\Notifications\\Infrastructure\\Providers\\NotificationsServiceProvider"
     ],
