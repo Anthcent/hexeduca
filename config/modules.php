@@ -24,28 +24,24 @@ return [
     |
     */
     'stubs' => [
-        'enabled' => false,
-        'path' => base_path('vendor/nwidart/laravel-modules/src/Commands/stubs'),
+        // Project-specific stubs override the vendor defaults below (see
+        // stubs/modules/). Files not present there fall back to nwidart's
+        // defaults automatically. See sdd/module-developer-platform R1.2.
+        'enabled' => true,
+        'path' => base_path('stubs/modules'),
         'files' => [
             'routes/web' => 'routes/web.php',
             'routes/api' => 'routes/api.php',
-            'views/index' => 'resources/views/index.blade.php',
-            'views/master' => 'resources/views/layouts/master.blade.php',
             'scaffold/config' => 'config/config.php',
             'composer' => 'composer.json',
-            'assets/js/app' => 'resources/assets/js/app.js',
-            'assets/sass/app' => 'resources/assets/sass/app.scss',
-            'vite' => 'vite.config.js',
-            'package' => 'package.json',
+            'module-md' => 'MODULE.md',
         ],
         'replacements' => [
             'routes/web' => ['LOWER_NAME', 'STUDLY_NAME', 'KEBAB_NAME', 'MODULE_NAMESPACE', 'CONTROLLER_NAMESPACE'],
             'routes/api' => ['LOWER_NAME', 'STUDLY_NAME', 'KEBAB_NAME', 'MODULE_NAMESPACE', 'CONTROLLER_NAMESPACE'],
-            'vite' => ['LOWER_NAME', 'STUDLY_NAME', 'KEBAB_NAME'],
             'json' => ['LOWER_NAME', 'STUDLY_NAME', 'KEBAB_NAME', 'MODULE_NAMESPACE', 'PROVIDER_NAMESPACE'],
-            'views/index' => ['LOWER_NAME'],
-            'views/master' => ['LOWER_NAME', 'STUDLY_NAME', 'KEBAB_NAME'],
             'scaffold/config' => ['STUDLY_NAME'],
+            'module-md' => ['STUDLY_NAME', 'LOWER_NAME'],
             'composer' => [
                 'LOWER_NAME',
                 'STUDLY_NAME',
@@ -109,62 +105,80 @@ return [
         | Customise the paths where the folders will be generated.
         | Setting the generate key to false will not generate that folder
         */
+        // Generator paths below follow this project's hexagonal module
+        // layout (Domain/Application/Infrastructure/Public), matching
+        // Modules/Users and Modules/AcademicPeriods. See
+        // sdd/module-developer-platform R1.2.
         'generator' => [
-            // app/
-            'actions' => ['path' => 'app/Actions', 'generate' => false],
-            'casts' => ['path' => 'app/Casts', 'generate' => false],
-            'channels' => ['path' => 'app/Broadcasting', 'generate' => false],
-            'class' => ['path' => 'app/Classes', 'generate' => false],
-            'command' => ['path' => 'app/Console', 'generate' => false],
-            'component-class' => ['path' => 'app/View/Components', 'generate' => false],
-            'emails' => ['path' => 'app/Emails', 'generate' => false],
-            'event' => ['path' => 'app/Events', 'generate' => false],
-            'enums' => ['path' => 'app/Enums', 'generate' => false],
-            'exceptions' => ['path' => 'app/Exceptions', 'generate' => false],
-            'jobs' => ['path' => 'app/Jobs', 'generate' => false],
-            'helpers' => ['path' => 'app/Helpers', 'generate' => false],
-            'interfaces' => ['path' => 'app/Interfaces', 'generate' => false],
-            'listener' => ['path' => 'app/Listeners', 'generate' => false],
-            'model' => ['path' => 'app/Models', 'generate' => false],
-            'notifications' => ['path' => 'app/Notifications', 'generate' => false],
-            'observer' => ['path' => 'app/Observers', 'generate' => false],
-            'policies' => ['path' => 'app/Policies', 'generate' => false],
-            'provider' => ['path' => 'app/Providers', 'generate' => true],
-            'repository' => ['path' => 'app/Repositories', 'generate' => false],
-            'resource' => ['path' => 'app/Transformers', 'generate' => false],
-            'route-provider' => ['path' => 'app/Providers', 'generate' => true],
-            'rules' => ['path' => 'app/Rules', 'generate' => false],
-            'services' => ['path' => 'app/Services', 'generate' => false],
-            'scopes' => ['path' => 'app/Models/Scopes', 'generate' => false],
-            'traits' => ['path' => 'app/Traits', 'generate' => false],
+            // Domain/
+            'domain-entities' => ['path' => 'Domain/Entities', 'generate' => true],
+            'domain-repositories' => ['path' => 'Domain/Repositories', 'generate' => true],
+            'domain-events' => ['path' => 'Domain/Events', 'generate' => false],
+            'domain-value-objects' => ['path' => 'Domain/ValueObjects', 'generate' => false],
 
-            // app/Http/
-            'controller' => ['path' => 'app/Http/Controllers', 'generate' => true],
-            'filter' => ['path' => 'app/Http/Middleware', 'generate' => false],
-            'request' => ['path' => 'app/Http/Requests', 'generate' => false],
+            // Application/
+            'application-usecases' => ['path' => 'Application/UseCases', 'generate' => true],
+            'application-dtos' => ['path' => 'Application/DTOs', 'generate' => true],
+            'application-services' => ['path' => 'Application/Services', 'generate' => false],
+
+            // Infrastructure/
+            'model' => ['path' => 'Infrastructure/Models', 'generate' => true],
+            'infrastructure-persistence' => ['path' => 'Infrastructure/Persistence', 'generate' => true],
+            'provider' => ['path' => 'Infrastructure/Providers', 'generate' => true],
+            'route-provider' => ['path' => 'Infrastructure/Providers', 'generate' => true],
+            'controller' => ['path' => 'Infrastructure/Http/Controllers', 'generate' => true],
+            'request' => ['path' => 'Infrastructure/Http/Requests', 'generate' => false],
+            'filter' => ['path' => 'Infrastructure/Http/Middleware', 'generate' => false],
+            'migration' => ['path' => 'Infrastructure/Database/Migrations', 'generate' => true],
+            'seeder' => ['path' => 'Infrastructure/Database/Seeders', 'generate' => true],
+
+            // Public/ (the only layer sibling modules may depend on — see
+            // tests/Architecture/Support/ModuleArchitectureValidator.php)
+            'public-contracts' => ['path' => 'Public/Contracts', 'generate' => true],
+            'public-dtos' => ['path' => 'Public/DTOs', 'generate' => false],
+            'public-events' => ['path' => 'Public/Events', 'generate' => false],
+
+            // Unused scaffolding for this hexagonal layout — disabled
+            // rather than removed, so `module:make-*` sub-generators keep
+            // working if a module opts in later.
+            'actions' => ['path' => 'Application/Actions', 'generate' => false],
+            'casts' => ['path' => 'Infrastructure/Casts', 'generate' => false],
+            'channels' => ['path' => 'Infrastructure/Broadcasting', 'generate' => false],
+            'class' => ['path' => 'Domain/Support', 'generate' => false],
+            'command' => ['path' => 'Infrastructure/Console', 'generate' => false],
+            'component-class' => ['path' => 'Resources/js/Components', 'generate' => false],
+            'emails' => ['path' => 'Infrastructure/Emails', 'generate' => false],
+            'event' => ['path' => 'Domain/Events', 'generate' => false],
+            'enums' => ['path' => 'Domain/Enums', 'generate' => false],
+            'exceptions' => ['path' => 'Domain/Exceptions', 'generate' => false],
+            'jobs' => ['path' => 'Infrastructure/Jobs', 'generate' => false],
+            'helpers' => ['path' => 'Infrastructure/Helpers', 'generate' => false],
+            'interfaces' => ['path' => 'Domain/Contracts', 'generate' => false],
+            'listener' => ['path' => 'Infrastructure/Listeners', 'generate' => false],
+            'notifications' => ['path' => 'Infrastructure/Notifications', 'generate' => false],
+            'observer' => ['path' => 'Infrastructure/Observers', 'generate' => false],
+            'policies' => ['path' => 'Infrastructure/Policies', 'generate' => false],
+            'repository' => ['path' => 'Infrastructure/Persistence', 'generate' => false],
+            'resource' => ['path' => 'Infrastructure/Transformers', 'generate' => false],
+            'rules' => ['path' => 'Application/Rules', 'generate' => false],
+            'services' => ['path' => 'Application/Services', 'generate' => false],
+            'scopes' => ['path' => 'Infrastructure/Models/Scopes', 'generate' => false],
+            'traits' => ['path' => 'Infrastructure/Traits', 'generate' => false],
+            'factory' => ['path' => 'Infrastructure/Database/Factories', 'generate' => false],
+            'lang' => ['path' => 'lang', 'generate' => false],
+            'assets' => ['path' => 'Resources/assets', 'generate' => false],
+            'component-view' => ['path' => 'Resources/views/components', 'generate' => false],
+            'views' => ['path' => 'Resources/views', 'generate' => false],
 
             // config/
             'config' => ['path' => 'config', 'generate' => true],
 
-            // database/
-            'factory' => ['path' => 'database/factories', 'generate' => true],
-            'migration' => ['path' => 'database/migrations', 'generate' => true],
-            'seeder' => ['path' => 'database/seeders', 'generate' => true],
-
-            // lang/
-            'lang' => ['path' => 'lang', 'generate' => false],
-
-            // resource/
-            'assets' => ['path' => 'resources/assets', 'generate' => true],
-            'component-view' => ['path' => 'resources/views/components', 'generate' => false],
-            'views' => ['path' => 'resources/views', 'generate' => true],
-
             // routes/
             'routes' => ['path' => 'routes', 'generate' => true],
 
-            // tests/
-            'test-feature' => ['path' => 'tests/Feature', 'generate' => true],
-            'test-unit' => ['path' => 'tests/Unit', 'generate' => true],
+            // Tests/ (capitalized to match existing modules)
+            'test-feature' => ['path' => 'Tests/Feature', 'generate' => true],
+            'test-unit' => ['path' => 'Tests/Unit', 'generate' => true],
         ],
     ],
 

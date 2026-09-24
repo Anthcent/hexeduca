@@ -3,6 +3,7 @@
 use App\AcademicPeriod\Http\Middleware\ResolveActivePeriod;
 use App\Http\Middleware\AddStrictTransportSecurity;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\ModuleGateMiddleware;
 use App\Support\SecurityPolicy;
 use App\Tenancy\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
@@ -45,6 +46,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
+            // Pass-through until R2 wires real module activation
+            // (sdd/module-developer-platform R2.3-R2.4).
+            'module' => ModuleGateMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

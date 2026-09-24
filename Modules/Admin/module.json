@@ -4,6 +4,12 @@
     "description": "",
     "keywords": [],
     "priority": 0,
+    "core": true,
+    "maturity": "mature",
+    "dependencies": [],
+    "permissions": [
+        "admin.access"
+    ],
     "providers": [
         "Modules\\Admin\\Infrastructure\\Providers\\AdminServiceProvider"
     ],

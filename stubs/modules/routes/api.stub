@@ -1,0 +1,18 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use $MODULE_NAMESPACE$\$STUDLY_NAME$\$CONTROLLER_NAMESPACE$\$STUDLY_NAME$Controller;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Guarded with `auth:sanctum` plus the `module:$LOWER_NAME$` gate. See
+| routes/web.php for the gate note.
+|
+*/
+
+Route::middleware(['auth:sanctum', 'module:$LOWER_NAME$'])->prefix('v1')->group(function () {
+    Route::apiResource('$PLURAL_LOWER_NAME$', $STUDLY_NAME$Controller::class)->names('$LOWER_NAME$');
+});

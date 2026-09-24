@@ -1,0 +1,20 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use $MODULE_NAMESPACE$\$STUDLY_NAME$\$CONTROLLER_NAMESPACE$\$STUDLY_NAME$Controller;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Guarded with `auth` plus the `module:$LOWER_NAME$` gate. The gate is a
+| pass-through alias until R2 wires the real module activation resolver
+| (see sdd/module-developer-platform design). Every module route MUST
+| stay authenticated — see tests/Architecture/Support/ModuleArchitectureValidator.php.
+|
+*/
+
+Route::middleware(['auth', 'module:$LOWER_NAME$'])->group(function () {
+    Route::resource('$PLURAL_LOWER_NAME$', $STUDLY_NAME$Controller::class)->names('$LOWER_NAME$');
+});

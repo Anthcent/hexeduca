@@ -1,0 +1,31 @@
+# $STUDLY_NAME$ module
+
+Generated with `php artisan make:project-module $STUDLY_NAME$`.
+
+## Layout
+
+- `Domain/` — entities, repository interfaces, value objects. No framework code.
+- `Application/` — use cases and DTOs orchestrating the domain.
+- `Infrastructure/` — Eloquent models, persistence, HTTP controllers, providers,
+  migrations. The only layer allowed to depend on Laravel and on other modules'
+  `Public/` layer.
+- `Public/` — the module's public contract. Sibling modules may only depend on
+  classes under this namespace (`Modules\$STUDLY_NAME$\Public\...`). Enforced by
+  `tests/Architecture/Support/ModuleArchitectureValidator.php`.
+- `routes/web.php` and `routes/api.php` — guarded with `auth` (or
+  `auth:sanctum`) plus the `module:$LOWER_NAME$` middleware alias.
+- `Tests/Unit` and `Tests/Feature` — module-scoped tests.
+
+## Manifest (`module.json`)
+
+- `core` — `true` only for modules the app cannot run without (Users, Admin).
+- `maturity` — `skeleton` until the module has real behavior, then `mature`.
+- `dependencies` — sibling module keys this module's `Public\` imports are
+  allowed to reference.
+- `permissions` — Spatie permission strings this module owns.
+
+## Activation
+
+This module starts as `maturity: skeleton` and is not wired into the module
+registry yet. Module registration, activation, and per-school entitlements
+are introduced in a later slice (see `sdd/module-developer-platform`).

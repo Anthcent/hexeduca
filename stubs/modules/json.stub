@@ -1,0 +1,15 @@
+{
+    "name": "$STUDLY_NAME$",
+    "alias": "$LOWER_NAME$",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "skeleton",
+    "dependencies": [],
+    "permissions": [],
+    "providers": [
+        "$MODULE_NAMESPACE$\\$STUDLY_NAME$\\$PROVIDER_NAMESPACE$\\$STUDLY_NAME$ServiceProvider"
+    ],
+    "files": []
+}
