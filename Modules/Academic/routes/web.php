@@ -20,7 +20,7 @@ use Modules\Academic\Infrastructure\Http\Controllers\SeccionController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('academic')->name('academic.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:academic'])->prefix('academic')->name('academic.')->group(function () {
     Route::get('ofertas/create', [OfertaAcademicaController::class, 'create'])->name('ofertas.create');
     Route::post('ofertas', [OfertaAcademicaController::class, 'store'])->name('ofertas.store');
     Route::get('matriculas/create', [MatriculaController::class, 'create'])->name('matriculas.create');

@@ -4,6 +4,7 @@ use App\AcademicPeriod\Context\AcademicPeriodContext;
 use App\AcademicPeriod\Contracts\ActivePeriod;
 use App\Tenancy\Models\School;
 use App\Tenancy\TenantContext;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 function enrollmentOfferFor(School $school): object

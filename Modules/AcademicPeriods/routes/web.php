@@ -15,7 +15,7 @@ use Modules\AcademicPeriods\Infrastructure\Http\Controllers\AcademicPeriodContro
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('academic-periods')->name('academic-periods.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:academicperiods'])->prefix('academic-periods')->name('academic-periods.')->group(function () {
     Route::get('/', [AcademicPeriodController::class, 'index'])->name('index');
     Route::post('/', [AcademicPeriodController::class, 'store'])->name('store');
     Route::put('/{academic_period}', [AcademicPeriodController::class, 'update'])->name('update');

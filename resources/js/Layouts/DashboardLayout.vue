@@ -17,6 +17,7 @@ const props = defineProps({
 const page = usePage();
 const user = computed(() => page.props.auth?.user ?? null);
 const isLandlord = computed(() => user.value?.role === 'super-admin');
+const availableModules = computed(() => page.props.modules ?? []);
 const initials = computed(() => {
     if (!user.value?.name) return '?';
     return user.value.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
@@ -31,14 +32,14 @@ const navItems = computed(() => {
         items.push({ key: 'instituciones', label: 'Instituciones', icon: GraduationCap, href: route('admin.schools.index') });
     } else {
         items.push(
-            { key: 'matriculas', label: 'Matrículas', icon: ListChecks, href: route('academic.matriculas.create') },
-            { key: 'academico', label: 'Base académica', icon: GraduationCap, href: route('academic.catalogos') },
+            { key: 'matriculas', label: 'Matrículas', icon: ListChecks, href: route('academic.matriculas.create'), moduleKey: 'academic' },
+            { key: 'academico', label: 'Base académica', icon: GraduationCap, href: route('academic.catalogos'), moduleKey: 'academic' },
         );
     }
 
     items.push({ key: 'usuarios', label: 'Usuarios', icon: Users, href: route('users.index') });
 
-    return items;
+    return items.filter((item) => !item.moduleKey || availableModules.value.includes(item.moduleKey));
 });
 
 const compactSidebar = ref(false);

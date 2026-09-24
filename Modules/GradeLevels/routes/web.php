@@ -15,7 +15,7 @@ use Modules\GradeLevels\Infrastructure\Http\Controllers\GradeLevelController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('grade-levels')->name('grade-levels.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:gradelevels'])->prefix('grade-levels')->name('grade-levels.')->group(function () {
     Route::get('/', [GradeLevelController::class, 'index'])->name('index');
     Route::post('/', [GradeLevelController::class, 'store'])->name('store');
     Route::put('/{grade_level}', [GradeLevelController::class, 'update'])->name('update');

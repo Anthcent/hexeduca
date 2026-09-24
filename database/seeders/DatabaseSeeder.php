@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RoleAndPermissionSeeder::class,
             SuperAdminUserSeeder::class,
             AcademicDatabaseSeeder::class,
+            ModulePlatformSeeder::class,
         ]);
 
         // User::factory(10)->create();

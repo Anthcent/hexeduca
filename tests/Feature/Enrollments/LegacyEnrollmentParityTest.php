@@ -2,6 +2,7 @@
 
 use App\IntegrationEvents\Outbox\OutboxWorker;
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 test('legacy and new enrollment HTTP paths emit equivalent events consumed by Grades', function () {

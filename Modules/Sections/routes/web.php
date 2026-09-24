@@ -15,7 +15,7 @@ use Modules\Sections\Infrastructure\Http\Controllers\SectionController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('sections')->name('sections.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:sections'])->prefix('sections')->name('sections.')->group(function () {
     Route::get('/', [SectionController::class, 'index'])->name('index');
     Route::post('/', [SectionController::class, 'store'])->name('store');
     Route::put('/{section}', [SectionController::class, 'update'])->name('update');

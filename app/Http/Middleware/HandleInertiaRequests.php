@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\ModulePlatform\Services\ModuleAccess;
+use App\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -48,6 +50,12 @@ class HandleInertiaRequests extends Middleware
                     'role' => $request->user()->getRoleNames()->first(),
                 ] : null,
             ],
+            // Module keys the current request may use, so the frontend nav
+            // (see DashboardLayout.vue) can hide links to modules that are
+            // inactive or the current school isn't entitled to.
+            'modules' => fn () => app(ModuleAccess::class)->availableKeys(
+                app(TenantContext::class)->current()
+            ),
         ]);
     }
 }

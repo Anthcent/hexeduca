@@ -1,6 +1,7 @@
 <?php
 
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Academic\Infrastructure\Models\Grado;
@@ -13,6 +14,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 function ofertaAcademicUrl(School $school, string $path): string

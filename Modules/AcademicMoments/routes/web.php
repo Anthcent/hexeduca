@@ -15,7 +15,7 @@ use Modules\AcademicMoments\Infrastructure\Http\Controllers\AcademicMomentContro
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('academic-moments')->name('academic-moments.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:academicmoments'])->prefix('academic-moments')->name('academic-moments.')->group(function () {
     Route::get('/', [AcademicMomentController::class, 'index'])->name('index');
     Route::post('/', [AcademicMomentController::class, 'store'])->name('store');
     Route::put('/{academic_moment}', [AcademicMomentController::class, 'update'])->name('update');

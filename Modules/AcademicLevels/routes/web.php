@@ -15,7 +15,7 @@ use Modules\AcademicLevels\Infrastructure\Http\Controllers\AcademicLevelControll
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('academic-levels')->name('academic-levels.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:academiclevels'])->prefix('academic-levels')->name('academic-levels.')->group(function () {
     Route::get('/', [AcademicLevelController::class, 'index'])->name('index');
     Route::post('/', [AcademicLevelController::class, 'store'])->name('store');
     Route::put('/{academic_level}', [AcademicLevelController::class, 'update'])->name('update');

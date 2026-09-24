@@ -1,6 +1,7 @@
 <?php
 
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Academic\Infrastructure\Database\Seeders\AcademicDatabaseSeeder;
@@ -19,6 +20,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
     $this->seed(AcademicDatabaseSeeder::class);
 });
 

@@ -14,6 +14,7 @@
  */
 
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,6 +30,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 function academicRouteUrl(School $school, string $path): string

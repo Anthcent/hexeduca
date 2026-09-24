@@ -15,7 +15,7 @@ use Modules\Grades\Infrastructure\Http\Controllers\GradeController;
 |
 */
 
-Route::middleware(['auth', 'role:teacher|staff/admin'])->prefix('grades')->name('grades.')->group(function () {
+Route::middleware(['auth', 'role:teacher|staff/admin', 'module:grades'])->prefix('grades')->name('grades.')->group(function () {
     Route::get('/create', [GradeController::class, 'create'])->name('create');
     Route::post('/', [GradeController::class, 'store'])->name('store');
     Route::put('/{grade}', [GradeController::class, 'update'])->name('update');

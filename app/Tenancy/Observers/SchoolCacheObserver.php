@@ -2,6 +2,8 @@
 
 namespace App\Tenancy\Observers;
 
+use App\ModulePlatform\Models\ModuleRecord;
+use App\ModulePlatform\Services\ModuleRegistry;
 use App\Tenancy\Models\School;
 use Illuminate\Support\Facades\Cache;
 
@@ -22,6 +24,26 @@ use Illuminate\Support\Facades\Cache;
  */
 class SchoolCacheObserver
 {
+    /**
+     * A new school is entitled to every currently active, optional module —
+     * mature modules already shipped to other schools are not "opt-in" for
+     * onboarding, only genuinely new modules an operator later builds are.
+     * See sdd/module-developer-platform R2.6.
+     */
+    public function created(School $school): void
+    {
+        $registry = app(ModuleRegistry::class);
+
+        $activeOptionalKeys = ModuleRecord::query()
+            ->where('active', true)
+            ->where('core', false)
+            ->pluck('key');
+
+        foreach ($activeOptionalKeys as $key) {
+            $registry->entitle($key, $school);
+        }
+    }
+
     public function saved(School $school): void
     {
         Cache::forget("tenant:school:{$school->subdomain}");

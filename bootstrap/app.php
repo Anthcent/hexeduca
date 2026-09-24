@@ -46,8 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
-            // Pass-through until R2 wires real module activation
-            // (sdd/module-developer-platform R2.3-R2.4).
             'module' => ModuleGateMiddleware::class,
         ]);
     })

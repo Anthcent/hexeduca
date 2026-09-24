@@ -4,6 +4,7 @@ use App\AcademicPeriod\Context\AcademicPeriodContext;
 use App\AcademicPeriod\Contracts\ActivePeriod;
 use App\Tenancy\Models\School;
 use App\Tenancy\TenantContext;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,6 +19,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 function seedEnrollmentProjectionRow(int $schoolId, int $periodId, int $offerId, int $studentId, string $status = 'active'): void

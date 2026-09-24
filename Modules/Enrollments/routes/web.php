@@ -15,7 +15,7 @@ use Modules\Enrollments\Infrastructure\Http\Controllers\EnrollmentController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('enrollments')->name('enrollments.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:enrollments'])->prefix('enrollments')->name('enrollments.')->group(function () {
     Route::get('/create', [EnrollmentController::class, 'create'])->name('create');
     Route::post('/', [EnrollmentController::class, 'store'])->name('store');
 });

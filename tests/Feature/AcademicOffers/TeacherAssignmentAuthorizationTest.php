@@ -1,6 +1,7 @@
 <?php
 
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +16,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->seed(RoleAndPermissionSeeder::class);
+    $this->seed(ModulePlatformSeeder::class);
 });
 
 function academicOfferDataWithTeacher(int $schoolId, int $teacherId): CreateAcademicOfferData

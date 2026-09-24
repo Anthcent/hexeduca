@@ -15,7 +15,7 @@ use Modules\AcademicOffers\Infrastructure\Http\Controllers\AcademicOfferControll
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin'])->prefix('academic-offers')->name('academic-offers.')->group(function () {
+Route::middleware(['auth', 'role:staff/admin', 'module:academicoffers'])->prefix('academic-offers')->name('academic-offers.')->group(function () {
     Route::get('/create', [AcademicOfferController::class, 'create'])->name('create');
     Route::post('/', [AcademicOfferController::class, 'store'])->name('store');
 });
