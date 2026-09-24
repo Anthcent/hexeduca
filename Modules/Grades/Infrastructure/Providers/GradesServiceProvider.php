@@ -2,7 +2,13 @@
 
 namespace Modules\Grades\Infrastructure\Providers;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Grades\Domain\Repositories\GradeRepositoryInterface;
+use Modules\Grades\Infrastructure\Console\Commands\RebuildEnrollmentProjection;
+use Modules\Grades\Infrastructure\Models\Grade;
+use Modules\Grades\Infrastructure\Persistence\EloquentGradeRepository;
+use Modules\Grades\Infrastructure\Policies\GradePolicy;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -25,6 +31,19 @@ class GradesServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->loadMigrationsFrom(module_path($this->name, 'Infrastructure/Database/Migrations'));
+        $this->registerInertiaPages();
+
+        // Explicit registration is required: `Grade` lives outside
+        // `App\Models`, so Laravel's policy auto-discovery will not find
+        // `GradePolicy` — same pattern as UsersServiceProvider/UserPolicy.
+        Gate::policy(Grade::class, GradePolicy::class);
+    }
+
+    protected function registerInertiaPages(): void
+    {
+        $this->app->afterResolving('inertia.view-finder', function ($finder): void {
+            $finder->addNamespace($this->name, module_path($this->name, 'Resources/js/Pages'));
+        });
     }
 
     /**
@@ -32,6 +51,8 @@ class GradesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(GradeRepositoryInterface::class, EloquentGradeRepository::class);
+
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
     }
@@ -41,7 +62,7 @@ class GradesServiceProvider extends ServiceProvider
      */
     protected function registerCommands(): void
     {
-        // $this->commands([]);
+        $this->commands([RebuildEnrollmentProjection::class]);
     }
 
     /**

@@ -4,6 +4,17 @@
     "description": "",
     "keywords": [],
     "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "AcademicOffers",
+        "Enrollments",
+        "Users"
+    ],
+    "permissions": [
+        "grades.view",
+        "grades.manage"
+    ],
     "providers": [
         "Modules\\Grades\\Infrastructure\\Providers\\GradesServiceProvider"
     ],
