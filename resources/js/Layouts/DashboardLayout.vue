@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import {
-    Bell, ChevronDown, GraduationCap, LayoutDashboard, ListChecks, Menu,
+    Bell, Blocks, ChevronDown, GraduationCap, LayoutDashboard, ListChecks, Menu,
     Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, Users, X,
 } from 'lucide-vue-next';
 import SchoolContextBar from '@/Components/school/SchoolContextBar.vue';
@@ -29,7 +29,10 @@ const navItems = computed(() => {
     ];
 
     if (isLandlord.value) {
-        items.push({ key: 'instituciones', label: 'Instituciones', icon: GraduationCap, href: route('admin.schools.index') });
+        items.push(
+            { key: 'instituciones', label: 'Instituciones', icon: GraduationCap, href: route('admin.schools.index') },
+            { key: 'modulos', label: 'Módulos', icon: Blocks, href: route('admin.modules.index') },
+        );
     } else {
         items.push(
             { key: 'matriculas', label: 'Matrículas', icon: ListChecks, href: route('academic.matriculas.create'), moduleKey: 'academic' },
