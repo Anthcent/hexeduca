@@ -127,6 +127,7 @@ test('student to teacher HTTP reassignment updates both projections through the 
     expect($row->event_class)->toBe(UserUpdated::class)
         ->and(json_decode($row->payload, true)['roles'])->toBe(['teacher']);
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 1, 'failed' => 0]);
+    $this->runQueuedJobs();
     expect(DB::table('enrollments_student_projection')->where('source_student_id', $target->id)->where('is_active', false)->count())->toBe(1)
         ->and(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', $target->id)->count())->toBe(1);
 });
@@ -152,6 +153,7 @@ test('teacher to student HTTP reassignment updates both projections through the 
     $row = DB::table('integration_outbox_events')->where('event_name', 'user.updated')->sole();
     expect(json_decode($row->payload, true)['roles'])->toBe(['student']);
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 1, 'failed' => 0]);
+    $this->runQueuedJobs();
     expect(DB::table('academic_offers_teacher_projection')->where('source_teacher_id', $target->id)->where('is_active', false)->count())->toBe(1)
         ->and(DB::table('enrollments_student_projection')->where('source_student_id', $target->id)->count())->toBe(1);
 });

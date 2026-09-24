@@ -101,6 +101,7 @@ test('HTTP registration publishes only to the student projection', function () {
         ->sole();
 
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 1, 'failed' => 0]);
+    $this->runQueuedJobs();
     expect(DB::table('enrollments_student_projection')->where('source_student_id', $user->id)->count())->toBe(1);
     expect(DB::table('academic_offers_teacher_projection')
         ->where('source_teacher_id', $user->id)

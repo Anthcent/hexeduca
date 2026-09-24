@@ -49,6 +49,7 @@ test('CreateEnrollment writes to the outbox, and running the worker projects the
     expect(DB::table('integration_outbox_events')->where('event_name', 'enrollment.created')->count())->toBe(1);
 
     app(OutboxWorker::class)->run();
+    $this->runQueuedJobs();
 
     $row = DB::table('grades_enrollment_projection')->where('source_enrollment_id', $enrollment->id())->sole();
 

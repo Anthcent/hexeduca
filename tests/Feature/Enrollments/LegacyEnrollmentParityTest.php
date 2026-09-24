@@ -47,6 +47,7 @@ test('legacy and new enrollment HTTP paths emit equivalent events consumed by Gr
 
     expect(DB::table('integration_outbox_events')->where('event_name', 'enrollment.created')->count())->toBe(2);
     expect(app(OutboxWorker::class)->run())->toMatchArray(['published' => 2, 'failed' => 0]);
+    $this->runQueuedJobs();
     expect(DB::table('grades_enrollment_projection')->count())->toBe(2)
         ->and(DB::table('grades_enrollment_projection')->pluck('student_id')->sort()->values()->all())
         ->toBe(collect([$legacyStudent->id, $newStudent->id])->sort()->values()->all());
