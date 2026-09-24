@@ -14,4 +14,6 @@ interface UserRepositoryInterface
     public function save(User $user): User;
 
     public function assignRole(int $userId, string $role): void;
+
+    public function delete(int $id): void;
 }

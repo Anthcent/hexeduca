@@ -9,5 +9,6 @@ final readonly class UserData
         public string $email,
         public string $password,
         public int $schoolId,
+        public string $role = 'student',
     ) {}
 }

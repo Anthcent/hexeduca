@@ -48,6 +48,11 @@ final class EloquentUserRepository implements UserRepositoryInterface
         UserModel::withoutTenantScope()->findOrFail($userId)->assignRole($role);
     }
 
+    public function delete(int $id): void
+    {
+        UserModel::withoutTenantScope()->findOrFail($id)->delete();
+    }
+
     private function toEntity(UserModel $model): UserEntity
     {
         return new UserEntity(

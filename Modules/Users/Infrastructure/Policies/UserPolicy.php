@@ -32,4 +32,47 @@ class UserPolicy
             && $actor->school_id === $target->school_id
             && $role !== 'super-admin';
     }
+
+    /**
+     * A super-admin may create users anywhere. A staff/admin may only do so
+     * on their own school's subdomain: the new user is stamped with the
+     * bound tenant, so a mismatched (or missing) tenant is refused.
+     */
+    public function create(User $actor): bool
+    {
+        if ($actor->hasRole('super-admin')) {
+            return true;
+        }
+
+        $tenant = current_tenant();
+
+        return $actor->hasRole('staff/admin')
+            && $actor->school_id !== null
+            && $tenant !== null
+            && $tenant->id === $actor->school_id;
+    }
+
+    /**
+     * Callers treat a denial as 404, not 403, so a user from another school
+     * is indistinguishable from one that does not exist.
+     */
+    public function view(User $actor, User $target): bool
+    {
+        if ($actor->hasRole('super-admin')) {
+            return true;
+        }
+
+        return $actor->school_id !== null
+            && $actor->school_id === $target->school_id;
+    }
+
+    /**
+     * Nobody deletes themselves or a super-admin from the directory.
+     */
+    public function delete(User $actor, User $target): bool
+    {
+        return $this->view($actor, $target)
+            && ! $actor->is($target)
+            && ! $target->hasRole('super-admin');
+    }
 }

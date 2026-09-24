@@ -29,16 +29,16 @@ final class RegisterUser
             schoolId: $data->schoolId,
         );
 
-        $saved = DB::transaction(function () use ($user) {
+        $saved = DB::transaction(function () use ($user, $data) {
             $saved = $this->users->save($user);
-            $this->users->assignRole($saved->id(), 'student');
+            $this->users->assignRole($saved->id(), $data->role);
 
             $this->outbox->record(new IntegrationUserCreated(
                 userId: $saved->id(),
                 name: $saved->name(),
                 email: (string) $saved->email(),
                 schoolId: $saved->schoolId(),
-                roles: ['student'],
+                roles: [$data->role],
             ));
 
             return $saved;
