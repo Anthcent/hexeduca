@@ -96,6 +96,27 @@
         --brand: 60 203 152;
     }
 
+    /*
+     * Nuxt UI semantic tokens follow the app palette, so its components use the same
+     * surfaces, lines and text as the rest of the UI (its dark defaults are slate).
+     * The app variables switch with `.dark`, so one declaration covers both themes.
+     */
+    :root,
+    .dark {
+        --ui-bg: rgb(var(--surface));
+        --ui-bg-muted: rgb(var(--surface-muted));
+        --ui-bg-elevated: rgb(var(--surface-muted));
+        --ui-bg-accented: rgb(var(--line));
+        --ui-border: rgb(var(--line));
+        --ui-border-muted: rgb(var(--line));
+        --ui-border-accented: rgb(var(--line));
+        --ui-text: rgb(var(--text));
+        --ui-text-toned: rgb(var(--text));
+        --ui-text-highlighted: rgb(var(--text));
+        --ui-text-muted: rgb(var(--muted));
+        --ui-text-dimmed: rgb(var(--muted));
+    }
+
     html {
         scroll-behavior: smooth;
     }
@@ -120,6 +141,16 @@
      */
     :is(input, textarea)[data-slot]:focus {
         box-shadow: none;
+    }
+
+    /*
+     * Nuxt UI marks a focused field with a 1px ring plus a 3px translucent outline
+     * (`focus-visible:outline-3`). The global `outline-hidden` focus rule above and the
+     * forms plugin's 2px outline offset would hide or detach that outline, so restore them.
+     */
+    :is(input, textarea)[data-slot]:focus-visible {
+        --tw-outline-style: solid;
+        outline-offset: 0;
     }
 }
 

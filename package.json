@@ -7,6 +7,7 @@
         "test:e2e": "playwright test"
     },
     "devDependencies": {
+        "@iconify-json/lucide": "^1.2.136",
         "@playwright/test": "^1.61.1",
         "@vitejs/plugin-vue": "^6.0.7",
         "axios": "^1.7.4",

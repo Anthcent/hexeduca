@@ -23,6 +23,14 @@ export default defineConfig({
             // The dashboard layout owns the light/dark toggle (the "educativo-theme" key
             // in localStorage); Nuxt UI's color mode would follow the OS preference instead.
             colorMode: false,
+            // Bundle the icons used by name (e.g. `icon="i-lucide-bell"`) and Nuxt UI's
+            // own defaults, so they never fall back to fetching from api.iconify.design.
+            // The scan only sees literal names: never build an icon name at runtime.
+            icon: {
+                clientBundle: {
+                    scan: true,
+                },
+            },
             ui: {
                 colors: {
                     primary: 'brand',
