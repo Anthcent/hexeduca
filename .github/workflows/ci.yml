@@ -84,7 +84,7 @@ jobs:
         timeout-minutes: 2
         run: |
           php artisan config:clear
-          php -r '$app=require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); $driver=$app->make("db")->connection()->getDriverName(); fwrite(STDOUT, "Database driver: {$driver}\n"); if ($driver !== "pgsql") { throw new RuntimeException("Expected pgsql, got {$driver}"); } $app->make("db")->select("select 1"); $pong=$app->make("redis")->connection()->ping(); fwrite(STDOUT, "Redis ping: ".var_export($pong, true)."\n"); if (!in_array($pong, [true, "PONG", "+PONG"], true)) { throw new RuntimeException("Redis ping failed"); }'
+          php -r 'require "vendor/autoload.php"; $app=require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); $driver=$app->make("db")->connection()->getDriverName(); fwrite(STDOUT, "Database driver: {$driver}\n"); if ($driver !== "pgsql") { throw new RuntimeException("Expected pgsql, got {$driver}"); } $app->make("db")->select("select 1"); $pong=$app->make("redis")->connection()->ping(); fwrite(STDOUT, "Redis ping: ".var_export($pong, true)."\n"); if (!in_array($pong, [true, "PONG", "+PONG"], true)) { throw new RuntimeException("Redis ping failed"); }'
       - name: Run migrations on PostgreSQL
         timeout-minutes: 5
         run: php artisan migrate:fresh --force
