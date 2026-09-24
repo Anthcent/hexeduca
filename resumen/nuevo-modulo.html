@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EDUCATIVO — Playbook: crear un módulo nuevo</title>
+
+<!-- CDN: Tailwind, fuentes, iconos, diagramas -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    themeVariables: {
+      background: "#0b1210",
+      primaryColor: "#0f1a17",
+      primaryTextColor: "#e7f4ef",
+      primaryBorderColor: "#18a879",
+      lineColor: "#2f6f5c",
+      secondaryColor: "#122019",
+      tertiaryColor: "#0f1a17",
+      fontFamily: "Inter, sans-serif",
+      textColor: "#cfe8de"
+    },
+    flowchart: { curve: "basis", htmlLabels: true }
+  });
+  window.addEventListener("load", () => lucide.createIcons());
+</script>
+
+<style>
+  :root{
+    --canvas:#0a100e; --surface:#111b17; --surface-muted:#0e1613;
+    --line:#1e2b25; --text:#e7f4ef; --muted:#8fa89d;
+    --brand:#18a879; --brand-soft:#123529; --brand-strong:#22d3a0;
+  }
+  html{scroll-behavior:smooth;}
+  body{background:var(--canvas); color:var(--text); font-family:"Inter",sans-serif;}
+  h1,h2,h3,.font-display{font-family:"Manrope",sans-serif;}
+  code, .mono{font-family:"JetBrains Mono", monospace;}
+
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-muted));
+    border:1px solid var(--line); border-radius:16px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600;
+    letter-spacing:.02em; text-transform:uppercase;
+  }
+  .chip-ok{background:var(--brand-soft); color:var(--brand-strong); border:1px solid #1f5943;}
+  .chip-no{background:#2a1414; color:#f28b82; border:1px solid #4d2323;}
+  .chip-warn{background:#3a2a10; color:#f0b429; border:1px solid #5c4416;}
+
+  .sidebar a{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--muted); font-size:13.5px; transition:.15s;}
+  .sidebar a:hover, .sidebar a.active{background:var(--brand-soft); color:var(--brand-strong);}
+  .sidebar{position:sticky; top:24px; max-height:calc(100vh - 48px); overflow-y:auto;}
+
+  .mermaid{background:transparent !important; display:flex; justify-content:center;}
+  section{scroll-margin-top:24px;}
+
+  .legend{margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); display:grid; gap:7px;}
+  .legend-title{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:2px;}
+  .legend-item{display:flex; gap:8px; font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .legend-item b{color:var(--brand-strong); font-weight:600; white-space:nowrap; font-family:"JetBrains Mono",monospace; font-size:11.5px;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--muted); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.05em; padding:8px 10px; border-bottom:1px solid var(--line);}
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:hover td{background:#0f1913;}
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--canvas);}
+  ::-webkit-scrollbar-thumb{background:#1e2b25; border-radius:8px;}
+</style>
+</head>
+<body class="antialiased">
+
+<!-- HEADER -->
+<header class="border-b border-[var(--line)] sticky top-0 z-40 backdrop-blur bg-[#0a100eee]">
+  <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[var(--brand-soft)] border border-[#1f5943] flex items-center justify-center">
+        <i data-lucide="puzzle" class="w-5 h-5 text-[var(--brand-strong)]"></i>
+      </div>
+      <div>
+        <div class="font-display font-extrabold text-[15px] leading-none">EDUCATIVO</div>
+        <div class="text-[11px] text-[var(--muted)] leading-none mt-1">Playbook: cómo se crea un módulo nuevo sin romper los que ya existen</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-[11px] text-[var(--muted)] mono">
+      <a href="index.html" class="chip chip-ok"><i data-lucide="arrow-left" class="w-3 h-3"></i>Volver al mapa de arquitectura</a>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-6 py-8 grid grid-cols-[240px_1fr] gap-8">
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar hidden md:block">
+    <div class="text-[10.5px] uppercase tracking-wider text-[var(--muted)] px-3 mb-2">Caso concreto</div>
+    <a href="#escenario"><i data-lucide="target" class="w-4 h-4"></i>El escenario</a>
+    <a href="#decision"><i data-lucide="split" class="w-4 h-4"></i>La decisión clave</a>
+    <a href="#pasos"><i data-lucide="list-ordered" class="w-4 h-4"></i>Pasos de implementación</a>
+    <a href="#flujo-alta"><i data-lucide="git-commit-horizontal" class="w-4 h-4"></i>Flujo: matricular (Academic)</a>
+    <a href="#flujo-consulta"><i data-lucide="search" class="w-4 h-4"></i>Flujo: cargar notas (Grades)</a>
+    <a href="#que-cambia"><i data-lucide="diff" class="w-4 h-4"></i>Qué se altera y qué no</a>
+    <a href="#crecimiento"><i data-lucide="trending-up" class="w-4 h-4"></i>Cómo crece el sistema</a>
+    <a href="#prevencion"><i data-lucide="shield-check" class="w-4 h-4"></i>Prevención en requests/consultas</a>
+  </nav>
+
+  <main class="min-w-0 flex flex-col gap-12">
+
+    <!-- ESCENARIO -->
+    <section id="escenario">
+      <h1 class="font-display font-extrabold text-3xl mb-2">Caso concreto: crear el módulo Grades</h1>
+      <p class="text-[var(--muted)] max-w-3xl mb-6">Pedido de ejemplo: <em>"Necesito un módulo de Calificaciones (Grades) donde el profesor cargue notas. Para eso necesita saber qué estudiantes están matriculados en su oferta académica"</em> — un dato que hoy vive completo dentro de <code class="mono">Modules/Academic</code> (tabla <code class="mono">matriculas</code>).</p>
+      <p class="text-[var(--muted)] max-w-3xl mb-6">Este es exactamente el caso que pone a prueba el <a href="index.html#target-design" class="text-[var(--brand-strong)] underline">diseño objetivo de independencia entre módulos</a>: Grades necesita un dato que "nace" en Academic, sin volverse dependiente de Academic.</p>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-4 border-l-4" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4 text-[#f28b82]"></i>Lo que NO vamos a hacer</h3>
+          <p class="text-[13px] text-[var(--muted)]">Grades NO va a hacer <code class="mono">use Modules\Academic\...\Matricula</code> ni consultar directamente la tabla <code class="mono">matriculas</code> de Academic. Eso sería exactamente el "puenteo" que generó el riesgo de fallos en cascada.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#18a879;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-[var(--brand-strong)]"></i>Lo que sí vamos a hacer</h3>
+          <p class="text-[13px] text-[var(--muted)]">Grades va a mantener su <strong>propia copia mínima</strong> de "quién está matriculado en qué", construida escuchando el evento <code class="mono">EstudianteMatriculado</code> que Academic ya dispara. Grades queda dueño de sus propios datos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DECISION -->
+    <section id="decision">
+      <h2 class="font-display font-extrabold text-2xl mb-1">La decisión clave: proyección local vs. consulta directa</h2>
+      <p class="text-[var(--muted)] mb-6">Hay dos formas de que Grades "sepa" quiénes están matriculados. Comparadas en la práctica:</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+graph TB
+  subgraph A["Opción A — Consulta directa (DESCARTADA)"]
+    direction LR
+    GA["Grades pide la nota"] -->|"consulta en vivo,<br/>ejecución síncrona"| MA["tabla matriculas<br/>de Academic"]
+    style A fill:#2b1414,stroke:#4d2323,color:#f28b82
+  end
+  subgraph B["Opción B — Proyección local (ELEGIDA)"]
+    direction LR
+    EV["Academic dispara evento<br/>EstudianteMatriculado<br/>(cuando pasa, no cuando Grades pregunta)"] -.->|"listener con<br/>ShouldQueue"| PROJ["Grades guarda su propia<br/>copia mínima: student_id,<br/>oferta_id, school_id, periodo_id"]
+    PROJ -->|"consulta en vivo,<br/>pero a SU PROPIA tabla"| GB["Grades pide la nota"]
+    style B fill:#0f1a17,stroke:#1f5943,color:#22d3a0
+  end
+        </div>
+        <div class="legend">
+          <div class="legend-title">Por qué se descarta la Opción A</div>
+          <div class="legend-item"><b>Disponibilidad</b> — si Academic está lento, con timeout, o caído, Grades se cae con él. Deja de ser independiente en la práctica, aunque en el código "parezca" un módulo aparte.</div>
+          <div class="legend-item"><b>Cambios de esquema</b> — si mañana Academic cambia su tabla <code class="mono">matriculas</code> (agrega columna, renombra algo), Grades se rompe sin haber tocado su propio código.</div>
+          <div class="legend-title" style="margin-top:8px;">Por qué se elige la Opción B</div>
+          <div class="legend-item"><b>Grades es dueño de sus datos</b> — tiene su propia tabla chica, con solo los campos que le importan. Si Academic se cae, Grades sigue funcionando con la última copia que recibió.</div>
+          <div class="legend-item"><b>Desacople real, no solo de nombre</b> — la comunicación pasa por un evento con forma fija (un "contrato"), no por la estructura interna de la tabla de otro módulo.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PASOS -->
+    <section id="pasos">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Pasos de implementación, en orden</h2>
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+flowchart TD
+  S1["1. module:make Grades<br/>(scaffold Domain/Application/Infrastructure,<br/>igual que Academic y Users)"] --> S2
+  S2["2. Migración NUEVA, solo de Grades:<br/>grades_matricula_snapshots<br/>(student_id, oferta_id, school_id, periodo_id)"] --> S3
+  S3["3. Listener en Grades:<br/>SyncMatriculaSnapshot<br/>implementa ShouldQueue"] --> S4
+  S4["4. Registrar el listener<br/>en EventServiceProvider de Grades<br/>escuchando EstudianteMatriculado"] --> S5
+  S5["5. UseCase RegistrarNota<br/>lee de SU propia tabla snapshot,<br/>nunca de Academic"] --> S6
+  S6["6. Controller + rutas nuevas<br/>bajo prefix grades/,<br/>con auth + role + tenant/periodo<br/>igual que las demás"] --> S7
+  S7["7. Página Vue nueva<br/>Modules/Grades/Resources/js/Pages/*"] --> S8
+  S8["8. Test: simular el evento<br/>EstudianteMatriculado y verificar<br/>que el snapshot se crea solo"]
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Pasos 1-2</b> — son 100% dentro de la carpeta <code class="mono">Modules/Grades</code>, cero archivos tocados fuera de ahí.</div>
+          <div class="legend-item"><b>Pasos 3-4</b> — es el único punto de "conexión" con Academic, y es indirecto: Grades se suscribe a un evento que YA existe, no pide permiso ni modifica nada del lado de Academic.</div>
+          <div class="legend-item"><b>Pasos 5-8</b> — desarrollo normal de un módulo nuevo, sin ninguna dependencia cruzada.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLUJO ALTA -->
+    <section id="flujo-alta">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Flujo 1: se matricula un estudiante (dispara todo desde Academic)</h2>
+      <p class="text-[var(--muted)] mb-6">Este flujo YA existe hoy en Academic — lo único nuevo es que ahora alguien escucha el evento que ya se disparaba al vacío.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+sequenceDiagram
+  participant P as Profesor/Staff<br/>(navegador)
+  participant AC as Controller de Academic<br/>(ya existe, sin cambios)
+  participant UC as Caso de uso: matricular<br/>(ya existe, sin cambios)
+  participant DB as Base de datos<br/>(tabla matriculas de Academic)
+  participant EV as Evento EstudianteMatriculado<br/>(ya existe, sin cambios)
+  participant LG as Listener NUEVO<br/>(vive en Modules/Grades,<br/>ShouldQueue)
+  participant SNAP as Tabla NUEVA<br/>(grades_matricula_snapshots,<br/>vive en Modules/Grades)
+
+  P->>AC: envía el formulario de matrícula
+  AC->>UC: pide ejecutar la matrícula
+  UC->>DB: guarda la matrícula (INSERT)
+  UC->>EV: avisa 'ya se matriculó'<br/>(esto Academic lo hace igual<br/>haya o no quien escuche)
+  Note over AC,DB: Academic responde 200 al profesor<br/>SIN esperar a Grades — no sabe<br/>ni le importa que Grades exista
+  EV->>LG: el worker recoge el trabajo<br/>pendiente y ejecuta el listener<br/>(en otro momento, otro proceso)
+  LG->>SNAP: guarda su propia copia mínima<br/>de ese dato (upsert por student_id+oferta_id)
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Todo lo de Academic queda igual</b> — Controller, UseCase, tabla, y el evento disparado: cero líneas modificadas ahí.</div>
+          <div class="legend-item"><b>El profesor no espera a Grades</b> — la respuesta al usuario sale apenas Academic termina su trabajo; el listener de Grades corre después, en el worker.</div>
+          <div class="legend-item"><b>Upsert, no insert simple</b> — si el mismo evento llega dos veces (reintento del worker), el snapshot no debe duplicarse: se actualiza si ya existe la combinación student_id+oferta_id, se crea si no.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLUJO CONSULTA -->
+    <section id="flujo-consulta">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Flujo 2: el profesor carga una nota (dentro de Grades)</h2>
+      <p class="text-[var(--muted)] mb-6">Acá se ve por qué la Opción B funciona incluso si Academic estuviera caído en ese momento.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+sequenceDiagram
+  participant P as Profesor (navegador)
+  participant MW as Middleware global<br/>(el mismo de siempre:<br/>tenant + periodo + rol)
+  participant GC as Controller de Grades<br/>(nuevo)
+  participant GUC as Caso de uso: registrar nota<br/>(nuevo)
+  participant SNAP as Tabla local de Grades<br/>(grades_matricula_snapshots)
+  participant GDB as Tabla de notas<br/>(grades, nueva)
+
+  P->>MW: pide la pantalla de carga de notas
+  MW->>GC: ya sabe la escuela y el periodo<br/>(igual que con cualquier otro módulo)
+  GC->>GUC: pide la lista de estudiantes<br/>matriculados en esa oferta
+  GUC->>SNAP: consulta SU PROPIA tabla<br/>(no la de Academic)
+  SNAP-->>GUC: devuelve la lista<br/>(aunque Academic esté caído<br/>en este momento, esto funciona)
+  GUC-->>GC: arma la pantalla
+  P->>GC: envía las notas cargadas
+  GC->>GUC: guarda las notas
+  GUC->>GDB: INSERT en la tabla de notas<br/>de Grades
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Middleware global sin cambios</b> — Grades usa exactamente el mismo pipeline de tenant+periodo+rol que ya corre para todos los módulos, no inventa nada nuevo ahí.</div>
+          <div class="legend-item"><b>Nunca toca Academic en este flujo</b> — la pantalla de carga de notas ni siquiera intenta contactar a Academic; todo lo que necesita ya está replicado localmente.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUE CAMBIA -->
+    <section id="que-cambia">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Qué se altera y qué no</h2>
+      <div class="card p-5">
+        <table>
+          <thead><tr><th>Elemento</th><th>Academic (existente)</th><th>Users / Admin (existentes)</th><th>Grades (nuevo)</th></tr></thead>
+          <tbody>
+            <tr><td>Código modificado</td><td><span class="chip chip-ok">ninguno</span></td><td><span class="chip chip-ok">ninguno</span></td><td><span class="chip chip-warn">todo nuevo</span></td></tr>
+            <tr><td>Migraciones nuevas</td><td><span class="chip chip-ok">ninguna</span></td><td><span class="chip chip-ok">ninguna</span></td><td><span class="chip chip-warn">2 tablas nuevas</span></td></tr>
+            <tr><td>Rutas nuevas</td><td><span class="chip chip-ok">ninguna</span></td><td><span class="chip chip-ok">ninguna</span></td><td><span class="chip chip-warn">prefix grades/</span></td></tr>
+            <tr><td>Eventos que dispara</td><td><span class="chip chip-ok">sigue igual</span> (ya lo hacía)</td><td>—</td><td>opcional: puede emitir los suyos a futuro</td></tr>
+            <tr><td>Único archivo que "toca" otro módulo</td><td colspan="3"><code class="mono">Modules/Grades/Providers/EventServiceProvider.php</code> — y solo porque ahí se declara "quiero escuchar <code class="mono">EstudianteMatriculado</code>", que es un evento público. No abre ni un archivo dentro de <code class="mono">Modules/Academic</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- CRECIMIENTO -->
+    <section id="crecimiento">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Cómo crece el sistema a partir de acá</h2>
+      <p class="text-[var(--muted)] mb-6">El mismo patrón se repite para cada módulo nuevo — no se vuelve más frágil a medida que se agregan más.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+graph TB
+  ACA["Academic<br/>dispara: OfertaAcademicaCreated,<br/>EstudianteMatriculado"]
+  USR["Users<br/>dispara: UserRegistered<br/>(cuando se conecte)"]
+
+  BUS{{"Eventos de dominio<br/>(el 'idioma común' entre módulos)"}}
+
+  GRA["Grades (nuevo, HOY)<br/>escucha: EstudianteMatriculado<br/>guarda su propio snapshot"]
+  NOT["Notifications (a futuro)<br/>escucha: EstudianteMatriculado,<br/>OfertaAcademicaCreated<br/>manda emails, no guarda nada"]
+  SCH["Schedule (a futuro)<br/>escucha: OfertaAcademicaCreated<br/>arma el horario, guarda su propio dato"]
+  FIL["Files (a futuro)<br/>no escucha nada de Academic todavía<br/>— módulo totalmente aislado"]
+
+  ACA -.->|"publica"| BUS
+  USR -.->|"publica"| BUS
+  BUS -.->|"cada uno se suscribe<br/>solo a lo que necesita"| GRA
+  BUS -.-> NOT
+  BUS -.-> SCH
+  FIL -.->|"no necesita nada<br/>de nadie por ahora"| BUS
+
+  style BUS fill:#123529,stroke:#1f5943,color:#22d3a0
+  style GRA fill:#0f1a17,stroke:#1f5943,color:#22d3a0
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Cada módulo nuevo se suma al costado</b>, no arriba ni en cadena — agregar Notifications no requiere tocar Grades, ni viceversa, aunque ambos escuchen el mismo evento.</div>
+          <div class="legend-item"><b>Un módulo puede escuchar cero eventos</b> — Files no necesita saber nada de Academic hoy; eso es válido y no rompe el patrón.</div>
+          <div class="legend-item"><b>El "costo" de agregar un módulo es constante</b> — no crece con la cantidad de módulos que ya existen, porque ninguno depende de la estructura interna de los demás.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PREVENCION -->
+    <section id="prevencion" class="pb-16">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Prevención en requests y consultas</h2>
+      <p class="text-[var(--muted)] mb-6">Lo que hay que dejar activado por diseño para que este patrón no se rompa en producción.</p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="repeat" class="w-4 h-4 text-[var(--brand-strong)]"></i>Idempotencia en el listener</h3>
+          <p class="text-[13px] text-[var(--muted)]">Como el worker puede reintentar un job (por timeout, por fallo momentáneo), el <code class="mono">SyncMatriculaSnapshot</code> debe hacer <code class="mono">updateOrCreate</code> por <code class="mono">student_id + oferta_id</code>, nunca un <code class="mono">insert</code> ciego — si no, procesar el mismo evento dos veces duplica datos.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="database" class="w-4 h-4 text-[var(--brand-strong)]"></i>after_commit en true</h3>
+          <p class="text-[13px] text-[var(--muted)]">El evento se dispara dentro de la transacción de Academic. Si el job se procesa antes del <code class="mono">commit</code>, el listener podría leer un estado que todavía no es definitivo. Por eso el job del listener debe usar <code class="mono">afterCommit()</code> (ya señalado como gotcha en <a href="index.html#resilience" class="text-[var(--brand-strong)] underline">Fallos en cascada</a>).</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-[var(--brand-strong)]"></i>Tenant + periodo también en el snapshot</h3>
+          <p class="text-[13px] text-[var(--muted)]">La tabla nueva de Grades también lleva <code class="mono">school_id</code> y <code class="mono">periodo_academico_id</code> — sigue bajo <code class="mono">TenantScope</code>/<code class="mono">PeriodoScope</code> igual que cualquier otro dato del sistema. Ningún módulo nuevo queda afuera del aislamiento multi-tenant.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="gauge" class="w-4 h-4 text-[var(--brand-strong)]"></i>Rate limit en las rutas nuevas</h3>
+          <p class="text-[13px] text-[var(--muted)]">Las rutas de <code class="mono">grades/</code> se registran igual que las de Academic: con <code class="mono">auth</code>, <code class="mono">role</code>, y el limiter <code class="mono">web</code> propuesto en el mapa de arquitectura — nunca replicar el patrón de Files/Schedule (rutas sin ninguna protección).</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4 text-[var(--brand-strong)]"></i>Snapshot desactualizado (consistencia eventual)</h3>
+          <p class="text-[13px] text-[var(--muted)]">Entre que se matricula un estudiante y el worker procesa el evento, hay una ventana (normalmente segundos) donde Grades todavía no lo "ve". Aceptable para cargar notas; si algún día una pantalla necesita el dato en tiempo real garantizado, esa pantalla puntual es candidata a consulta directa vía interfaz pública, no snapshot — decisión caso por caso, no la regla general.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="clipboard-list" class="w-4 h-4 text-[var(--brand-strong)]"></i>failed_jobs como red de seguridad</h3>
+          <p class="text-[13px] text-[var(--muted)]">Si el listener falla todas sus reintentos, el job cae en <code class="mono">failed_jobs</code> en vez de perderse en silencio — permite reprocesar manualmente sin tener que volver a disparar el evento original desde Academic.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="border-t border-[var(--line)] py-6 text-center text-[11px] text-[var(--muted)]">
+  Ejemplo de diseño (Grades) para ilustrar el patrón de independencia entre módulos — todavía no implementado en código, es la guía a seguir. Ver <a href="index.html" class="text-[var(--brand-strong)] underline">mapa de arquitectura completo</a>.
+</footer>
+
+</body>
+</html>

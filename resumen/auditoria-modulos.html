@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EDUCATIVO — Auditoría técnica de módulos</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>window.addEventListener("load", () => lucide.createIcons());</script>
+
+<style>
+  :root{
+    --canvas:#0a100e; --surface:#111b17; --surface-muted:#0e1613;
+    --line:#1e2b25; --text:#e7f4ef; --muted:#8fa89d;
+    --brand:#18a879; --brand-soft:#123529; --brand-strong:#22d3a0;
+  }
+  html{scroll-behavior:smooth;}
+  body{background:var(--canvas); color:var(--text); font-family:"Inter",sans-serif;}
+  h1,h2,h3,.font-display{font-family:"Manrope",sans-serif;}
+  code, .mono{font-family:"JetBrains Mono", monospace;}
+
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-muted));
+    border:1px solid var(--line); border-radius:16px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600;
+    letter-spacing:.02em; text-transform:uppercase;
+  }
+  .chip-built{background:var(--brand-soft); color:var(--brand-strong); border:1px solid #1f5943;}
+  .chip-partial{background:#3a2a10; color:#f0b429; border:1px solid #5c4416;}
+  .chip-stub{background:#2a1414; color:#f28b82; border:1px solid #4d2323;}
+  .chip-alert{background:#2b1414; color:#ff9c8f; border:1px solid #5c2323;}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{text-align:left; color:var(--muted); font-weight:600; text-transform:uppercase; font-size:10px; letter-spacing:.05em; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap;}
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:hover td{background:#0f1913;}
+  td code, span.mono{font-size:11.5px; color:#a9d6c7; word-break:break-word;}
+
+  .matrix td, .matrix th{text-align:center;}
+  .matrix td.hit{background:#2b1414; color:#ff9c8f; font-weight:700;}
+  .matrix th.rowhead{text-align:left; color:var(--text);}
+
+  .sidebar a{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--muted); font-size:13.5px; transition:.15s;}
+  .sidebar a:hover, .sidebar a.active{background:var(--brand-soft); color:var(--brand-strong);}
+  .sidebar{position:sticky; top:24px; max-height:calc(100vh - 48px); overflow-y:auto;}
+
+  section{scroll-margin-top:24px;}
+
+  pre.tree{
+    background:#080d0b; border:1px solid var(--line); border-radius:12px;
+    padding:16px; font-size:12px; line-height:1.6; overflow-x:auto;
+    color:#bfe3d4; font-family:"JetBrains Mono", monospace;
+  }
+  pre.tree .dir{color:var(--brand-strong); font-weight:600;}
+  pre.tree .note{color:#f0b429;}
+
+  .finding{
+    border-left:3px solid #ff9c8f; background:#160f0f; border-radius:0 10px 10px 0;
+    padding:12px 16px; margin-bottom:10px; font-size:13px; line-height:1.55;
+  }
+  .finding b{color:#ffb3a5;}
+  .finding code{color:#a9d6c7;}
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--canvas);}
+  ::-webkit-scrollbar-thumb{background:#1e2b25; border-radius:8px;}
+</style>
+</head>
+<body class="antialiased">
+
+<header class="border-b border-[var(--line)] sticky top-0 z-40 backdrop-blur bg-[#0a100eee]">
+  <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[var(--brand-soft)] border border-[#1f5943] flex items-center justify-center">
+        <i data-lucide="search-check" class="w-5 h-5 text-[var(--brand-strong)]"></i>
+      </div>
+      <div>
+        <div class="font-display font-extrabold text-[15px] leading-none">EDUCATIVO</div>
+        <div class="text-[11px] text-[var(--muted)] leading-none mt-1">Auditoría técnica de módulos — solo lectura</div>
+      </div>
+    </div>
+    <div class="text-[11px] text-[var(--muted)] mono">2026-09-21 · sin cambios en código</div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-6 py-8 grid grid-cols-[220px_1fr] gap-8">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar hidden md:block">
+    <a href="#inventario"><i data-lucide="boxes" class="w-4 h-4"></i>1. Inventario de módulos</a>
+    <a href="#academic"><i data-lucide="library" class="w-4 h-4"></i>2. Academic en detalle</a>
+    <a href="#comunicacion"><i data-lucide="git-branch" class="w-4 h-4"></i>3. Comunicación entre módulos</a>
+    <a href="#tenant-periodo"><i data-lucide="calendar-clock" class="w-4 h-4"></i>4. Tenant y Periodo activo</a>
+    <a href="#matriz"><i data-lucide="grid-3x3" class="w-4 h-4"></i>5. Matriz de dependencias</a>
+    <a href="#arboles"><i data-lucide="folder-tree" class="w-4 h-4"></i>6. Árboles de carpetas</a>
+    <a href="#hallazgos"><i data-lucide="flag" class="w-4 h-4"></i>Resumen de hallazgos</a>
+  </nav>
+
+  <main class="min-w-0 flex flex-col gap-14">
+
+    <!-- 1. INVENTARIO -->
+    <section id="inventario">
+      <h2 class="font-display font-extrabold text-2xl mb-1">1. Inventario de módulos reales (<code class="mono">Modules/*</code>)</h2>
+      <p class="text-[var(--muted)] mb-6">Verificado con conteo de archivos PHP, lectura de <code class="mono">routes/web.php</code> y búsqueda de páginas Vue por módulo. Las páginas NO están en <code class="mono">resources/js/Pages/</code> global (ahí solo hay <code class="mono">Dashboard.vue</code> y <code class="mono">Welcome.vue</code>) — cada módulo tiene su propio <code class="mono">Modules/{X}/Resources/js/Pages/</code>.</p>
+      <div class="card p-5 overflow-x-auto">
+        <table>
+          <thead><tr><th>Módulo</th><th>Domain</th><th>Application</th><th>Infrastructure</th><th>Rutas</th><th>Vue Pages</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="font-semibold">Academic</td>
+              <td>8 entidades, 2 eventos, 7 repo interfaces, 2 VOs</td>
+              <td>2 use cases, 2 DTOs</td>
+              <td>68 archivos PHP: 7 modelos, 7 migraciones, 7 controllers, 6 requests, 7 repos Eloquent, capa Period propia</td>
+              <td><code class="mono">Modules/Academic/routes/web.php</code> (24 rutas)</td>
+              <td><code class="mono">Catalogos.vue</code>, <code class="mono">OfertaCreate.vue</code>, <code class="mono">MatriculaCreate.vue</code></td>
+              <td><span class="chip chip-built">Completo</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Users</td>
+              <td>1 entidad, 1 evento, 1 VO, 1 repo interface</td>
+              <td>1 use case, 1 DTO</td>
+              <td>21 archivos: User, AuthController, UsersController, UserPolicy, EloquentUserRepository</td>
+              <td><code class="mono">Modules/Users/routes/web.php</code>, <code class="mono">api.php</code></td>
+              <td><code class="mono">Login.vue</code>, <code class="mono">Register.vue</code>, <code class="mono">Index.vue</code>, <code class="mono">Edit.vue</code></td>
+              <td><span class="chip chip-built">Completo</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Admin</td>
+              <td>—</td>
+              <td>—</td>
+              <td>9 archivos: SchoolController (landlord-only), StoreSchoolRequest, seeder, providers</td>
+              <td><code class="mono">Modules/Admin/routes/web.php</code> — protegido por <code class="mono">role:super-admin</code> + <code class="mono">RequireLandlordHost</code></td>
+              <td><code class="mono">Schools.vue</code></td>
+              <td><span class="chip chip-partial">Parcial</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Files</td><td>—</td><td>—</td>
+              <td>8 archivos: controller vacío (scaffold), providers, seeder</td>
+              <td><code class="mono">Route::resource('files', ...)</code> default</td>
+              <td>Ninguna</td>
+              <td><span class="chip chip-stub">Esqueleto</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Grades</td><td>—</td><td>—</td>
+              <td>8 archivos: controller vacío (scaffold), providers, seeder</td>
+              <td><code class="mono">Route::resource('grades', ...)</code> default</td>
+              <td>Ninguna</td>
+              <td><span class="chip chip-stub">Esqueleto</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Notifications</td><td>—</td><td>—</td>
+              <td>8 archivos: controller vacío (scaffold), providers, seeder</td>
+              <td><code class="mono">Route::resource('notifications', ...)</code> default</td>
+              <td>Ninguna</td>
+              <td><span class="chip chip-stub">Esqueleto</span></td>
+            </tr>
+            <tr>
+              <td class="font-semibold">Schedule</td><td>—</td><td>—</td>
+              <td>8 archivos: controller vacío (scaffold), providers, seeder</td>
+              <td><code class="mono">Route::resource('schedule', ...)</code> default</td>
+              <td>Ninguna</td>
+              <td><span class="chip chip-stub">Esqueleto</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 2. ACADEMIC -->
+    <section id="academic">
+      <h2 class="font-display font-extrabold text-2xl mb-1">2. Módulo Academic — detalle exhaustivo</h2>
+      <p class="text-[var(--muted)] mb-6">Único módulo con implementación completa (Domain + Application + Infrastructure). Base para entender el acoplamiento real del sistema.</p>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.1 Entidades de dominio</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Entidad</th><th>Path</th><th>Propósito</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Grado</td><td class="mono">Modules/Academic/Domain/Entities/Grado.php</td><td>Catálogo fijo, sin FK a periodo, reutilizado en todos los PeriodoAcademico</td></tr>
+            <tr><td class="mono">NivelAcademico</td><td class="mono">Modules/Academic/Domain/Entities/NivelAcademico.php</td><td>Catálogo fijo, padre de Grado</td></tr>
+            <tr><td class="mono">Seccion</td><td class="mono">Modules/Academic/Domain/Entities/Seccion.php</td><td>Catálogo fijo (etiqueta A/B/...)</td></tr>
+            <tr><td class="mono">PeriodoAcademico</td><td class="mono">Modules/Academic/Domain/Entities/PeriodoAcademico.php</td><td>Alcance temporal raíz — comentario en código: "Tenant-only tier: cannot be period-scoped against itself"</td></tr>
+            <tr><td class="mono">MomentoAcademico</td><td class="mono">Modules/Academic/Domain/Entities/MomentoAcademico.php</td><td>Subdivisión de calificación de un periodo; sin school_id propio (tenant heredado transitivamente)</td></tr>
+            <tr><td class="mono">OfertaAcademica</td><td class="mono">Modules/Academic/Domain/Entities/OfertaAcademica.php</td><td>Instancia de Grado+Seccion dentro de un PeriodoAcademico</td></tr>
+            <tr><td class="mono">Matricula</td><td class="mono">Modules/Academic/Domain/Entities/Matricula.php</td><td>Inscribe estudiante en OfertaAcademica — comentario: "MUST NOT reference Grado/Seccion directly"</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-[13px] text-[var(--muted)] mb-6">Value Objects: <code class="mono">Capacity</code> (<span class="mono">Domain/ValueObjects/Capacity.php</span>, valida no-negativo, <code class="mono">isFullAt()</code>) y <code class="mono">DateRange</code> (<span class="mono">Domain/ValueObjects/DateRange.php</span>, valida <code class="mono">endsOn >= startsOn</code>).</p>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.2 Modelos Eloquent — tabla y relaciones</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Modelo</th><th>Path</th><th>Tabla</th><th>Traits</th><th>Relaciones</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Grado</td><td class="mono">.../Models/Grado.php</td><td class="mono">grados</td><td>BelongsToTenant, HasFactory</td><td>belongsTo(NivelAcademico)</td></tr>
+            <tr><td class="mono">NivelAcademico</td><td class="mono">.../Models/NivelAcademico.php</td><td class="mono">niveles_academicos</td><td>BelongsToTenant, HasFactory</td><td>hasMany(Grado)</td></tr>
+            <tr><td class="mono">Seccion</td><td class="mono">.../Models/Seccion.php</td><td class="mono">secciones</td><td>BelongsToTenant, HasFactory</td><td>—</td></tr>
+            <tr><td class="mono">PeriodoAcademico</td><td class="mono">.../Models/PeriodoAcademico.php</td><td class="mono">periodos_academicos</td><td>BelongsToTenant, HasFactory</td><td>—</td></tr>
+            <tr><td class="mono">MomentoAcademico</td><td class="mono">.../Models/MomentoAcademico.php</td><td class="mono">momentos_academicos</td><td>BelongsToActivePeriodo, HasFactory <span class="text-[#ff9c8f]">(sin BelongsToTenant)</span></td><td>belongsTo(PeriodoAcademico)</td></tr>
+            <tr><td class="mono">OfertaAcademica</td><td class="mono">.../Models/OfertaAcademica.php</td><td class="mono">ofertas_academicas</td><td>BelongsToActivePeriodo, BelongsToTenant, HasFactory</td><td>belongsTo(Grado), belongsTo(Seccion), belongsTo(PeriodoAcademico), belongsTo(<span class="text-[#ff9c8f]">Modules\Users\...\User</span>, 'teacher_id'), hasMany(Matricula)</td></tr>
+            <tr><td class="mono">Matricula</td><td class="mono">.../Models/Matricula.php</td><td class="mono">matriculas</td><td>BelongsToActivePeriodo, BelongsToTenant, HasFactory</td><td>belongsTo(OfertaAcademica), belongsTo(<span class="text-[#ff9c8f]">Modules\Users\...\User</span>, 'student_id')</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.3 Migraciones — tablas, FKs, constraints</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Migración</th><th>Tabla</th><th>Foreign Keys</th><th>Constraints</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">2025_01_01_000001_create_niveles_academicos_table.php</td><td class="mono">niveles_academicos</td><td class="mono">school_id → schools (restrict)</td><td>index school_id</td></tr>
+            <tr><td class="mono">2025_01_01_000002_create_grados_table.php</td><td class="mono">grados</td><td class="mono">school_id → schools, nivel_academico_id → niveles_academicos</td><td>index [school_id, nivel_academico_id]</td></tr>
+            <tr><td class="mono">2025_01_01_000003_create_secciones_table.php</td><td class="mono">secciones</td><td class="mono">school_id → schools</td><td>index school_id</td></tr>
+            <tr><td class="mono">2025_01_01_000004_create_periodos_academicos_table.php</td><td class="mono">periodos_academicos</td><td class="mono">school_id → schools</td><td>is_active boolean, index [school_id, is_active]</td></tr>
+            <tr><td class="mono">2025_01_01_000005_create_momentos_academicos_table.php</td><td class="mono">momentos_academicos</td><td class="mono">periodo_academico_id → periodos_academicos <span class="text-[#f0b429]">(sin school_id)</span></td><td>index periodo_academico_id</td></tr>
+            <tr><td class="mono">2025_01_01_000006_create_ofertas_academicas_table.php</td><td class="mono">ofertas_academicas</td><td class="mono">school_id, periodo_academico_id, grado_id, seccion_id; <span class="text-[#ff9c8f]">teacher_id → users</span> (nullable)</td><td>unique [periodo_academico_id, grado_id, seccion_id]</td></tr>
+            <tr><td class="mono">2025_01_01_000007_create_matriculas_table.php</td><td class="mono">matriculas</td><td class="mono">school_id, periodo_academico_id; oferta_academica_id → ofertas_academicas (cascade); <span class="text-[#ff9c8f]">student_id → users</span></td><td>unique [oferta_academica_id, student_id]</td></tr>
+          </tbody>
+        </table>
+        <p class="text-[12px] text-[#ff9c8f] mt-3">FK cruzada a otro módulo confirmada a nivel de base de datos: <code class="mono">ofertas_academicas.teacher_id</code> y <code class="mono">matriculas.student_id</code> apuntan a la tabla <code class="mono">users</code> (módulo Users).</p>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.4 Casos de uso</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Caso de uso</th><th>Path</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CreateOfertaAcademica</td><td class="mono">Application/UseCases/CreateOfertaAcademica.php</td><td>Valida no-duplicado (periodo+grado+seccion), crea entidad, guarda vía repo, dispara <code class="mono">OfertaAcademicaCreated</code></td></tr>
+            <tr><td class="mono">MatricularEstudiante</td><td class="mono">Application/UseCases/MatricularEstudiante.php</td><td>Valida oferta existente, no-duplicado, capacidad; deriva school_id/periodo de la oferta (no del request); guarda y dispara <code class="mono">EstudianteMatriculado</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.5 Controladores y rutas</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Controller</th><th>Path</th><th>Métodos</th><th>Rutas</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">CatalogosController</td><td class="mono">Infrastructure/Http/Controllers/CatalogosController.php</td><td>index</td><td class="mono">GET academic/catalogos</td></tr>
+            <tr><td class="mono">GradoController</td><td class="mono">.../GradoController.php</td><td>store, update, destroy</td><td class="mono">POST/PUT/DELETE academic/grados[/{id}]</td></tr>
+            <tr><td class="mono">NivelAcademicoController</td><td class="mono">.../NivelAcademicoController.php</td><td>store, update, destroy</td><td class="mono">.../academic/niveles[/{id}]</td></tr>
+            <tr><td class="mono">SeccionController</td><td class="mono">.../SeccionController.php</td><td>store, update, destroy</td><td class="mono">.../academic/secciones[/{id}]</td></tr>
+            <tr><td class="mono">PeriodoAcademicoController</td><td class="mono">.../PeriodoAcademicoController.php</td><td>store, update, destroy, <b class="text-[var(--brand-strong)]">activate</b> (transacción: desactiva anterior, activa nuevo)</td><td class="mono">.../academic/periodos[/{id}], POST .../{id}/activate</td></tr>
+            <tr><td class="mono">OfertaAcademicaController</td><td class="mono">.../OfertaAcademicaController.php</td><td>create, store</td><td class="mono">GET/POST academic/ofertas[/create]</td></tr>
+            <tr><td class="mono">MatriculaController</td><td class="mono">.../MatriculaController.php</td><td>create, store</td><td class="mono">GET/POST academic/matriculas[/create]</td></tr>
+          </tbody>
+        </table>
+        <p class="text-[12px] text-[var(--muted)] mt-3">Todas bajo <code class="mono">Route::middleware(['auth','role:staff/admin'])->prefix('academic')</code> — <span class="mono">Modules/Academic/routes/web.php:23</span>. <code class="mono">routes/api.php</code> vacío (comentado: controllers son Inertia, no API JSON).</p>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.6 Pantallas Vue</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Vista</th><th>Path</th><th>Alimentada por</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Catalogos.vue</td><td class="mono">Modules/Academic/Resources/js/Pages/Catalogos.vue</td><td class="mono">CatalogosController@index → Inertia::render('Academic::Catalogos')</td></tr>
+            <tr><td class="mono">OfertaCreate.vue</td><td class="mono">Modules/Academic/Resources/js/Pages/OfertaCreate.vue</td><td class="mono">OfertaAcademicaController@create → Inertia::render('Academic::OfertaCreate')</td></tr>
+            <tr><td class="mono">MatriculaCreate.vue</td><td class="mono">Modules/Academic/Resources/js/Pages/MatriculaCreate.vue</td><td class="mono">MatriculaController@create → Inertia::render('Academic::MatriculaCreate')</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.7 Repositorios</h3>
+      <p class="text-[13px] text-[var(--muted)] mb-6">7 pares interfaz + implementación Eloquent completos: Grado, Matricula, MomentoAcademico, NivelAcademico, OfertaAcademica, PeriodoAcademico, Seccion (<code class="mono">Domain/Repositories/*Interface.php</code> + <code class="mono">Infrastructure/Persistence/Eloquent*Repository.php</code>). Ejemplo — <code class="mono">OfertaAcademicaRepositoryInterface</code>: <code class="mono">findById</code>, <code class="mono">findByPeriodoGradoSeccion</code>, <code class="mono">save</code>.</p>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">2.8 Eventos de dominio y listeners</h3>
+      <div class="card p-5 overflow-x-auto">
+        <table>
+          <thead><tr><th>Evento</th><th>Path</th><th>Disparado en</th><th>Listener registrado</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">OfertaAcademicaCreated</td><td class="mono">Domain/Events/OfertaAcademicaCreated.php</td><td class="mono">CreateOfertaAcademica::handle()</td><td><span class="chip chip-alert">Ninguno</span></td></tr>
+            <tr><td class="mono">EstudianteMatriculado</td><td class="mono">Domain/Events/EstudianteMatriculado.php</td><td class="mono">MatricularEstudiante::handle()</td><td><span class="chip chip-alert">Ninguno</span></td></tr>
+            <tr><td class="mono">UserRegistered</td><td class="mono">Modules/Users/Domain/Events/UserRegistered.php</td><td>—</td><td><span class="chip chip-alert">Mapeado, array vacío</span></td></tr>
+          </tbody>
+        </table>
+        <p class="text-[12px] text-[#ff9c8f] mt-3">Grep completo de los 7 <code class="mono">EventServiceProvider.php</code> de <code class="mono">Modules/*</code>: cero listeners activos en todo el proyecto. Notifications — el destino natural — no tiene ninguno registrado.</p>
+      </div>
+    </section>
+
+    <!-- 3. COMUNICACION -->
+    <section id="comunicacion">
+      <h2 class="font-display font-extrabold text-2xl mb-1">3. Mapa de comunicación entre módulos</h2>
+      <p class="text-[var(--muted)] mb-6">Grep exhaustivo de <code class="mono">use Modules\</code> en todo <code class="mono">Modules/</code>, filtrado a imports cruzados (excluye imports internos al mismo módulo).</p>
+      <div class="card p-5 overflow-x-auto">
+        <table>
+          <thead><tr><th>Archivo origen</th><th>Importa de</th><th>Clase</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">Modules/Academic/Infrastructure/Models/OfertaAcademica.php:12</td><td>Users</td><td class="mono">Modules\Users\Infrastructure\Models\User</td></tr>
+            <tr><td class="mono">Modules/Academic/Infrastructure/Models/Matricula.php:11</td><td>Users</td><td class="mono">Modules\Users\Infrastructure\Models\User</td></tr>
+            <tr><td class="mono">Modules/Academic/Infrastructure/Http/Controllers/OfertaAcademicaController.php:18</td><td>Users</td><td class="mono">Modules\Users\Infrastructure\Models\User</td></tr>
+            <tr><td class="mono">Modules/Academic/Infrastructure/Http/Controllers/MatriculaController.php:15</td><td>Users</td><td class="mono">Modules\Users\Infrastructure\Models\User</td></tr>
+            <tr><td class="mono">Modules/Academic/Infrastructure/Database/Seeders/AcademicDatabaseSeeder.php:13</td><td>Users</td><td class="mono">Modules\Users\Infrastructure\Models\User <span class="text-[10px] text-[var(--brand-strong)]">(nuevo hallazgo)</span></td></tr>
+          </tbody>
+        </table>
+        <p class="text-[13px] text-[var(--muted)] mt-4">Ningún otro módulo (Grades, Schedule, Files, Notifications) tiene imports cruzados: son scaffolds vacíos. Admin solo depende de <code class="mono">App\Tenancy\Models\School</code> (plataforma, no otro módulo de negocio). Nadie importa de Academic — el acoplamiento es 100% unidireccional: Academic → Users.</p>
+      </div>
+    </section>
+
+    <!-- 4. TENANT Y PERIODO -->
+    <section id="tenant-periodo">
+      <h2 class="font-display font-extrabold text-2xl mb-1">4. Tenant y Periodo activo — dónde se usan</h2>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">4.1 Tenant — vive en <code class="mono">app/Tenancy/</code> (plataforma)</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Pieza</th><th>Path</th><th>Rol</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ResolveTenant</td><td class="mono">app/Tenancy/Http/Middleware/ResolveTenant.php</td><td>Extrae subdominio, resuelve School (cache 5min, sentinel false), fail-closed 404 si no existe/inactivo, hace <code class="mono">TenantContext::set()</code></td></tr>
+            <tr><td class="mono">TenantContext</td><td class="mono">app/Tenancy/TenantContext.php</td><td>Singleton scoped por request: set / current / hasTenant / forget</td></tr>
+            <tr><td class="mono">TenantScope</td><td class="mono">app/Tenancy/Scopes/TenantScope.php</td><td>Global scope: filtra por school_id = tenant actual; no-op sin tenant</td></tr>
+            <tr><td class="mono">BelongsToTenant</td><td class="mono">app/Tenancy/Concerns/BelongsToTenant.php</td><td>Trait: registra TenantScope + auto-rellena school_id en creating. Bypass: scopeWithoutTenantScope()</td></tr>
+          </tbody>
+        </table>
+        <p class="text-[13px] text-[var(--muted)] mt-3">Modelos que usan <code class="mono">BelongsToTenant</code> (7, confirmado por grep): Grado, NivelAcademico, Seccion, PeriodoAcademico, OfertaAcademica, Matricula (Academic) + User (Users).</p>
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">4.2 Periodo activo — vive DENTRO de Academic</h3>
+      <div class="card p-5 overflow-x-auto mb-6">
+        <table>
+          <thead><tr><th>Pieza</th><th>Path</th><th>Rol</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ResolveActivePeriodo</td><td class="mono">Modules/Academic/Infrastructure/Http/Middleware/ResolveActivePeriodo.php</td><td>Sin tenant → no-op. Con tenant → busca PeriodoAcademico::where('is_active',true)->first() (ya filtrado por TenantScope) y hace PeriodoContext::set(). Comentario propio: "MUST run after ResolveTenant"</td></tr>
+            <tr><td class="mono">PeriodoContext</td><td class="mono">Modules/Academic/Infrastructure/Period/PeriodoContext.php</td><td>Comentario literal en el código: "Structural clone of App\Tenancy\TenantContext"</td></tr>
+            <tr><td class="mono">PeriodoScope</td><td class="mono">Modules/Academic/Infrastructure/Period/Scopes/PeriodoScope.php</td><td>Comentario literal: "Structural clone of App\Tenancy\Scopes\TenantScope". Filtra por periodo_academico_id</td></tr>
+            <tr><td class="mono">BelongsToActivePeriodo</td><td class="mono">Modules/Academic/Infrastructure/Period/Concerns/BelongsToActivePeriodo.php</td><td>Comentario literal: "Structural clone of App\Tenancy\Concerns\BelongsToTenant". Bypass: scopeWithoutActivePeriodoScope()</td></tr>
+          </tbody>
+        </table>
+        <p class="text-[13px] text-[var(--muted)] mt-3">Modelos que usan <code class="mono">BelongsToActivePeriodo</code> (3, confirmado por grep, todos dentro de Academic): OfertaAcademica, Matricula, MomentoAcademico.</p>
+      </div>
+
+      <div class="finding">
+        <b>Hallazgo estructural:</b> el propio código admite en comentarios que <code>PeriodoContext</code>/<code>PeriodoScope</code>/<code>BelongsToActivePeriodo</code> son "structural clones" 1:1 de sus equivalentes de Tenant. Pero mientras Tenant vive en <code>app/Tenancy/</code> (plataforma, fuera de cualquier módulo), todo el stack de Periodo vive en <code>Modules/Academic/Infrastructure/Period/</code> (dentro de un módulo de negocio). Esta es la discrepancia entre el diseño objetivo (Periodo como capa base, igual que Tenant) y el código actual.
+      </div>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">4.3 Registro de middleware — <code class="mono">bootstrap/app.php</code></h3>
+      <div class="card p-5 overflow-x-auto">
+        <pre class="tree">use App\Tenancy\Http\Middleware\ResolveTenant;
+use Modules\Academic\Infrastructure\Http\Middleware\ResolveActivePeriodo;
+...
+$middleware->group('api', [
+    EnsureFrontendRequestsAreStateful::class,
+    ResolveTenant::class,
+    ResolveActivePeriodo::class,
+    'throttle:api',
+    SubstituteBindings::class,
+]);
+
+$middleware->web(append: [
+    HandleInertiaRequests::class,
+    ResolveTenant::class,
+    ResolveActivePeriodo::class,
+]);</pre>
+        <p class="text-[11px] text-[var(--muted)] mt-2 mono">bootstrap/app.php:6,12,32-33,40-41</p>
+        <div class="finding mt-4">
+          <b>Hallazgo crítico:</b> <code>bootstrap/app.php</code> — código de plataforma que corre para TODAS las requests web/api — importa directamente una clase interna de <code>Modules\Academic\...</code>. Si mañana se extrae Periodo a su propio módulo o a <code>app/Platform/Period/</code>, este es el primer archivo de plataforma que hay que tocar. Hoy la plataforma entera depende de que Academic exista y no se mueva ni se renombre.
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. MATRIZ -->
+    <section id="matriz">
+      <h2 class="font-display font-extrabold text-2xl mb-1">5. Matriz de dependencias módulo × módulo</h2>
+      <p class="text-[var(--muted)] mb-6">Filas = origen, columnas = destino. Marca roja = al menos un import <code class="mono">use Modules\X\...</code> confirmado.</p>
+      <div class="card p-5 overflow-x-auto">
+        <table class="matrix">
+          <thead><tr><th class="rowhead">Origen \ Destino</th><th>Academic</th><th>Admin</th><th>Files</th><th>Grades</th><th>Notif.</th><th>Schedule</th><th>Users</th></tr></thead>
+          <tbody>
+            <tr><th class="rowhead mono">Academic</th><td>—</td><td></td><td></td><td></td><td></td><td></td><td class="hit">X</td></tr>
+            <tr><th class="rowhead mono">Admin</th><td></td><td>—</td><td></td><td></td><td></td><td></td><td></td></tr>
+            <tr><th class="rowhead mono">Files</th><td></td><td></td><td>—</td><td></td><td></td><td></td><td></td></tr>
+            <tr><th class="rowhead mono">Grades</th><td></td><td></td><td></td><td>—</td><td></td><td></td><td></td></tr>
+            <tr><th class="rowhead mono">Notifications</th><td></td><td></td><td></td><td></td><td>—</td><td></td><td></td></tr>
+            <tr><th class="rowhead mono">Schedule</th><td></td><td></td><td></td><td></td><td></td><td>—</td><td></td></tr>
+            <tr><th class="rowhead mono">Users</th><td></td><td></td><td></td><td></td><td></td><td></td><td>—</td></tr>
+          </tbody>
+        </table>
+        <p class="text-[13px] text-[var(--muted)] mt-4">Además, fuera de la matriz módulo-a-módulo: <code class="mono">bootstrap/app.php</code> (plataforma) → <code class="mono">Modules\Academic\...\ResolveActivePeriodo</code>. Academic es el único módulo de negocio con acoplamiento saliente real, unidireccional hacia Users. Los 4 scaffolds vacíos no tienen ningún acoplamiento — porque tampoco tienen funcionalidad todavía.</p>
+      </div>
+    </section>
+
+    <!-- 6. ARBOLES -->
+    <section id="arboles">
+      <h2 class="font-display font-extrabold text-2xl mb-1">6. Árboles de carpetas</h2>
+
+      <h3 class="font-display font-bold text-base mt-6 mb-2 text-[var(--brand-strong)]">6.1 <code class="mono">Modules/Academic</code> — completo</h3>
+      <pre class="tree">Modules/Academic/
+├── Application/
+│   ├── DTOs/
+│   │   ├── CreateOfertaAcademicaData.php
+│   │   └── MatricularEstudianteData.php
+│   ├── Services/            <span class="note">(vacío, .gitkeep)</span>
+│   └── UseCases/
+│       ├── CreateOfertaAcademica.php
+│       └── MatricularEstudiante.php
+├── Domain/
+│   ├── Entities/
+│   │   ├── Grado.php
+│   │   ├── Matricula.php
+│   │   ├── MomentoAcademico.php
+│   │   ├── NivelAcademico.php
+│   │   ├── OfertaAcademica.php
+│   │   ├── PeriodoAcademico.php
+│   │   └── Seccion.php
+│   ├── Events/
+│   │   ├── EstudianteMatriculado.php
+│   │   └── OfertaAcademicaCreated.php
+│   ├── Repositories/
+│   │   ├── GradoRepositoryInterface.php
+│   │   ├── MatriculaRepositoryInterface.php
+│   │   ├── MomentoAcademicoRepositoryInterface.php
+│   │   ├── NivelAcademicoRepositoryInterface.php
+│   │   ├── OfertaAcademicaRepositoryInterface.php
+│   │   ├── PeriodoAcademicoRepositoryInterface.php
+│   │   └── SeccionRepositoryInterface.php
+│   └── ValueObjects/
+│       ├── Capacity.php
+│       └── DateRange.php
+├── Infrastructure/
+│   ├── Database/
+│   │   ├── Migrations/
+│   │   │   ├── 2025_01_01_000001_create_niveles_academicos_table.php
+│   │   │   ├── 2025_01_01_000002_create_grados_table.php
+│   │   │   ├── 2025_01_01_000003_create_secciones_table.php
+│   │   │   ├── 2025_01_01_000004_create_periodos_academicos_table.php
+│   │   │   ├── 2025_01_01_000005_create_momentos_academicos_table.php
+│   │   │   ├── 2025_01_01_000006_create_ofertas_academicas_table.php
+│   │   │   └── 2025_01_01_000007_create_matriculas_table.php
+│   │   └── Seeders/
+│   │       └── AcademicDatabaseSeeder.php
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── CatalogosController.php
+│   │   │   ├── GradoController.php
+│   │   │   ├── MatriculaController.php
+│   │   │   ├── NivelAcademicoController.php
+│   │   │   ├── OfertaAcademicaController.php
+│   │   │   ├── PeriodoAcademicoController.php
+│   │   │   └── SeccionController.php
+│   │   ├── Middleware/
+│   │   │   └── ResolveActivePeriodo.php   <span class="note">← registrado en bootstrap/app.php</span>
+│   │   └── Requests/
+│   │       ├── StoreGradoRequest.php
+│   │       ├── StoreMatriculaRequest.php
+│   │       ├── StoreNivelAcademicoRequest.php
+│   │       ├── StoreOfertaRequest.php
+│   │       ├── StorePeriodoAcademicoRequest.php
+│   │       └── StoreSeccionRequest.php
+│   ├── Models/
+│   │   ├── Grado.php
+│   │   ├── Matricula.php
+│   │   ├── MomentoAcademico.php
+│   │   ├── NivelAcademico.php
+│   │   ├── OfertaAcademica.php
+│   │   ├── PeriodoAcademico.php
+│   │   └── Seccion.php
+│   ├── Period/                            <span class="note">← candidato a extraerse de Academic</span>
+│   │   ├── Broadcasting/
+│   │   │   └── PeriodoChannel.php
+│   │   ├── Concerns/
+│   │   │   └── BelongsToActivePeriodo.php
+│   │   ├── PeriodoContext.php
+│   │   └── Scopes/
+│   │       └── PeriodoScope.php
+│   ├── Persistence/
+│   │   ├── EloquentGradoRepository.php
+│   │   ├── EloquentMatriculaRepository.php
+│   │   ├── EloquentMomentoAcademicoRepository.php
+│   │   ├── EloquentNivelAcademicoRepository.php
+│   │   ├── EloquentOfertaAcademicaRepository.php
+│   │   ├── EloquentPeriodoAcademicoRepository.php
+│   │   └── EloquentSeccionRepository.php
+│   └── Providers/
+│       ├── AcademicServiceProvider.php
+│       ├── EventServiceProvider.php
+│       └── RouteServiceProvider.php
+├── Resources/
+│   └── js/Pages/
+│       ├── Catalogos.vue
+│       ├── MatriculaCreate.vue
+│       └── OfertaCreate.vue
+├── Tests/
+│   ├── Feature/  <span class="note">(vacío)</span>
+│   └── Unit/     <span class="note">(vacío)</span>
+├── routes/
+│   ├── api.php
+│   └── web.php
+├── README.md
+├── composer.json
+├── config/config.php
+├── module.json
+├── package.json
+└── vite.config.js</pre>
+
+      <h3 class="font-display font-bold text-base mt-8 mb-2 text-[var(--brand-strong)]">6.2 Resto de <code class="mono">Modules/*</code> (1-2 niveles)</h3>
+      <pre class="tree">Modules/
+├── Admin/
+│   ├── Infrastructure/
+│   │   ├── Database/Seeders/AdminDatabaseSeeder.php
+│   │   ├── Http/Controllers/SchoolController.php
+│   │   ├── Http/Requests/StoreSchoolRequest.php
+│   │   └── Providers/ (AdminServiceProvider, EventServiceProvider, RouteServiceProvider)
+│   ├── Resources/js/Pages/Schools.vue
+│   └── routes/ (web.php, api.php)
+│   <span class="note">[Domain/ y Application/ existen como carpetas pero vacías]</span>
+│
+├── Files/            <span class="note">[scaffold — Domain/Application vacíos]</span>
+│   └── Infrastructure/ (FilesController, providers, seeder)
+│
+├── Grades/            <span class="note">[scaffold — Domain/Application vacíos]</span>
+│   └── Infrastructure/ (GradesController, providers, seeder)
+│
+├── Notifications/      <span class="note">[scaffold — Domain/Application vacíos]</span>
+│   └── Infrastructure/ (NotificationsController, providers, seeder)
+│
+├── Schedule/           <span class="note">[scaffold — Domain/Application vacíos]</span>
+│   └── Infrastructure/ (ScheduleController, providers, seeder)
+│
+└── Users/
+    ├── Domain/ (Entities/User.php, Events/UserRegistered.php, Repositories/UserRepositoryInterface.php, ValueObjects/Email.php)
+    ├── Application/ (UseCases/RegisterUser.php, DTOs/UserData.php)
+    ├── Infrastructure/
+    │   ├── Http/Controllers/ (AuthController, UsersController)
+    │   ├── Models/User.php
+    │   ├── Persistence/EloquentUserRepository.php
+    │   ├── Policies/UserPolicy.php
+    │   └── Providers/ (UsersServiceProvider, EventServiceProvider, RouteServiceProvider)
+    ├── Resources/js/Pages/ (Login.vue, Register.vue, Index.vue, Edit.vue)
+    └── routes/ (web.php, api.php)</pre>
+    </section>
+
+    <!-- RESUMEN -->
+    <section id="hallazgos">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Resumen de hallazgos</h2>
+      <p class="text-[var(--muted)] mb-6">Auditoría de solo lectura — nada del código fue modificado.</p>
+
+      <div class="finding"><b>1.</b> Periodo no es un módulo ni capa de plataforma — vive dentro de <code>Modules/Academic/Infrastructure/Period/*</code>, aunque su propio código se declara "structural clone" de Tenant, que sí es plataforma (<code>app/Tenancy/*</code>).</div>
+      <div class="finding"><b>2.</b> <code>bootstrap/app.php</code> importa una clase interna de Academic para registrar <code>ResolveActivePeriodo</code> en los grupos globales web/api — la plataforma depende del módulo, no al revés.</div>
+      <div class="finding"><b>3.</b> Academic → Users es el único acoplamiento cruzado real entre módulos de negocio, confirmado en 5 archivos (<code>OfertaAcademica.php</code>, <code>Matricula.php</code>, <code>OfertaAcademicaController.php</code>, <code>MatriculaController.php</code>, <code>AcademicDatabaseSeeder.php</code>) más 2 FKs de base de datos (<code>teacher_id</code>, <code>student_id</code> → <code>users</code>).</div>
+      <div class="finding"><b>4.</b> Grades, Files, Notifications, Schedule son scaffolds sin modificar (rutas <code>Route::resource</code> default, controllers vacíos, sin Domain/Application, sin páginas Vue) — hoy no violan nada porque no hacen nada.</div>
+      <div class="finding"><b>5.</b> Cero listeners de eventos registrados en todo el proyecto — 3 eventos de dominio existen y ninguno tiene listener, ni siquiera en Notifications.</div>
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

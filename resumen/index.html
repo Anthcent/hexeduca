@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EDUCATIVO — Mapa de Arquitectura</title>
+
+<!-- CDN: Tailwind, fuentes, iconos, diagramas -->
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "dark",
+    themeVariables: {
+      background: "#0b1210",
+      primaryColor: "#0f1a17",
+      primaryTextColor: "#e7f4ef",
+      primaryBorderColor: "#18a879",
+      lineColor: "#2f6f5c",
+      secondaryColor: "#122019",
+      tertiaryColor: "#0f1a17",
+      fontFamily: "Inter, sans-serif",
+      textColor: "#cfe8de"
+    },
+    flowchart: { curve: "basis", htmlLabels: true },
+    er: { fontSize: 12 }
+  });
+  window.addEventListener("load", () => lucide.createIcons());
+</script>
+
+<style>
+  :root{
+    --canvas:#0a100e; --surface:#111b17; --surface-muted:#0e1613;
+    --line:#1e2b25; --text:#e7f4ef; --muted:#8fa89d;
+    --brand:#18a879; --brand-soft:#123529; --brand-strong:#22d3a0;
+  }
+  html{scroll-behavior:smooth;}
+  body{background:var(--canvas); color:var(--text); font-family:"Inter",sans-serif;}
+  h1,h2,h3,.font-display{font-family:"Manrope",sans-serif;}
+  code, .mono{font-family:"JetBrains Mono", monospace;}
+
+  .card{
+    background:linear-gradient(180deg, var(--surface), var(--surface-muted));
+    border:1px solid var(--line); border-radius:16px;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 10px; border-radius:999px; font-size:11px; font-weight:600;
+    letter-spacing:.02em; text-transform:uppercase;
+  }
+  .chip-built{background:var(--brand-soft); color:var(--brand-strong); border:1px solid #1f5943;}
+  .chip-partial{background:#3a2a10; color:#f0b429; border:1px solid #5c4416;}
+  .chip-stub{background:#2a1414; color:#f28b82; border:1px solid #4d2323;}
+
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{text-align:left; color:var(--muted); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.05em; padding:8px 10px; border-bottom:1px solid var(--line);}
+  td{padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top;}
+  tr:hover td{background:#0f1913;}
+  .verb{font-family:"JetBrains Mono",monospace; font-size:11px; padding:2px 6px; border-radius:6px; font-weight:600;}
+  .v-get{background:#0f2a24; color:#4fd8b0;}
+  .v-post{background:#1e2a10; color:#b7e26a;}
+  .v-put{background:#26200e; color:#f0c94a;}
+  .v-delete{background:#2b1414; color:#f28b82;}
+
+  .sidebar a{display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; color:var(--muted); font-size:13.5px; transition:.15s;}
+  .sidebar a:hover, .sidebar a.active{background:var(--brand-soft); color:var(--brand-strong);}
+  .sidebar{position:sticky; top:24px; max-height:calc(100vh - 48px); overflow-y:auto;}
+
+  .mermaid{background:transparent !important; display:flex; justify-content:center;}
+  section{scroll-margin-top:24px;}
+
+  .legend{margin-top:16px; padding-top:14px; border-top:1px dashed var(--line); display:grid; gap:7px;}
+  .legend-title{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); margin-bottom:2px;}
+  .legend-item{display:flex; gap:8px; font-size:12.5px; color:var(--muted); line-height:1.5;}
+  .legend-item b{color:var(--brand-strong); font-weight:600; white-space:nowrap; font-family:"JetBrains Mono",monospace; font-size:11.5px;}
+
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:var(--canvas);}
+  ::-webkit-scrollbar-thumb{background:#1e2b25; border-radius:8px;}
+</style>
+</head>
+<body class="antialiased">
+
+<!-- HEADER -->
+<header class="border-b border-[var(--line)] sticky top-0 z-40 backdrop-blur bg-[#0a100eee]">
+  <div class="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-xl bg-[var(--brand-soft)] border border-[#1f5943] flex items-center justify-center">
+        <i data-lucide="layout-grid" class="w-5 h-5 text-[var(--brand-strong)]"></i>
+      </div>
+      <div>
+        <div class="font-display font-extrabold text-[15px] leading-none">EDUCATIVO</div>
+        <div class="text-[11px] text-[var(--muted)] leading-none mt-1">Mapa de arquitectura del sistema</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-[11px] text-[var(--muted)] mono">
+      <span class="chip chip-built"><i data-lucide="git-branch" class="w-3 h-3"></i>main</span>
+      <span>Laravel 12 · nwidart/laravel-modules · Inertia + Vue 3</span>
+    </div>
+  </div>
+</header>
+
+<div class="max-w-[1400px] mx-auto px-6 py-8 grid grid-cols-[220px_1fr] gap-8">
+
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar hidden md:block">
+    <div class="text-[10.5px] uppercase tracking-wider text-[var(--muted)] px-3 mb-2">Capas del sistema</div>
+    <a href="#overview"><i data-lucide="compass" class="w-4 h-4"></i>Visión general</a>
+    <a href="#modules"><i data-lucide="boxes" class="w-4 h-4"></i>Módulos</a>
+    <a href="#request-flow"><i data-lucide="git-commit-horizontal" class="w-4 h-4"></i>Flujo de request</a>
+    <a href="#tenancy"><i data-lucide="building-2" class="w-4 h-4"></i>Multi-tenancy</a>
+    <a href="#periodo"><i data-lucide="calendar-clock" class="w-4 h-4"></i>Periodo activo</a>
+    <a href="#security"><i data-lucide="shield-check" class="w-4 h-4"></i>Seguridad y RBAC</a>
+    <a href="#events"><i data-lucide="radio" class="w-4 h-4"></i>Comunicación entre módulos</a>
+    <a href="#resilience"><i data-lucide="heart-crack" class="w-4 h-4"></i>Fallos en cascada</a>
+    <a href="#target-design"><i data-lucide="puzzle" class="w-4 h-4"></i>Diseño objetivo: independencia</a>
+    <a href="#frontend"><i data-lucide="monitor-smartphone" class="w-4 h-4"></i>Frontend</a>
+    <a href="#database"><i data-lucide="database" class="w-4 h-4"></i>Base de datos</a>
+    <a href="#routes"><i data-lucide="route" class="w-4 h-4"></i>Rutas por módulo</a>
+    <a href="#risks"><i data-lucide="alert-triangle" class="w-4 h-4"></i>Deuda técnica / gaps</a>
+  </nav>
+
+  <main class="min-w-0 flex flex-col gap-12">
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <h1 class="font-display font-extrabold text-3xl mb-2">Cómo está armado el sistema</h1>
+      <p class="text-[var(--muted)] max-w-3xl mb-6">Monolito modular sobre Laravel 12, con arquitectura hexagonal por módulo (Domain / Application / Infrastructure), multi-tenancy por subdominio, y un segundo nivel de aislamiento por periodo académico activo. Frontend con Inertia.js + Vue 3, bajo el design system "Nova UI Kit".</p>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <div class="card p-4">
+          <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide mb-1">Módulos activos</div>
+          <div class="font-display font-extrabold text-2xl">7</div>
+          <div class="text-[11px] text-[var(--muted)] mt-1">2 completos · 1 parcial · 4 esqueleto</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide mb-1">Capas de aislamiento</div>
+          <div class="font-display font-extrabold text-2xl">2</div>
+          <div class="text-[11px] text-[var(--muted)] mt-1">Tenant (school) + Periodo activo</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide mb-1">Roles RBAC</div>
+          <div class="font-display font-extrabold text-2xl">4</div>
+          <div class="text-[11px] text-[var(--muted)] mt-1">student · teacher · staff/admin · super-admin</div>
+        </div>
+        <div class="card p-4">
+          <div class="text-[11px] text-[var(--muted)] uppercase tracking-wide mb-1">Páginas Vue</div>
+          <div class="font-display font-extrabold text-2xl">22</div>
+          <div class="text-[11px] text-[var(--muted)] mt-1">Inertia, resolución dual root + módulo</div>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <div class="mermaid">
+graph TB
+  Client["Navegador del usuario<br/>Vue 3 + Inertia + Ziggy<br/>(navega como una SPA, sin recargar la página)"]
+  subgraph LB["Laravel 12 — un solo proceso PHP (bootstrap/app.php)"]
+    MW["Middleware global<br/>Corre en TODAS las requests:<br/>fuerza HTTPS · detecta la escuela · detecta el periodo activo"]
+    subgraph MODS["Modules/* — carpetas de negocio, no procesos separados"]
+      ACA["Academic<br/>(completo)<br/>ofertas, matrículas, catálogos"]
+      USR["Users<br/>(completo)<br/>login, roles, directorio"]
+      ADM["Admin<br/>(parcial)<br/>alta de escuelas"]
+      OTR["Files · Grades<br/>Notifications · Schedule<br/>(esqueleto, sin lógica real)"]
+    end
+    TEN["app/Tenancy<br/>Sabe 'de qué escuela es este dato'<br/>(aislamiento lógico, no físico)"]
+  end
+  DB[("PostgreSQL<br/>una sola base compartida<br/>por todas las escuelas")]
+  Client -->|"pide una página (Inertia request)"| MW -->|"ya sabe quién es y de qué escuela"| MODS
+  MODS -->|"consulta el tenant actual"| TEN
+  TEN -->|"aplica el filtro school_id"| DB
+  MODS -->|"lee/escribe datos"| DB
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Browser</b> — el cliente manda requests normales de navegación (Inertia intercepta los links/forms y los convierte en fetch con headers especiales).</div>
+          <div class="legend-item"><b>Middleware global</b> — se ejecuta en TODAS las requests antes de llegar a cualquier módulo: fuerza HTTPS, resuelve qué escuela es, resuelve qué periodo académico está activo.</div>
+          <div class="legend-item"><b>Modules/*</b> — los 7 módulos de negocio; el color/estado (completo, parcial, esqueleto) indica cuánto código real tienen, no su importancia arquitectónica.</div>
+          <div class="legend-item"><b>app/Tenancy</b> — capa transversal (no es un módulo de negocio) que todos los módulos consultan para saber "a qué escuela pertenece este dato".</div>
+          <div class="legend-item"><b>PostgreSQL</b> — única base de datos compartida por todos los módulos y tenants; el aislamiento entre escuelas es lógico (columna <code class="mono">school_id</code>), no físico.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GLOSSARY -->
+    <section id="glossary">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Glosario en simple</h2>
+      <p class="text-[var(--muted)] mb-6">Antes de entrar en diagramas técnicos, esto es lo que significa cada término que vas a ver repetido en toda la página.</p>
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="box" class="w-4 h-4 text-[var(--brand-strong)]"></i>Monolito modular</h3>
+          <p class="text-[13px] text-[var(--muted)]">Es <strong>una sola aplicación</strong> (un solo proceso, un solo deploy) pero organizada en carpetas separadas por tema ("módulos"). No son microservicios: si un módulo se cae, se cae toda la app, porque comparten el mismo proceso PHP.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="layers" class="w-4 h-4 text-[var(--brand-strong)]"></i>Arquitectura hexagonal</h3>
+          <p class="text-[13px] text-[var(--muted)]">Divide cada módulo en 3 capas: <strong>Domain</strong> (las reglas de negocio puras, sin Laravel), <strong>Application</strong> (los "casos de uso", qué pasos ejecutar), <strong>Infrastructure</strong> (cómo se conecta con la base de datos, HTTP, etc). La idea es poder cambiar Infrastructure sin tocar las reglas de negocio.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="building-2" class="w-4 h-4 text-[var(--brand-strong)]"></i>Multi-tenancy (tenant)</h3>
+          <p class="text-[13px] text-[var(--muted)]">Un mismo sistema atiende a <strong>varias escuelas</strong> ("tenants") con los mismos datos guardados juntos en la misma base, pero filtrados: cada escuela solo ve lo suyo. Se identifica por subdominio (<code class="mono">colegioX.app.com</code>).</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="radio" class="w-4 h-4 text-[var(--brand-strong)]"></i>Evento de dominio</h3>
+          <p class="text-[13px] text-[var(--muted)]">Un "aviso" que un módulo lanza cuando pasó algo importante (ej: "se creó una oferta académica"). Otros módulos pueden <strong>escuchar</strong> ese aviso y reaccionar (mandar un email, generar una notificación) sin que el módulo original sepa quién escucha.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="filter" class="w-4 h-4 text-[var(--brand-strong)]"></i>Middleware</h3>
+          <p class="text-[13px] text-[var(--muted)]">Un filtro que se ejecuta <strong>antes</strong> de que la request llegue al controller: valida sesión, tenant, rol, límites de velocidad, etc. Si el middleware rechaza, el controller nunca se entera de que hubo un pedido.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="shield" class="w-4 h-4 text-[var(--brand-strong)]"></i>RBAC (Role-Based Access Control)</h3>
+          <p class="text-[13px] text-[var(--muted)]">Control de permisos por <strong>rol</strong> (student, teacher, staff/admin, super-admin) en vez de por usuario individual. Hoy solo controla "qué rol puede entrar a qué ruta", todavía no controla acciones finas dentro de una pantalla.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-[var(--brand-strong)]"></i>Síncrono vs. en cola (queue)</h3>
+          <p class="text-[13px] text-[var(--muted)]">Síncrono = pasa <strong>dentro del mismo request</strong>, el usuario espera a que termine todo. En cola = se guarda el trabajo para un proceso aparte ("worker") que lo hace después, en background — si falla, no le rompe la pantalla al usuario.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="gauge" class="w-4 h-4 text-[var(--brand-strong)]"></i>Rate limiting (throttle)</h3>
+          <p class="text-[13px] text-[var(--muted)]">Un límite de cuántas veces se puede llamar a una ruta en un minuto, para evitar que alguien (a propósito o por error) sature el servidor con pedidos repetidos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODULES -->
+    <section id="modules">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Módulos (Modules/*)</h2>
+      <p class="text-[var(--muted)] mb-6">Cada módulo sigue el patrón <code class="mono">Domain → Application → Infrastructure</code>. El dominio es PHP puro (sin Eloquent); la infraestructura implementa los repositorios e integra con Laravel.</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+graph LR
+  subgraph DOM["Domain (PHP puro, sin Laravel)"]
+    E["Entities<br/>OfertaAcademica, Matricula...<br/>objetos de negocio simples,<br/>sin saber nada de base de datos"]
+    R["Repository Interfaces<br/>contratos: 'qué se puede hacer'<br/>(ej: guardar, buscar)<br/>sin decir CÓMO se hace"]
+    EV["Domain Events<br/>avisos de 'esto ya pasó'<br/>(ej: OfertaAcademicaCreated)"]
+  end
+  subgraph APP["Application (orquesta los pasos)"]
+    UC["UseCases<br/>CreateOfertaAcademica<br/>MatricularEstudiante<br/>ejecutan un caso de uso completo,<br/>paso a paso"]
+  end
+  subgraph INF["Infrastructure (la parte 'conectada' a Laravel)"]
+    EM["Eloquent Models<br/>(BelongsToTenant)<br/>representan tablas reales<br/>de PostgreSQL"]
+    ER["Eloquent*Repository<br/>implementación real que SÍ sabe<br/>cómo guardar/buscar con Eloquent"]
+    CTRL["Http Controllers<br/>reciben la request HTTP<br/>y llaman al UseCase correspondiente"]
+    SP["ServiceProvider<br/>'bind interfaces → impl':<br/>le dice a Laravel 'cuando alguien pida<br/>la interfaz, dale ESTA implementación concreta'"]
+  end
+  CTRL -->|"llama al caso de uso"| UC -->|"pide datos usando el contrato"| R
+  ER -.->|"implementa el contrato<br/>(cumple la interfaz)"| R
+  ER -->|"traduce a consultas reales"| EM
+  UC -->|"avisa que algo pasó"| EV
+  SP -.->|"registra en el arranque<br/>de la app (boot)"| ER
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Domain</b> — PHP puro, cero dependencias de Laravel/Eloquent. Define entidades, interfaces de repositorio y eventos. Es lo que sobreviviría si mañana cambian de framework.</div>
+          <div class="legend-item"><b>Application</b> — los UseCases orquestan: reciben datos, llaman al Domain, deciden qué evento disparar. No saben cómo se guardan los datos, solo el "qué hacer".</div>
+          <div class="legend-item"><b>Infrastructure</b> — la parte "sucia": Eloquent Models, implementaciones concretas de los repositorios, Controllers HTTP, y el ServiceProvider que conecta interfaz → implementación.</div>
+          <div class="legend-item"><b>Flechas sólidas (→)</b> — dependencia directa de código (import real).</div>
+          <div class="legend-item"><b>Flechas punteadas (-.→)</b> — relación indirecta: implementa una interfaz o se registra en tiempo de boot, no es un import directo.</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display font-bold text-lg">Academic</h3>
+            <span class="chip chip-built">completo</span>
+          </div>
+          <p class="text-[13px] text-[var(--muted)] mb-3">Núcleo del dominio: estructura académica (niveles, grados, secciones, periodos) + ofertas + matrícula.</p>
+          <ul class="text-[13px] space-y-1 text-[var(--muted)]">
+            <li>• 7 entidades de dominio, 7 interfaces de repositorio</li>
+            <li>• UseCases: <code class="mono">CreateOfertaAcademica</code>, <code class="mono">MatricularEstudiante</code></li>
+            <li>• Capa propia de scoping por periodo activo (<code class="mono">Infrastructure/Period/*</code>)</li>
+            <li>• 3 páginas Vue: Catalogos, OfertaCreate, MatriculaCreate</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display font-bold text-lg">Users</h3>
+            <span class="chip chip-built">completo</span>
+          </div>
+          <p class="text-[13px] text-[var(--muted)] mb-3">Autenticación, directorio de usuarios y modelo base de RBAC. Es el <em>auth provider</em> real de la app.</p>
+          <ul class="text-[13px] space-y-1 text-[var(--muted)]">
+            <li>• <code class="mono">User</code> extiende <code class="mono">Auth\User</code> + <code class="mono">HasRoles, HasApiTokens, BelongsToTenant</code></li>
+            <li>• <code class="mono">AuthController</code>: login/register/logout (hand-rolled, sin Fortify)</li>
+            <li>• <code class="mono">UserPolicy::assignRole</code> registrada a mano (modelo fuera de <code class="mono">App\Models</code>)</li>
+            <li>⚠ UseCase <code class="mono">RegisterUser</code> existe pero <strong>no se usa</strong> — el controller crea el User directo</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display font-bold text-lg">Admin</h3>
+            <span class="chip chip-partial">parcial</span>
+          </div>
+          <p class="text-[13px] text-[var(--muted)] mb-3">Gestión de instituciones (schools) desde el host landlord. Una sola feature real.</p>
+          <ul class="text-[13px] space-y-1 text-[var(--muted)]">
+            <li>• <code class="mono">SchoolController</code> opera sobre <code class="mono">App\Tenancy\Models\School</code></li>
+            <li>• Domain/Infrastructure del módulo están vacíos — el modelo real vive en <code class="mono">app/Tenancy</code></li>
+            <li>• 1 página Vue: Schools.vue</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-display font-bold text-lg">Files · Grades · Notifications · Schedule</h3>
+            <span class="chip chip-stub">esqueleto</span>
+          </div>
+          <p class="text-[13px] text-[var(--muted)] mb-3">Scaffolding sin modificar de <code class="mono">module:make</code>. Sin Domain, sin migraciones, sin Vue, sin listeners.</p>
+          <ul class="text-[13px] space-y-1 text-[var(--muted)]">
+            <li>• Controllers stub devuelven <code class="mono">null</code> / vacío</li>
+            <li>• Rutas web <strong>sin middleware</strong> (ni siquiera <code class="mono">auth</code>)</li>
+            <li>• <code class="mono">Notifications</code> no tiene ningún listener pese a ser el destino natural de los eventos de dominio</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUEST FLOW -->
+    <section id="request-flow">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Flujo de una request (grupo <code class="mono">web</code>)</h2>
+      <p class="text-[var(--muted)] mb-6">Pipeline real definido en <code class="mono">bootstrap/app.php</code>: middleware global → resolución de tenant → resolución de periodo activo → middleware de rol → controller → Inertia.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+sequenceDiagram
+  participant B as Navegador<br/>(Browser)
+  participant HSTS as 1. Fuerza HTTPS<br/>(AddStrictTransportSecurity)
+  participant HIR as 2. Prepara datos de Inertia<br/>(HandleInertiaRequests)
+  participant RT as 3. Detecta la escuela<br/>(ResolveTenant)
+  participant RAP as 4. Detecta el periodo activo<br/>(ResolveActivePeriodo)
+  participant ROLE as 5. Verifica el rol del usuario<br/>(role:staff/admin, varía por ruta)
+  participant C as 6. Controller<br/>(del módulo pedido)
+  participant V as 7. Página Vue<br/>(componente Inertia)
+
+  B->>HSTS: pide una página
+  HSTS->>HIR: si estamos en producción,<br/>obliga a usar HTTPS
+  HIR->>RT: comparte mensajes flash<br/>y datos del usuario logueado
+  RT->>RT: ¿dominio admin? si no,<br/>saca la escuela del subdominio<br/>(resultado cacheado 5 min)
+  RT->>RAP: guarda la escuela detectada<br/>para el resto del request
+  RAP->>RAP: busca el periodo académico<br/>activo DE ESA escuela
+  RAP->>ROLE: guarda el periodo detectado<br/>para el resto del request
+  ROLE->>C: si el rol tiene permiso,<br/>deja pasar al controller
+  C->>V: arma los datos (props)<br/>y pide renderizar la página
+  V-->>B: responde con HTML<br/>+ los datos en JSON
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Orden de lectura</b> — de arriba hacia abajo es el orden real de ejecución; cada flecha es un paso que tiene que pasar antes de que el siguiente arranque.</div>
+          <div class="legend-item"><b>HSTS → HandleInertiaRequests</b> — capas de infraestructura/framework, no tocan lógica de negocio todavía.</div>
+          <div class="legend-item"><b>ResolveTenant / ResolveActivePeriodo</b> — acá se decide "de qué escuela" y "de qué periodo" es esta request; si fallan, cortan el flujo antes de llegar al controller.</div>
+          <div class="legend-item"><b>role:staff/admin</b> — middleware de autorización, distinto por ruta (varía según qué módulo/acción se pida).</div>
+          <div class="legend-item"><b>Controller → Vue Page</b> — el controller no devuelve JSON de API ni una vista Blade: devuelve una "página Inertia", que el browser renderiza como componente Vue sin recargar toda la página.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TENANCY -->
+    <section id="tenancy">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Multi-tenancy (app/Tenancy)</h2>
+      <p class="text-[var(--muted)] mb-6">Aislamiento por subdominio (<code class="mono">escuela.app.com</code>). Fail-closed: sin tenant válido, <code class="mono">404</code>.</p>
+      <div class="card p-6 mb-4">
+        <div class="mermaid">
+flowchart TD
+  A["Llega la request"] --> B{"¿El dominio es el<br/>panel admin?<br/>(admin.app.com)"}
+  B -- sí --> C["Pasa sin escuela asignada<br/>(los filtros de tenant quedan inactivos,<br/>es zona de super-admin)"]
+  B -- no --> D["Toma el subdominio<br/>(ej: 'colegioX' de colegioX.app.com)"]
+  D --> E{"¿Subdominio vacío,<br/>'www', o dominio<br/>que no reconoce?"}
+  E -- sí --> F["Corta con error 404<br/>(prefiere decir 'no existe'<br/>antes que adivinar la escuela)"]
+  E -- no --> G["Busca la escuela en caché<br/>(guardada 5 min, para no<br/>consultar la base en cada request)"]
+  G --> H{"¿Existe esa escuela<br/>y está activa?"}
+  H -- no --> F
+  H -- sí --> I["Guarda 'esta es la escuela actual'<br/>para todo el resto del request"]
+  I --> J["A partir de acá, TODAS las consultas<br/>a la base se filtran solas<br/>por esa escuela"]
+  J --> K["Y todo lo que se crea nuevo<br/>queda automáticamente marcado<br/>como de esa escuela"]
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Rombos ({ })</b> — son decisiones (if/else); cada rama sale hacia un resultado distinto.</div>
+          <div class="legend-item"><b>Host landlord</b> — el dominio "administrador" (ej. <code class="mono">admin.app.com</code>) que NO pertenece a ninguna escuela — ahí los filtros de tenant se desactivan.</div>
+          <div class="legend-item"><b>abort(404)</b> — comportamiento fail-closed: si no se puede resolver una escuela válida, el sistema prefiere "no existe" antes que dejar pasar la request sin saber de quién es.</div>
+          <div class="legend-item"><b>Cache 5min</b> — evita consultar la tabla <code class="mono">schools</code> en cada request; el trade-off es que un cambio en una School tarda hasta 5 min en reflejarse (mitigado por <code class="mono">SchoolCacheObserver</code>, ver más abajo).</div>
+          <div class="legend-item"><b>TenantScope / BelongsToTenant</b> — una vez resuelto el tenant, estos dos aplican el filtro automáticamente en TODAS las queries Eloquent de ese request, sin que cada módulo tenga que acordarse de filtrar a mano.</div>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4 text-[var(--brand-strong)]"></i>TenantScope</h3>
+          <p class="text-[13px] text-[var(--muted)]">Global scope Eloquent: filtra por <code class="mono">school_id</code> del <code class="mono">TenantContext</code>. No-op si no hay tenant.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="radio-tower" class="w-4 h-4 text-[var(--brand-strong)]"></i>TenantChannel</h3>
+          <p class="text-[13px] text-[var(--muted)]">Broadcasting (Reverb) aislado: <code class="mono">school.{id}.{recurso}.{id}</code>. Autoriza contra <code class="mono">user.school_id</code> (no hay request scope en el proceso de Reverb).</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="refresh-cw" class="w-4 h-4 text-[var(--brand-strong)]"></i>SchoolCacheObserver</h3>
+          <p class="text-[13px] text-[var(--muted)]">Invalida la cache de 5min al guardar/borrar una School. ⚠ No usa <code class="mono">DB::afterCommit()</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PERIODO -->
+    <section id="periodo">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Segundo nivel: periodo académico activo</h2>
+      <p class="text-[var(--muted)] mb-6">Clon estructural del patrón de tenancy, un nivel más profundo, local al módulo Academic.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+graph LR
+  RAP["Middleware que detecta<br/>el periodo activo<br/>(corre DESPUÉS de saber<br/>qué escuela es)"] -->|"guarda el resultado"| PC["Memoria del request:<br/>'este es el periodo activo'<br/>(dura solo ese request)"]
+  PC -->|"lo usan las queries"| PS["Filtro automático:<br/>toda consulta a modelos<br/>marcados se limita<br/>a ese periodo"]
+  PS -->|"se aplica a modelos con"| BAP["una marca especial<br/>en el modelo<br/>(ej: OfertaAcademica)"]
+  PC -->|"también sirve para"| CH["Canal de notificaciones<br/>en tiempo real específico<br/>de esa escuela + ese periodo"]
+  RAP -.->|"busca en la base"| Q["'¿Cuál periodo académico<br/>está marcado como activo<br/>para ESTA escuela?'"]
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Patrón "clon"</b> — es literalmente la misma idea que Multi-tenancy de la sección anterior, pero un nivel más adentro: en vez de filtrar por escuela, filtra por periodo académico activo dentro de esa escuela.</div>
+          <div class="legend-item"><b>ResolveActivePeriodo</b> — corre DESPUÉS de <code class="mono">ResolveTenant</code> en la cadena de middleware — necesita saber primero de qué escuela es, para buscar el periodo activo de ESA escuela.</div>
+          <div class="legend-item"><b>PeriodoContext</b> — equivalente al <code class="mono">TenantContext</code>, pero para periodo; vive solo durante ese request (scoped singleton).</div>
+          <div class="legend-item"><b>PeriodoScope / BelongsToActivePeriodo</b> — mismo mecanismo que <code class="mono">TenantScope</code>: filtra automáticamente por periodo activo en las queries de modelos marcados con el trait.</div>
+          <div class="legend-item"><b>PeriodoChannel</b> — canal de WebSocket (Reverb) scopeado por escuela Y periodo a la vez, para notificaciones en tiempo real específicas de ese periodo.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECURITY -->
+    <section id="security">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Seguridad y RBAC</h2>
+      <p class="text-[var(--muted)] mb-6">Auth por sesión (guard <code class="mono">web</code>), Sanctum para API/SPA stateful, roles globales con <code class="mono">spatie/laravel-permission</code> (sin permisos asignados todavía — deuda reconocida en <code class="mono">openspec</code>).</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+flowchart TD
+  L["Usuario envía email + contraseña<br/>(máx. 5 intentos por minuto,<br/>por email+IP, para frenar fuerza bruta)"] --> AT["Laravel verifica<br/>si la contraseña es correcta"]
+  AT -- falla --> GEN["Muestra el MISMO mensaje de error<br/>sin importar si el email no existe<br/>o la contraseña está mal<br/>(para no revelar qué emails existen)"]
+  AT -- éxito --> RG["Genera un ID de sesión nuevo<br/>(evita que alguien reuse<br/>una sesión robada de antes)"]
+  RG --> HOST{"¿Está entrando<br/>por el dominio<br/>del panel admin?"}
+  HOST -- sí --> ROLE{"¿Su rol es<br/>super-admin?"}
+  ROLE -- no --> LOGOUT["Se lo desloguea al instante<br/>(aunque la contraseña<br/>haya sido correcta)<br/>+ mismo mensaje genérico"]
+  ROLE -- sí --> OK1["Queda logueado<br/>en el panel admin"]
+  HOST -- no --> OK2["Queda logueado<br/>dentro de su escuela"]
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>throttle:login</b> — antes de siquiera intentar el login, ya hay un límite de intentos por minuto (5, keyed por email+IP) para frenar fuerza bruta.</div>
+          <div class="legend-item"><b>ValidationException genérico</b> — el sistema no dice "email no existe" vs "contraseña incorrecta" por separado — mismo mensaje para ambos casos, para no filtrar qué emails están registrados.</div>
+          <div class="legend-item"><b>session()->regenerate()</b> — se cambia el ID de sesión al loguearse, para evitar ataques de session fixation.</div>
+          <div class="legend-item"><b>¿Host landlord?</b> — segunda verificación después del login: si estás en el dominio admin, solo <code class="mono">super-admin</code> puede quedarse logueado; cualquier otro rol se desloguea automáticamente aunque la contraseña haya sido correcta.</div>
+          <div class="legend-item"><b>OK1 / OK2</b> — los dos únicos finales válidos: sesión activa en el panel admin, o sesión activa dentro del tenant de una escuela.</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-5">
+          <h3 class="font-bold text-sm mb-2">Roles (globales, guard web)</h3>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <span class="chip chip-stub">student</span>
+            <span class="chip chip-partial">teacher</span>
+            <span class="chip chip-built">staff/admin</span>
+            <span class="chip chip-built" style="background:#1a2a3a;color:#7cc5ff;border-color:#264a6b;">super-admin</span>
+          </div>
+          <p class="text-[13px] text-[var(--muted)]">Sin permisos finos aún — <code class="mono">rbac-permission-matrix</code> queda fuera de alcance por decisión explícita. Aislamiento real por tenant es vía <code class="mono">users.school_id</code>, no por "teams" de Spatie.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-bold text-sm mb-2">Capas de protección activas</h3>
+          <ul class="text-[13px] text-[var(--muted)] space-y-1.5">
+            <li>✓ HSTS global (<code class="mono">AddStrictTransportSecurity</code>)</li>
+            <li>✓ Throttle en login (por email|ip) y en API (por school+user)</li>
+            <li>✓ <code class="mono">RequireLandlordHost</code> en <code class="mono">/register</code> y en <code class="mono">/instituciones/*</code></li>
+            <li>✓ <code class="mono">UserPolicy::assignRole</code>: mismo tenant, nunca otorga super-admin</li>
+            <li>✓ CSRF estándar (web) + cookie CSRF Sanctum (stateful SPA)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section id="events">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Comunicación entre módulos</h2>
+      <p class="text-[var(--muted)] mb-6">Vía eventos de dominio (<code class="mono">event()</code>), no llamadas directas entre módulos. <strong class="text-[#f28b82]">Ningún listener está registrado todavía</strong> — los eventos se disparan al vacío.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+graph LR
+  CO["Al crear una oferta<br/>académica (UseCase)"] -->|"dispara el aviso"| E1["'Se creó una oferta académica'<br/>(OfertaAcademicaCreated)"]
+  ME["Al matricular<br/>a un estudiante (UseCase)"] -->|"dispara el aviso"| E2["'Un estudiante se matriculó'<br/>(EstudianteMatriculado)"]
+  RU["Registrar usuario<br/>(UseCase que EXISTE en el código<br/>pero el controller real<br/>no lo usa)"] -.->|"avisaría, pero<br/>este código nunca corre"| E3["'Se registró un usuario'<br/>(UserRegistered)"]
+  E1 -.->|"debería llegar a"| N["Módulo de Notificaciones<br/>❌ vacío: no hay nada escuchando<br/>estos avisos todavía"]
+  E2 -.->|"debería llegar a"| N
+  E3 -.->|"debería llegar a"| N
+  style N fill:#2b1414,stroke:#4d2323,color:#f28b82
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Recuadros izquierda</b> — UseCases que SÍ disparan un evento de dominio cuando terminan su trabajo.</div>
+          <div class="legend-item"><b>event →</b> — flecha sólida: el evento se dispara de verdad en código.</div>
+          <div class="legend-item"><b>RegisterUser (punteado)</b> — este UseCase existe en el código pero el controller real (<code class="mono">AuthController::register</code>) no lo usa — por eso la flecha hacia su evento está punteada con "nunca se ejecuta".</div>
+          <div class="legend-item"><b>Modules/Notifications (rojo)</b> — el destino natural de los tres eventos, pero remarcado en rojo porque está confirmado que no tiene ningún listener registrado — los eventos se disparan y no los escucha nadie.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESILIENCE -->
+    <section id="resilience">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Fallos en cascada: monolito síncrono sin aislamiento</h2>
+      <p class="text-[var(--muted)] mb-6">Análisis del escenario: <strong>¿qué pasa si un módulo falla en medio de un request?</strong> Verificado en código, no es hipotético — es consecuencia directa de que no hay listeners registrados ni cola async.</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+sequenceDiagram
+  participant C as Controller de Academic<br/>(recibe el pedido del usuario)
+  participant UC as Caso de uso: matricular<br/>(MatricularEstudiante)
+  participant EV as Aviso disparado<br/>(evento EstudianteMatriculado)
+  participant L as Listener hipotético<br/>(todavía NO existe,<br/>sería parte de Notifications)
+  participant DB as Base de datos<br/>(PostgreSQL)
+
+  C->>UC: pide guardar la matrícula
+  UC->>DB: guarda el registro (INSERT)
+  UC->>EV: avisa 'ya se matriculó'
+  Note over EV,L: ESTADO ACTUAL: no hay nada escuchando este aviso.<br/>Se dispara al vacío y no pasa nada más — no rompe nada.
+  EV--xL: (no existe todavía)
+  alt Escenario futuro: si alguien agrega un listener SÍNCRONO<br/>(la forma 'obvia' de implementarlo, sin usar colas)
+    EV->>L: intenta mandar el email/notificación
+    L--xL: se rompe (ej: el servidor de<br/>email está caído, o hay un bug)
+    L-->>UC: el error sube por el mismo<br/>camino de ejecución, sin frenarse
+    UC-->>C: el usuario recibe error 500
+    Note over C,DB: La matrícula YA quedó guardada en la base<br/>(el guardado ya se confirmó antes de que falle el listener)<br/>pero el usuario ve un error como si nada se hubiera guardado<br/>→ probablemente reintenta el mismo pedido
+  end
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Parte de arriba (sin alt)</b> — lo que pasa HOY de verdad: el evento se dispara pero muere en el vacío, nadie lo escucha, nada se rompe.</div>
+          <div class="legend-item"><b>Bloque alt</b> — es un escenario HIPOTÉTICO/futuro, no código actual: "si mañana alguien agrega un listener síncrono de la forma obvia, esto es lo que pasaría".</div>
+          <div class="legend-item"><b>L--x L (excepción)</b> — el símbolo <code class="mono">--x</code> marca una falla; la excepción no se queda contenida en el listener, sube (bubble up) por el mismo stack de llamadas de PHP.</div>
+          <div class="legend-item"><b>UC-->>C: excepción sube</b> — flecha punteada de vuelta: es el camino de vuelta del error, no una llamada nueva — mismo hilo de ejecución, mismo request.</div>
+          <div class="legend-item"><b>Nota final</b> — el punto clave del riesgo: la escritura en base de datos ya es un hecho consumado antes de que el listener falle, pero el usuario ve un error como si nada se hubiera guardado.</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4 mb-6">
+        <div class="card p-4 border-l-4" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="alert-octagon" class="w-4 h-4 text-[#f28b82]"></i>Riesgo real detectado</h3>
+          <p class="text-[13px] text-[var(--muted)]">Como <strong>no hay cola</strong> (<code class="mono">ShouldQueue</code> no está en uso en ningún listener porque no hay listeners), el día que se implemente <code class="mono">Modules/Notifications</code> de la forma "obvia" — un <code class="mono">Listener::handle()</code> síncrono escuchando <code class="mono">EstudianteMatriculado</code> — cualquier falla ahí (SMTP caído, excepción de código, timeout de un servicio externo) <strong>sube por el mismo stack de PHP</strong> y tumba el request completo del módulo que disparó el evento. Academic no se "cae" por su propio código — se cae porque Notifications, ejecutando en el mismo proceso sin aislamiento, no le devolvió el control.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="copy" class="w-4 h-4 text-[#f28b82]"></i>Efecto secundario: escritura ya confirmada</h3>
+          <p class="text-[13px] text-[var(--muted)]">El <code class="mono">INSERT</code> de la matrícula ya pasó y (si no hay <code class="mono">DB::transaction()</code> envolviendo UseCase + evento) puede estar comprometido antes de que el listener falle. El usuario recibe un 500, no sabe si su matrícula quedó guardada, y probablemente reintenta — con riesgo de duplicado si no hay constraint único cubriendo ese caso (acá sí hay <code class="mono">unique(oferta+student)</code> en <code class="mono">MATRICULAS</code>, así que el duplicado exacto fallaría, pero el usuario igual ve un error que no refleja la realidad: la operación de negocio principal sí se completó).</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f0b429;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="link-2" class="w-4 h-4 text-[#f0b429]"></i>Por qué pasa: acoplamiento por ejecución, no solo por código</h3>
+          <p class="text-[13px] text-[var(--muted)]">Aunque el patrón de eventos <em>parece</em> desacoplado (Academic no importa clases de Notifications), en la práctica el acoplamiento existe a nivel de <strong>ejecución</strong>: mismo proceso, mismo hilo, misma transacción de request. Un evento síncrono no es distinto de una llamada directa en términos de blast radius — solo cambia la sintaxis, no el aislamiento de fallos.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#18a879;">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4 text-[var(--brand-strong)]"></i>Mitigación disponible sin reescribir arquitectura</h3>
+          <p class="text-[13px] text-[var(--muted)]">Laravel ya tiene la pieza para esto: <code class="mono">ShouldQueue</code> en el listener. Con eso, el evento se despacha a un job, el request principal termina y responde 200 sin esperar al listener, y si el listener falla, falla en el worker — con reintentos y <code class="mono">failed_jobs</code> para inspección, sin tumbar el flujo del usuario. Esto no está implementado todavía porque Notifications sigue siendo esqueleto — queda anotado como requisito de diseño para cuando se implemente, no como bug actual.</p>
+        </div>
+      </div>
+
+      <h3 class="font-display font-bold text-lg mb-3">Cómo funciona hoy la infraestructura de colas (ya existe, no se usa)</h3>
+      <p class="text-[13px] text-[var(--muted)] mb-4">Verificado en <code class="mono">config/queue.php</code> y <code class="mono">app/Support/SecurityPolicy.php</code> — el proyecto <strong>ya tiene todo lo necesario para aplicar la mitigación</strong>, no hace falta infraestructura nueva.</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+sequenceDiagram
+  participant UC as Caso de uso: matricular<br/>(MatricularEstudiante)
+  participant TX as Transacción de base de datos<br/>(todo o nada, DB::transaction)
+  participant EV as Aviso disparado<br/>(evento EstudianteMatriculado)
+  participant Q as Tabla de trabajos pendientes<br/>(misma Postgres, tabla 'jobs')
+  participant W as Proceso worker aparte<br/>(corriendo 24/7: queue:work)
+  participant L as Listener QUE SÍ ESPERA EN COLA<br/>(marcado con ShouldQueue)
+
+  UC->>TX: empieza la transacción
+  TX->>TX: guarda la matrícula (INSERT)
+  TX->>EV: dispara el aviso dentro<br/>de la misma transacción
+  EV->>Q: como el listener está marcado<br/>'ShouldQueue', NO se ejecuta ahora:<br/>solo se anota 'hacer esto después'
+  TX->>TX: confirma los cambios (commit)
+  Note over Q,W: El worker es un proceso totalmente aparte<br/>del que atiende al usuario (no es php-fpm)
+  Q->>W: el worker ve que hay<br/>un trabajo pendiente
+  W->>L: recién ACÁ se ejecuta<br/>el código del listener
+  L--xL: si falla (ej: email caído),<br/>no afecta al usuario para nada
+  L-->>Q: reintenta unas veces; si sigue<br/>fallando, queda anotado como<br/>'falló' para revisar después
+  Note over UC,TX: El usuario ya recibió su respuesta (200)<br/>apenas terminó el commit —<br/>nunca esperó a que el listener corriera
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Comparar con el diagrama anterior</b> — misma secuencia de negocio (matricular), pero acá el listener implementa <code class="mono">ShouldQueue</code>: la diferencia clave es que el bloque "Worker" corre en un proceso totalmente separado del que atiende al usuario.</div>
+          <div class="legend-item"><b>jobs table</b> — no es un servicio nuevo: es una tabla más dentro de la misma Postgres del proyecto (driver <code class="mono">database</code>), donde se guarda "pendiente: ejecutar este listener".</div>
+          <div class="legend-item"><b>Worker (queue:work)</b> — un proceso PHP aparte, de larga duración, que va tomando jobs de esa tabla y ejecutándolos uno por uno — no es el mismo proceso que responde requests HTTP.</div>
+          <div class="legend-item"><b>L--x L (falla) dentro del worker</b> — acá una falla del listener NO afecta al usuario en absoluto, porque el usuario ya recibió su respuesta antes de que el worker siquiera empiece a procesar el job.</div>
+          <div class="legend-item"><b>Nota final</b> — es el punto central de la mitigación: se rompe la dependencia temporal entre "la matrícula se guardó" y "la notificación se mandó".</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1">Driver activo: <code class="mono">database</code></h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">config/queue.php:16</code> → <code class="mono">QUEUE_CONNECTION</code> default es <code class="mono">database</code>, no Redis/SQS. Usa la tabla <code class="mono">jobs</code> de la misma Postgres — cero infraestructura nueva para arrancar. Se puede migrar a Redis después si el volumen lo justifica, sin cambiar el código de los listeners.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f0b429;">
+          <h3 class="font-bold text-sm mb-1">⚠ Gotcha real: <code class="mono">after_commit</code> = false</h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">config/queue.php:43</code> tiene <code class="mono">'after_commit' => false</code> para el driver <code class="mono">database</code>. Esto significa que si el evento se dispara <strong>dentro</strong> de un <code class="mono">DB::transaction()</code> que todavía no hizo commit, el job puede encolarse y el worker puede intentar leer datos que aún no están confirmados. Hay que fijar <code class="mono">after_commit</code> a <code class="mono">true</code> (global o por job con <code class="mono">$job->afterCommit()</code>) antes de implementar Notifications — mismo patrón de bug que ya está anotado para <code class="mono">SchoolCacheObserver</code>.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1">Reintentos y falla definitiva</h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">retry_after => 90s</code> ya configurado. Falta definir en cada listener: <code class="mono">public $tries</code>, <code class="mono">backoff()</code>, y un método <code class="mono">failed()</code> — hoy no hay ningún listener, así que no hay ninguno de estos definidos todavía.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1">Operación: falta el worker corriendo</h3>
+          <p class="text-[13px] text-[var(--muted)]">El driver <code class="mono">database</code> no procesa nada solo — requiere <code class="mono">php artisan queue:work</code> corriendo como proceso persistente (systemd/Supervisor en prod, o <code class="mono">sail artisan queue:work</code> en local). Esto no está documentado en el proyecto todavía; queda como tarea de despliegue cuando se implemente el primer listener real.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TARGET DESIGN -->
+    <section id="target-design">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Diseño objetivo: módulos independientes</h2>
+      <p class="text-[var(--muted)] mb-6">Principio decidido para corregir el riesgo de <a href="#resilience" class="text-[var(--brand-strong)] underline">Fallos en cascada</a>: <strong>Tenant → Periodo es la única cadena de dependencia vertical del sistema.</strong> Todo lo demás son módulos hermanos, sin depender de código de otro módulo. Esto todavía NO está implementado — es la meta a construir.</p>
+
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+graph TB
+  T["1. Tenant (escuela)<br/>lo primero que se resuelve,<br/>de esto depende TODO"]
+  P["2. Periodo académico activo<br/>lo segundo que se resuelve,<br/>DEPENDE del tenant, nada más depende de él<br/>arriba en la cadena"]
+  T --> P
+
+  subgraph HERMANOS["Módulos: hermanos, NO una cadena entre ellos"]
+    direction LR
+    ACA["Academic<br/>ofertas, matrículas,<br/>niveles, grados, secciones"]
+    USR["Users<br/>auth, roles,<br/>directorio"]
+    FIL["Files<br/>(a construir)"]
+    GRA["Grades<br/>(a construir)"]
+    NOT["Notifications<br/>(a construir)"]
+    SCH["Schedule<br/>(a construir)"]
+  end
+
+  P -->|"le da el contexto<br/>(tenant + periodo)<br/>a cada uno"| HERMANOS
+
+  BUS{{"Contrato compartido:<br/>eventos de dominio + colas<br/>(ShouldQueue)<br/>— NO imports directos entre módulos"}}
+  ACA <-.->|"publica/escucha<br/>eventos"| BUS
+  USR <-.->|"publica/escucha<br/>eventos"| BUS
+  FIL <-.->|"publica/escucha<br/>eventos"| BUS
+  GRA <-.->|"publica/escucha<br/>eventos"| BUS
+  NOT <-.->|"publica/escucha<br/>eventos"| BUS
+  SCH <-.->|"publica/escucha<br/>eventos"| BUS
+
+  style BUS fill:#123529,stroke:#1f5943,color:#22d3a0
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Cadena vertical (arriba)</b> — Tenant → Periodo es la ÚNICA relación de "esto depende de aquello" que debería existir a nivel de plataforma. Nada más se agrega arriba ni entre medio.</div>
+          <div class="legend-item"><b>Módulos hermanos (recuadro)</b> — todos reciben el mismo contexto (tenant + periodo) desde arriba, pero NO se llaman entre sí directamente ni importan clases unos de otros.</div>
+          <div class="legend-item"><b>Contrato compartido (rombo verde)</b> — es la única forma en que un módulo se entera de algo que pasó en otro: evento de dominio + listener con <code class="mono">ShouldQueue</code>. Las flechas punteadas marcan que es una relación desacoplada, no una dependencia de código.</div>
+          <div class="legend-item"><b>Módulos "a construir"</b> — Files, Grades, Notifications, Schedule ya están escuchados en el diagrama objetivo como hermanos de Academic/Users desde el día uno, no como algo que se cuelga encima después.</div>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4 text-[var(--brand-strong)]"></i>Una sola cadena de dependencia vertical</h3>
+          <p class="text-[13px] text-[var(--muted)]">Tenant (escuela) resuelve primero. Periodo académico activo depende del tenant y rige el resto del contexto de negocio (qué año, qué sección, qué momento — mañana/tarde/noche). Ningún módulo de negocio debería estar arriba ni en el medio de esa cadena.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="shuffle" class="w-4 h-4 text-[var(--brand-strong)]"></i>Módulos como hermanos, no como capas</h3>
+          <p class="text-[13px] text-[var(--muted)]">Academic, Users, Files, Grades, Notifications, Schedule reciben el mismo contexto (tenant + periodo) pero ninguno se construye "encima" de otro. Si Grades necesita saber algo de Academic, lo pide vía evento/contrato — nunca importando un modelo o UseCase de Academic directamente.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="variable" class="w-4 h-4 text-[var(--brand-strong)]"></i>Datos variables no son una estructura fija</h3>
+          <p class="text-[13px] text-[var(--muted)]">Año, sección, momento (mañana/tarde/noche) pueden variar por escuela y por periodo — no son un catálogo universal que un módulo pueda asumir "hardcodeado". Cada módulo los consulta a través del contrato del periodo activo, no leyendo directamente la tabla de otro módulo.</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-1 flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4 text-[var(--brand-strong)]"></i>Criterio de éxito: agregar un módulo no toca los demás</h3>
+          <p class="text-[13px] text-[var(--muted)]">Implementar un módulo nuevo (o terminar uno esqueleto) debería significar: registrar sus rutas + suscribirse a los eventos que le interesan. Cero cambios en el código de Academic, Users o cualquier otro módulo ya existente para que el nuevo funcione.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FRONTEND -->
+    <section id="frontend">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Frontend (Inertia + Vue 3)</h2>
+      <p class="text-[var(--muted)] mb-6">Resolución dual de páginas: raíz del proyecto o dentro de cada módulo, vía un <code class="mono">resolve()</code> custom en <code class="mono">app.js</code>. Design system propio: <strong>Nova UI Kit</strong> (emerald oscuro, Manrope + Inter).</p>
+      <div class="card p-6 mb-6">
+        <div class="mermaid">
+flowchart TD
+  R["El controller pide renderizar<br/>una página, ej:<br/>'Academic::Catalogos'"] --> NS["Un código propio del proyecto<br/>intercepta ese nombre antes<br/>de que Inertia busque el archivo"]
+  NS --> NAME{"¿El nombre tiene<br/>'::' (doble dos puntos)?"}
+  NAME -- sí --> MOD["Busca el archivo .vue<br/>DENTRO de la carpeta<br/>de ese módulo específico"]
+  NAME -- no --> ROOT["Busca el archivo .vue<br/>en la carpeta raíz<br/>del proyecto (resources/js/Pages)"]
+  MOD --> RENDER["Se renderiza igual:<br/>Vue 3 + Pinia (estado) + Ziggy<br/>(rutas de Laravel en JS)"]
+  ROOT --> RENDER
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>Inertia::render(...)</b> — así se invoca desde cualquier controller; el string es el "nombre" de la página, no una ruta de archivo literal.</div>
+          <div class="legend-item"><b>¿Nombre contiene '::'?</b> — la única decisión del diagrama: si el nombre tiene el separador de módulo (ej. <code class="mono">Academic::Catalogos</code>), busca el archivo Vue dentro de ese módulo; si no, busca en la raíz del proyecto.</div>
+          <div class="legend-item"><b>Dos rutas posibles al mismo destino</b> — no importa cuál de las dos ramas se tome, ambas terminan renderizando el mismo tipo de componente Vue — la diferencia es solo dónde vive el archivo .vue en disco.</div>
+        </div>
+      </div>
+      <div class="grid md:grid-cols-3 gap-4">
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-2">Layouts</h3>
+          <p class="text-[13px] text-[var(--muted)] mono">AuthLayout.vue · DashboardLayout.vue</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-2">Componentes base (Ui*)</h3>
+          <p class="text-[13px] text-[var(--muted)] mono">UiBadge · UiButton · UiModal · UiSwitch · UiToast</p>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold text-sm mb-2">Componentes de dominio</h3>
+          <p class="text-[13px] text-[var(--muted)] mono">AcademicWizard · ResponsiveRoster · SchoolContextBar · SchoolModules · TrackingTimeline</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATABASE -->
+    <section id="database">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Base de datos</h2>
+      <p class="text-[var(--muted)] mb-6">PostgreSQL. Todo lo que cuelga de una escuela lleva <code class="mono">school_id</code> con <code class="mono">restrictOnDelete()</code>, salvo tablas que heredan tenancy de forma transitiva.</p>
+      <div class="card p-6">
+        <div class="mermaid">
+erDiagram
+  SCHOOLS ||--o{ USERS : "una escuela tiene muchos usuarios (vacío = admin)"
+  SCHOOLS ||--o{ NIVELES_ACADEMICOS : "define sus propios niveles"
+  SCHOOLS ||--o{ GRADOS : "define sus propios grados"
+  SCHOOLS ||--o{ SECCIONES : "define sus propias secciones"
+  SCHOOLS ||--o{ PERIODOS_ACADEMICOS : "define sus propios periodos"
+  SCHOOLS ||--o{ OFERTAS_ACADEMICAS : "es dueña de sus ofertas"
+  SCHOOLS ||--o{ MATRICULAS : "es dueña de sus matrículas"
+  NIVELES_ACADEMICOS ||--o{ GRADOS : "un nivel agrupa varios grados"
+  PERIODOS_ACADEMICOS ||--o{ MOMENTOS_ACADEMICOS : "un periodo tiene varios momentos"
+  PERIODOS_ACADEMICOS ||--o{ OFERTAS_ACADEMICAS : "las ofertas pertenecen a un periodo"
+  GRADOS ||--o{ OFERTAS_ACADEMICAS : "las ofertas pertenecen a un grado"
+  SECCIONES ||--o{ OFERTAS_ACADEMICAS : "las ofertas pertenecen a una sección"
+  USERS ||--o{ OFERTAS_ACADEMICAS : "un profesor puede dictar (opcional)"
+  OFERTAS_ACADEMICAS ||--o{ MATRICULAS : "si se borra la oferta, se borran sus matrículas"
+  USERS ||--o{ MATRICULAS : "un estudiante se matricula"
+  USERS ||--o{ MODEL_HAS_ROLES : "roles asignados (Spatie)"
+
+  SCHOOLS {
+    int id PK "identificador único"
+    string name "nombre de la escuela"
+    string subdomain UK "único, define la URL de acceso"
+    bool is_active "si está apagada, nadie de ahí entra"
+  }
+  USERS {
+    int id PK "identificador único"
+    string email UK "único en todo el sistema"
+    int school_id FK "vacío = usuario del panel admin (landlord)"
+  }
+  OFERTAS_ACADEMICAS {
+    int id PK "identificador único"
+    int capacity "cupos disponibles"
+    unique "periodo+grado+seccion" "no puede haber dos ofertas iguales en el mismo periodo/grado/sección"
+  }
+  MATRICULAS {
+    int id PK "identificador único"
+    string status "estado de la matrícula"
+    unique "oferta+student" "un estudiante no puede matricularse dos veces en la misma oferta"
+  }
+        </div>
+        <div class="legend">
+          <div class="legend-title">Cómo leer este diagrama</div>
+          <div class="legend-item"><b>||--o{</b> — notación estándar de ER: "uno" (línea recta) a "muchos" (pata de cuervo); ej. una SCHOOL tiene muchos USERS, pero cada USER es de una sola SCHOOL.</div>
+          <div class="legend-item"><b>school_id en casi todo</b> — patrón repetido: casi todas las tablas cuelgan directo de SCHOOLS, reforzando visualmente que el aislamiento por tenant está en el modelo de datos, no solo en el código de la aplicación.</div>
+          <div class="legend-item"><b>USERS.school_id nullable</b> — el único caso especial: un usuario SIN escuela asignada es un usuario landlord (super-admin), no un dato corrupto.</div>
+          <div class="legend-item"><b>unique "oferta+student"</b> — constraint real a nivel de base de datos que evita matricular dos veces al mismo estudiante en la misma oferta, incluso si la lógica de la aplicación fallara.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROUTES -->
+    <section id="routes">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Rutas por módulo</h2>
+      <p class="text-[var(--muted)] mb-6">Registradas vía <code class="mono">{Módulo}ServiceProvider → RouteServiceProvider::map()</code>, habilitadas según <code class="mono">modules_statuses.json</code>.</p>
+
+      <div class="card p-5 mb-5">
+        <h3 class="font-display font-bold mb-3 flex items-center gap-2"><i data-lucide="graduation-cap" class="w-4 h-4 text-[var(--brand-strong)]"></i>Academic <span class="text-[11px] text-[var(--muted)] font-normal">— prefix <code class="mono">academic/</code>, middleware <code class="mono">auth, role:staff/admin</code></span></h3>
+        <table>
+          <thead><tr><th>Verbo</th><th>URI</th><th>Acción</th><th>Nombre</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">academic/ofertas/create</td><td class="mono">OfertaAcademicaController@create</td><td>academic.ofertas.create</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">academic/ofertas</td><td class="mono">OfertaAcademicaController@store</td><td>academic.ofertas.store</td></tr>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">academic/matriculas/create</td><td class="mono">MatriculaController@create</td><td>academic.matriculas.create</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">academic/matriculas</td><td class="mono">MatriculaController@store</td><td>academic.matriculas.store</td></tr>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">academic/catalogos</td><td class="mono">CatalogosController@index</td><td>academic.catalogos</td></tr>
+            <tr><td><span class="verb v-post">POST/PUT/DEL</span></td><td class="mono">academic/niveles[/{id}]</td><td class="mono">NivelAcademicoController@*</td><td>academic.niveles.*</td></tr>
+            <tr><td><span class="verb v-post">POST/PUT/DEL</span></td><td class="mono">academic/grados[/{id}]</td><td class="mono">GradoController@*</td><td>academic.grados.*</td></tr>
+            <tr><td><span class="verb v-post">POST/PUT/DEL</span></td><td class="mono">academic/secciones[/{id}]</td><td class="mono">SeccionController@*</td><td>academic.secciones.*</td></tr>
+            <tr><td><span class="verb v-post">POST/PUT/DEL</span></td><td class="mono">academic/periodos[/{id}]</td><td class="mono">PeriodoAcademicoController@*</td><td>academic.periodos.*</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">academic/periodos/{id}/activate</td><td class="mono">PeriodoAcademicoController@activate</td><td>academic.periodos.activate</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-5 mb-5">
+        <h3 class="font-display font-bold mb-3 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-[var(--brand-strong)]"></i>Users</h3>
+        <table>
+          <thead><tr><th>Verbo</th><th>URI</th><th>Acción</th><th>Middleware</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">login</td><td class="mono">AuthController@showLogin</td><td>—</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">login</td><td class="mono">AuthController@login</td><td>throttle:login</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">logout</td><td class="mono">AuthController@logout</td><td>—</td></tr>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">register</td><td class="mono">AuthController@showRegister</td><td>RequireLandlordHost</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">register</td><td class="mono">AuthController@register</td><td>RequireLandlordHost</td></tr>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">users, users/{id}/edit</td><td class="mono">UsersController@*</td><td>auth, role:staff/admin|super-admin</td></tr>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">api/v1/users</td><td class="mono">UsersController (apiResource)</td><td>auth:sanctum</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-5 mb-5">
+        <h3 class="font-display font-bold mb-3 flex items-center gap-2"><i data-lucide="building" class="w-4 h-4 text-[var(--brand-strong)]"></i>Admin <span class="text-[11px] text-[var(--muted)] font-normal">— prefix <code class="mono">instituciones/</code>, middleware <code class="mono">auth, role:super-admin, RequireLandlordHost</code></span></h3>
+        <table>
+          <thead><tr><th>Verbo</th><th>URI</th><th>Acción</th><th>Nombre</th></tr></thead>
+          <tbody>
+            <tr><td><span class="verb v-get">GET</span></td><td class="mono">instituciones</td><td class="mono">SchoolController@index</td><td>admin.schools.index</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">instituciones</td><td class="mono">SchoolController@store</td><td>admin.schools.store</td></tr>
+            <tr><td><span class="verb v-put">PUT</span></td><td class="mono">instituciones/{id}</td><td class="mono">SchoolController@update</td><td>admin.schools.update</td></tr>
+            <tr><td><span class="verb v-post">POST</span></td><td class="mono">instituciones/{id}/toggle-active</td><td class="mono">SchoolController@toggleActive</td><td>admin.schools.toggle-active</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-5">
+        <h3 class="font-display font-bold mb-2 flex items-center gap-2"><i data-lucide="package" class="w-4 h-4 text-[#f28b82]"></i>Files · Grades · Notifications · Schedule <span class="chip chip-stub">sin middleware</span></h3>
+        <p class="text-[13px] text-[var(--muted)]">Rutas <code class="mono">resource</code> genéricas registradas sin <code class="mono">auth</code> ni <code class="mono">role</code> — quedan expuestas si algún día se activa un controller real sin agregar protección explícita.</p>
+      </div>
+    </section>
+
+    <!-- RISKS -->
+    <section id="risks" class="pb-16">
+      <h2 class="font-display font-extrabold text-2xl mb-1">Deuda técnica y puntos a seguir</h2>
+      <p class="text-[var(--muted)] mb-6">Cosas verificadas en el código, no supuestos.</p>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card p-4 border-l-4" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1">Eventos de dominio sin listeners</h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">OfertaAcademicaCreated</code>, <code class="mono">EstudianteMatriculado</code>, <code class="mono">UserRegistered</code> se disparan (o ni eso) sin que nada los escuche. Notifications está vacío.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1">RegisterUser UseCase muerto</h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">AuthController::register</code> no pasa por el UseCase del Domain — crea el <code class="mono">User</code> directo con Eloquent, rompiendo la arquitectura hexagonal declarada para ese flujo.</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f0b429;">
+          <h3 class="font-bold text-sm mb-1">RBAC sin permisos finos</h3>
+          <p class="text-[13px] text-[var(--muted)]">4 roles globales sembrados, pero sin ningún <code class="mono">permission</code> asignado — la matriz de permisos está explícitamente fuera de alcance del cambio actual (<code class="mono">openspec/changes/auth-rbac</code>).</p>
+        </div>
+        <div class="card p-4 border-l-4" style="border-left-color:#f0b429;">
+          <h3 class="font-bold text-sm mb-1">Cache de tenant sin afterCommit</h3>
+          <p class="text-[13px] text-[var(--muted)]"><code class="mono">SchoolCacheObserver</code> invalida la cache de 5min antes de que un <code class="mono">DB::transaction()</code> externo haga commit — riesgo de servir datos viejos ante escrituras concurrentes.</p>
+        </div>
+        <div class="card p-4 border-l-4 md:col-span-2" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1">4 módulos sin ninguna protección de ruta</h3>
+          <p class="text-[13px] text-[var(--muted)]">Files, Grades, Notifications y Schedule registran rutas <code class="mono">resource</code> sin <code class="mono">auth</code> — hoy no importa porque los controllers son stubs, pero es una trampa para cuando se implementen sin agregar middleware a mano.</p>
+        </div>
+        <div class="card p-4 border-l-4 md:col-span-2" style="border-left-color:#f28b82;">
+          <h3 class="font-bold text-sm mb-1">Riesgo de diseño: listeners futuros sin <code class="mono">ShouldQueue</code> tumbarían el módulo que dispara el evento</h3>
+          <p class="text-[13px] text-[var(--muted)]">Ver detalle en <a href="#resilience" class="text-[var(--brand-strong)] underline">Fallos en cascada</a>. Como los eventos hoy no tienen listeners, no es un bug activo — pero si <code class="mono">Notifications</code> se implementa con un listener síncrono "obvio", cualquier falla ahí (SMTP, timeout) tumba el request completo de Academic/Users que disparó el evento, porque todo corre en el mismo proceso PHP sin cola. Requisito de diseño a aplicar antes de implementar Notifications: todo listener debe implementar <code class="mono">ShouldQueue</code>.</p>
+        </div>
+        <div class="card p-4 border-l-4 md:col-span-2" style="border-left-color:#f0b429;">
+          <h3 class="font-bold text-sm mb-1">Rutas <code class="mono">web</code> sin rate limit</h3>
+          <p class="text-[13px] text-[var(--muted)]">Los throttles configurados (<code class="mono">app/Providers/AppServiceProvider.php</code>) solo cubren <code class="mono">login</code> (5/min, <code class="mono">SecurityPolicy::LOGIN_ATTEMPTS_PER_MINUTE</code>) y el grupo <code class="mono">api</code> (60/min, ya keyed por tenant tras <code class="mono">realtime-tenant-isolation</code>). Las rutas <code class="mono">web</code> normales — crear oferta, matricular, etc. — no tienen throttle explícito en <code class="mono">bootstrap/app.php</code>. Propuesta consistente con el patrón ya existente: agregar un tercer limiter <code class="mono">RateLimiter::for('web', ...)</code> en el mismo <code class="mono">AppServiceProvider::boot()</code>, keyed igual que <code class="mono">api</code> (<code class="mono">user_id|school_id</code> o IP si es guest) y aplicarlo al grupo <code class="mono">web</code> en <code class="mono">bootstrap/app.php</code>, con un límite más generoso (ej. 120/min) para no afectar navegación normal.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="border-t border-[var(--line)] py-6 text-center text-[11px] text-[var(--muted)]">
+  Generado a partir de lectura directa del código — rutas, providers, middleware y migraciones verificados en <span class="mono">C:\Users\DELL 3380\Desktop\EDUCATIVO</span>.
+</footer>
+
+</body>
+</html>
