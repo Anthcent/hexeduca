@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePage, Link } from '@inertiajs/vue3';
 import {
-    Bell, Blocks, ChevronDown, GraduationCap, LayoutDashboard, ListChecks, Menu,
+    Bell, Blocks, ChevronDown, GraduationCap, LayoutDashboard, ListChecks, LogOut, Menu,
     Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, Users, X,
 } from 'lucide-vue-next';
 import SchoolContextBar from '@/Components/school/SchoolContextBar.vue';
@@ -109,6 +109,17 @@ onMounted(() => {
                             <p class="muted text-[11px]">{{ user.role }}</p>
                         </div>
                     </div>
+                    <Link
+                        v-if="user"
+                        :href="route('logout')"
+                        method="post"
+                        as="button"
+                        class="hidden size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))] sm:grid"
+                        aria-label="Cerrar sesión"
+                        title="Cerrar sesión"
+                    >
+                        <LogOut class="size-[18px]" />
+                    </Link>
                 </div>
             </div>
         </header>
@@ -182,6 +193,15 @@ onMounted(() => {
                         <component :is="item.icon" class="size-[18px]" />{{ item.label }}
                     </Link>
                 </nav>
+                <Link
+                    v-if="user"
+                    :href="route('logout')"
+                    method="post"
+                    as="button"
+                    class="muted mt-4 flex h-12 w-full items-center gap-3 rounded-xl border-t px-3 pt-2 text-sm font-semibold"
+                >
+                    <LogOut class="size-[18px]" />Cerrar sesión
+                </Link>
             </aside>
         </Transition>
 
