@@ -10,9 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\Users\Application\DTOs\UserData;
+use Modules\Users\Application\UseCases\RegisterUser;
 use Modules\Users\Infrastructure\Http\Requests\LoginRequest;
 use Modules\Users\Infrastructure\Http\Requests\RegisterRequest;
-use Modules\Users\Infrastructure\Models\User;
 
 /**
  * Login/register/logout for the whole app. See design.md ("Only
@@ -30,6 +31,10 @@ class AuthController extends Controller
      * enumeration).
      */
     private const INVALID_CREDENTIALS_MESSAGE = 'These credentials do not match our records.';
+
+    public function __construct(
+        private readonly RegisterUser $registerUser,
+    ) {}
 
     public function showLogin(Request $request): Response
     {
@@ -96,14 +101,12 @@ class AuthController extends Controller
 
         $school = School::withoutTenantScope()->findOrFail($validated['school_id']);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'school_id' => $school->id,
-        ]);
-
-        $user->assignRole('student');
+        $this->registerUser->handle(new UserData(
+            name: $validated['name'],
+            email: $validated['email'],
+            password: $validated['password'],
+            schoolId: $school->id,
+        ));
 
         return redirect()->away($school->loginUrl().'?registered=1');
     }

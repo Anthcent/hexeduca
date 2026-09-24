@@ -29,9 +29,23 @@ final class EloquentUserRepository implements UserRepositoryInterface
 
         $model->name = $user->name();
         $model->email = $user->email()->value();
+
+        if ($user->passwordHash() !== null) {
+            $model->password = $user->passwordHash();
+        }
+
+        if ($user->schoolId() !== null) {
+            $model->school_id = $user->schoolId();
+        }
+
         $model->save();
 
         return $this->toEntity($model);
+    }
+
+    public function assignRole(int $userId, string $role): void
+    {
+        UserModel::withoutTenantScope()->findOrFail($userId)->assignRole($role);
     }
 
     private function toEntity(UserModel $model): UserEntity
@@ -40,6 +54,8 @@ final class EloquentUserRepository implements UserRepositoryInterface
             id: $model->id,
             name: $model->name,
             email: new Email($model->email),
+            passwordHash: $model->password,
+            schoolId: $model->school_id,
         );
     }
 }

@@ -6,6 +6,7 @@ return [
     'trusted_proxies' => SecurityPolicy::trustedProxies(),
     'rate_limits' => [
         'login_per_minute' => SecurityPolicy::LOGIN_ATTEMPTS_PER_MINUTE,
+        'registration_per_minute' => SecurityPolicy::REGISTRATION_ATTEMPTS_PER_MINUTE,
         'api_per_minute' => SecurityPolicy::API_REQUESTS_PER_MINUTE,
     ],
 

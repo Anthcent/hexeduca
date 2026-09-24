@@ -4,6 +4,13 @@
     "description": "",
     "keywords": [],
     "priority": 0,
+    "core": true,
+    "maturity": "mature",
+    "dependencies": [],
+    "permissions": [
+        "users.view",
+        "users.manage"
+    ],
     "providers": [
         "Modules\\Users\\Infrastructure\\Providers\\UsersServiceProvider"
     ],

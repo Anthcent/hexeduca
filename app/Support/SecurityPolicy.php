@@ -10,6 +10,8 @@ final class SecurityPolicy
 
     public const LOGIN_ATTEMPTS_PER_MINUTE = 5;
 
+    public const REGISTRATION_ATTEMPTS_PER_MINUTE = 3;
+
     /** @return list<string> */
     public static function trustedProxies(): array
     {

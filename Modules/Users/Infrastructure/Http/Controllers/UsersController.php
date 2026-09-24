@@ -3,12 +3,15 @@
 namespace Modules\Users\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\IntegrationEvents\Outbox\OutboxEventRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Users\Infrastructure\Http\Requests\UpdateUserRoleRequest;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Events\UserUpdated;
 
 class UsersController extends Controller
 {
@@ -93,14 +96,39 @@ class UsersController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRoleRequest $request, $id): RedirectResponse
-    {
-        $user = User::findOrFail($id);
+    public function update(
+        UpdateUserRoleRequest $request,
+        $id,
+        OutboxEventRecorder $outbox,
+    ): RedirectResponse {
         $role = $request->validated('role');
 
-        $this->authorize('assignRole', [$user, $role]);
+        DB::transaction(function () use ($id, $role, $outbox): void {
+            $user = User::query()->lockForUpdate()->findOrFail($id);
 
-        $user->syncRoles([$role]);
+            $this->authorize('assignRole', [$user, $role]);
+
+            $user->syncRoles([$role]);
+
+            $latestPayload = DB::table('integration_outbox_events')
+                ->where('aggregate_type', 'User')
+                ->where('aggregate_id', (string) $user->id)
+                ->whereIn('event_name', ['user.created', 'user.updated'])
+                ->orderByDesc('id')
+                ->value('payload');
+            $latestVersion = $latestPayload === null
+                ? 1
+                : (int) (json_decode((string) $latestPayload, true)['version'] ?? 1);
+
+            $outbox->record(new UserUpdated(
+                userId: $user->id,
+                name: $user->name,
+                email: $user->email,
+                schoolId: $user->school_id,
+                roles: $user->getRoleNames()->values()->all(),
+                version: $latestVersion + 1,
+            ));
+        });
 
         return back()->with('success', 'Role updated.');
     }

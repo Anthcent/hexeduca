@@ -33,11 +33,11 @@ Route::middleware(['auth', 'role:staff/admin|super-admin'])->group(function () {
 // restricted to the super-admin" for the in-controller role check.
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Registration: landlord-host-only (see design.md "Only registration is
 // route-constrained to the landlord host, enforced by middleware").
 Route::middleware(RequireLandlordHost::class)->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:registration');
 });
