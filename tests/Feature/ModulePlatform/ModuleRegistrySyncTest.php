@@ -21,9 +21,9 @@ test('sync upserts a modules row per manifest with the right core/maturity/activ
         ->and($sections->maturity)->toBe('mature')
         ->and($sections->active)->toBeFalse();
 
-    $files = ModuleRecord::query()->findOrFail('files');
-    expect($files->maturity)->toBe('skeleton')
-        ->and($files->active)->toBeFalse();
+    $schedule = ModuleRecord::query()->findOrFail('schedule');
+    expect($schedule->maturity)->toBe('skeleton')
+        ->and($schedule->active)->toBeFalse();
 });
 
 test('sync creates Spatie permissions declared in each manifest', function () {

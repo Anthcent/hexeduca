@@ -19,8 +19,8 @@ test('enabling an unknown module key throws', function () {
 })->throws(ModuleNotFoundException::class);
 
 test('enabling a skeleton module throws', function () {
-    // Files is manifest maturity: skeleton (see Modules/Files/module.json).
-    app(ModuleRegistry::class)->enable('files');
+    // Schedule is manifest maturity: skeleton (see Modules/Schedule/module.json).
+    app(ModuleRegistry::class)->enable('schedule');
 })->throws(ModuleNotReadyException::class);
 
 test('enabling a module whose dependency is not active yet throws', function () {

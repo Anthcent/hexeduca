@@ -19,7 +19,7 @@ test('seeding activates mature optional modules and entitles existing schools to
         // still activate it once its dependency is active.
         ->and(ModuleRecord::query()->findOrFail('gradelevels')->active)->toBeTrue()
         // Skeleton modules never get auto-enabled.
-        ->and(ModuleRecord::query()->findOrFail('files')->active)->toBeFalse()
+        ->and(ModuleRecord::query()->findOrFail('schedule')->active)->toBeFalse()
         // Core modules stay active regardless.
         ->and(ModuleRecord::query()->findOrFail('users')->active)->toBeTrue();
 

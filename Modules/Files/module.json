@@ -1,13 +1,20 @@
 {
     "name": "Files",
     "alias": "files",
-    "description": "",
+    "description": "Private per-school file repository: staff and teachers upload, list, and download documents; staff delete any file, teachers only their own.",
     "keywords": [],
     "priority": 0,
     "core": false,
-    "maturity": "skeleton",
+    "maturity": "mature",
     "dependencies": [],
-    "permissions": [],
+    "permissions": [
+        {"name": "files.view", "roles": ["staff/admin", "teacher"]},
+        {"name": "files.upload", "roles": ["staff/admin", "teacher"]},
+        {"name": "files.delete-any", "roles": ["staff/admin"]}
+    ],
+    "navigation": [
+        {"label": "Archivos", "route": "files.index", "icon": "FolderOpen", "permission": "files.view"}
+    ],
     "providers": [
         "Modules\\Files\\Infrastructure\\Providers\\FilesServiceProvider"
     ],

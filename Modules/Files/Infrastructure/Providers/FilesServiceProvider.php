@@ -3,6 +3,10 @@
 namespace Modules\Files\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Files\Domain\Repositories\FileStorageInterface;
+use Modules\Files\Domain\Repositories\StoredFileRepositoryInterface;
+use Modules\Files\Infrastructure\Persistence\DiskFileStorage;
+use Modules\Files\Infrastructure\Persistence\EloquentStoredFileRepository;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -25,6 +29,7 @@ class FilesServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->registerConfig();
         $this->loadMigrationsFrom(module_path($this->name, 'Infrastructure/Database/Migrations'));
+        $this->registerInertiaPages();
     }
 
     /**
@@ -32,8 +37,18 @@ class FilesServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(StoredFileRepositoryInterface::class, EloquentStoredFileRepository::class);
+        $this->app->bind(FileStorageInterface::class, DiskFileStorage::class);
+
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
+    }
+
+    protected function registerInertiaPages(): void
+    {
+        $this->app->afterResolving('inertia.view-finder', function ($finder): void {
+            $finder->addNamespace($this->name, module_path($this->name, 'Resources/js/Pages'));
+        });
     }
 
     /**
@@ -49,10 +64,7 @@ class FilesServiceProvider extends ServiceProvider
      */
     protected function registerCommandSchedules(): void
     {
-        // $this->app->booted(function () {
-        //     $schedule = $this->app->make(Schedule::class);
-        //     $schedule->command('inspire')->hourly();
-        // });
+        //
     }
 
     /**
