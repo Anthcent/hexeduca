@@ -29,11 +29,11 @@ function destroy(id) {
     <p v-if="!activePeriod" class="text-amber-600 mb-4">No hay período académico activo.</p>
 
     <form v-else class="flex gap-2 mb-6" @submit.prevent="create">
-      <input v-model="form.name" type="text" placeholder="Nombre" class="border rounded px-3 py-2" />
-      <input v-model.number="form.order" type="number" min="1" class="border rounded px-3 py-2 w-20" />
-      <input v-model="form.starts_on" type="date" class="border rounded px-3 py-2" />
-      <input v-model="form.ends_on" type="date" class="border rounded px-3 py-2" />
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded">Crear</button>
+      <input v-model="form.name" type="text" placeholder="Nombre" class="border rounded-sm px-3 py-2" />
+      <input v-model.number="form.order" type="number" min="1" class="border rounded-sm px-3 py-2 w-20" />
+      <input v-model="form.starts_on" type="date" class="border rounded-sm px-3 py-2" />
+      <input v-model="form.ends_on" type="date" class="border rounded-sm px-3 py-2" />
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-sm">Crear</button>
     </form>
 
     <ul class="divide-y">

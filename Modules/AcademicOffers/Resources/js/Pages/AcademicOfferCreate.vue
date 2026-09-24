@@ -24,20 +24,20 @@ function create() {
     <p v-else class="text-sm text-slate-500 mb-4">Período activo: {{ periodoName }}</p>
 
     <form v-if="hasActivePeriodo" class="flex flex-col gap-3 max-w-md" @submit.prevent="create">
-      <select v-model.number="form.grade_level_id" class="border rounded px-3 py-2">
+      <select v-model.number="form.grade_level_id" class="border rounded-sm px-3 py-2">
         <option :value="null" disabled>Grado</option>
         <option v-for="gl in gradeLevels" :key="gl.id" :value="gl.id">{{ gl.name }}</option>
       </select>
-      <select v-model.number="form.section_id" class="border rounded px-3 py-2">
+      <select v-model.number="form.section_id" class="border rounded-sm px-3 py-2">
         <option :value="null" disabled>Sección</option>
         <option v-for="s in sections" :key="s.id" :value="s.id">{{ s.name }}</option>
       </select>
-      <select v-model.number="form.teacher_id" class="border rounded px-3 py-2">
+      <select v-model.number="form.teacher_id" class="border rounded-sm px-3 py-2">
         <option :value="null">Sin asignar</option>
         <option v-for="t in teachers" :key="t.id" :value="t.id">{{ t.name }}</option>
       </select>
-      <input v-model.number="form.capacity" type="number" min="1" placeholder="Capacidad" class="border rounded px-3 py-2" />
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded">Crear oferta</button>
+      <input v-model.number="form.capacity" type="number" min="1" placeholder="Capacidad" class="border rounded-sm px-3 py-2" />
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-sm">Crear oferta</button>
     </form>
   </div>
 </template>

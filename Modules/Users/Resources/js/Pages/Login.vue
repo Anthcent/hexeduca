@@ -40,7 +40,7 @@ function submit() {
                     type="email"
                     autocomplete="username"
                     class="control"
-                    :class="form.errors.email && '!border-red-400 !ring-red-500/15'"
+                    :class="form.errors.email && 'border-red-400! ring-red-500/15!'"
                 />
                 <p v-if="form.errors.email" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.email }}</p>
             </div>
@@ -53,7 +53,7 @@ function submit() {
                     type="password"
                     autocomplete="current-password"
                     class="control"
-                    :class="form.errors.password && '!border-red-400 !ring-red-500/15'"
+                    :class="form.errors.password && 'border-red-400! ring-red-500/15!'"
                 />
                 <p v-if="form.errors.password" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.password }}</p>
             </div>

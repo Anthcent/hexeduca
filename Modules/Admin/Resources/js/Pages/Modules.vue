@@ -81,7 +81,7 @@ function maturityTone(maturity) {
 
         <div class="section-card mb-6">
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr>
                         <th class="px-5 py-3">Módulo</th>
                         <th class="px-5 py-3">Madurez</th>
@@ -134,7 +134,7 @@ function maturityTone(maturity) {
             </div>
 
             <table v-if="selectedSchool" class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Módulo</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">

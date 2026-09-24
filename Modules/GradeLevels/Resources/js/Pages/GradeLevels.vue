@@ -25,12 +25,12 @@ function destroy(id) {
     <h1 class="text-xl font-semibold mb-4">Grados</h1>
 
     <form class="flex gap-2 mb-6" @submit.prevent="create">
-      <input v-model="form.name" type="text" placeholder="Nombre del grado" class="border rounded px-3 py-2" />
-      <input v-model.number="form.order" type="number" min="1" class="border rounded px-3 py-2 w-24" />
-      <select v-model.number="form.academic_level_id" class="border rounded px-3 py-2">
+      <input v-model="form.name" type="text" placeholder="Nombre del grado" class="border rounded-sm px-3 py-2" />
+      <input v-model.number="form.order" type="number" min="1" class="border rounded-sm px-3 py-2 w-24" />
+      <select v-model.number="form.academic_level_id" class="border rounded-sm px-3 py-2">
         <option v-for="level in academicLevels" :key="level.id" :value="level.id">{{ level.name }}</option>
       </select>
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded">Crear</button>
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-sm">Crear</button>
     </form>
 
     <ul class="divide-y">

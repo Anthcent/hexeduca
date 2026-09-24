@@ -74,7 +74,7 @@ const trackingItems = [
                     <div class="mt-7 flex h-56 items-end gap-2 sm:gap-4">
                         <div v-for="(bar, index) in [76, 88, 65, 94, 82]" :key="index" class="flex h-full flex-1 flex-col justify-end gap-2">
                             <div class="relative flex-1 rounded-xl bg-[rgb(var(--surface-muted))]">
-                                <div class="absolute inset-x-0 bottom-0 origin-bottom animate-progress-in rounded-xl bg-gradient-to-t from-brand-800 to-brand-400" :style="{ height: bar + '%', animationDelay: index * .08 + 's' }">
+                                <div class="absolute inset-x-0 bottom-0 origin-bottom animate-progress-in rounded-xl bg-linear-to-t from-brand-800 to-brand-400" :style="{ height: bar + '%', animationDelay: index * .08 + 's' }">
                                     <span class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold">{{ bar }}%</span>
                                 </div>
                             </div>

@@ -39,7 +39,7 @@ function submit() {
             <form class="space-y-5" @submit.prevent="submit">
                 <div>
                     <label for="role" class="label">Rol</label>
-                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && '!border-red-400'">
+                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && 'border-red-400!'">
                         <option v-for="role in props.roles" :key="role" :value="role">{{ role }}</option>
                     </select>
                     <p v-if="form.errors.role" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.role }}</p>

@@ -28,7 +28,7 @@ function next() {
         <div class="absolute left-[12.5%] right-[12.5%] top-5 h-0.5 bg-[rgb(var(--line))]" />
         <div class="absolute left-[12.5%] top-5 h-0.5 origin-left bg-brand-500 transition-all duration-500" :style="{ width: `${((step - 1) / 3) * 75}%` }" />
         <button v-for="(item, index) in steps" :key="item.title" class="relative z-10 flex flex-col items-center text-center" @click="index + 1 <= step && emit('update:step', index + 1)">
-          <span class="grid size-10 place-items-center rounded-full border-2 transition-all duration-300" :class="index + 1 < step ? 'border-brand-500 bg-brand-500 text-white' : index + 1 === step ? 'border-brand-500 bg-[rgb(var(--surface))] text-brand-600 shadow-focus' : 'border-[rgb(var(--line))] bg-[rgb(var(--surface))] text-[rgb(var(--muted))]'">
+          <span class="grid size-10 place-items-center rounded-full border-2 transition-all duration-300" :class="index + 1 < step ? 'border-brand-500 bg-brand-500 text-white' : index + 1 === step ? 'border-brand-500 bg-[rgb(var(--surface))] text-brand-600 shadow-focus' : 'border-[rgb(var(--line))] bg-[rgb(var(--surface))] muted'">
             <Check v-if="index + 1 < step" class="size-4" /><component :is="item.icon" v-else class="size-4" />
           </span>
           <span class="mt-2 text-xs font-bold" :class="index + 1 <= step ? 'text-[rgb(var(--text))]' : 'muted'">{{ item.short }}</span>

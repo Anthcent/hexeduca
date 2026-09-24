@@ -72,7 +72,7 @@ onMounted(() => {
 
 <template>
     <div class="min-h-screen pb-20 lg:pb-0">
-        <header class="fixed inset-x-0 top-0 z-50 h-16 border-b bg-[rgb(var(--surface))]/92 backdrop-blur-xl">
+        <header class="fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-xl">
             <div class="flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5">
                 <button class="grid size-10 shrink-0 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))] lg:hidden" aria-label="Abrir menú" @click="mobileMenu = true">
                     <Menu class="size-5" />
@@ -126,7 +126,7 @@ onMounted(() => {
 
         <div
             v-if="!isLandlord"
-            class="fixed right-0 top-16 z-[45] border-b border-brand-100/80 bg-[rgb(var(--canvas))]/94 backdrop-blur-xl transition-[height,left] duration-300 dark:border-brand-900"
+            class="fixed right-0 top-16 z-45 border-b border-brand-100/80 backdrop-blur-xl transition-[height,left] duration-300 dark:border-brand-900"
             :class="[compactSidebar ? 'lg:left-[82px]' : 'lg:left-64', contextDockOpen ? 'left-0 h-[76px]' : 'left-0 h-7']"
         >
             <Transition name="bubble">
@@ -167,10 +167,10 @@ onMounted(() => {
         </aside>
 
         <Transition name="fade">
-            <div v-if="mobileMenu" class="fixed inset-0 z-[70] bg-brand-950/55 backdrop-blur-sm lg:hidden" @click="mobileMenu = false" />
+            <div v-if="mobileMenu" class="fixed inset-0 z-70 bg-brand-950/55 backdrop-blur-xs lg:hidden" @click="mobileMenu = false" />
         </Transition>
         <Transition name="slide">
-            <aside v-if="mobileMenu" class="fixed inset-y-0 left-0 z-[80] w-[86%] max-w-sm bg-[rgb(var(--surface))] p-4 shadow-lift lg:hidden">
+            <aside v-if="mobileMenu" class="fixed inset-y-0 left-0 z-80 w-[86%] max-w-sm bg-[rgb(var(--surface))] p-4 shadow-lift lg:hidden">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <span class="grid size-10 place-items-center rounded-2xl bg-brand-950 text-brand-100"><GraduationCap class="size-5" /></span>
@@ -217,7 +217,7 @@ onMounted(() => {
             </div>
         </nav>
 
-        <main class="transition-all duration-300" :class="[compactSidebar ? 'lg:pl-[82px]' : 'lg:pl-64', !isLandlord && contextDockOpen ? 'pt-[8.75rem]' : 'pt-[5.75rem]']">
+        <main class="transition-all duration-300" :class="[compactSidebar ? 'lg:pl-[82px]' : 'lg:pl-64', !isLandlord && contextDockOpen ? 'pt-35' : 'pt-23']">
             <div class="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
                 <slot />
             </div>

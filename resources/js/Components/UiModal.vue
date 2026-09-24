@@ -6,7 +6,7 @@ defineEmits(['close'])
 <template>
   <Teleport to="body">
     <Transition name="fade">
-      <div v-if="open" class="fixed inset-0 z-[100] grid place-items-center bg-slate-950/45 p-4 backdrop-blur-sm" @click.self="$emit('close')">
+      <div v-if="open" class="fixed inset-0 z-100 grid place-items-center bg-slate-950/45 p-4 backdrop-blur-xs" @click.self="$emit('close')">
         <div role="dialog" aria-modal="true" class="surface w-full max-w-md rounded-2xl p-5 shadow-lift">
           <div class="flex items-start justify-between gap-4">
             <div>

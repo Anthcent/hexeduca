@@ -82,7 +82,7 @@ function toggleActive(school) {
 
         <div class="section-card">
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Subdominio</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">
@@ -111,12 +111,12 @@ function toggleActive(school) {
             <form id="form-school" class="space-y-4" @submit.prevent="submit">
                 <div>
                     <label for="school-name" class="label">Nombre (ej: Colegio San Martín)</label>
-                    <input id="school-name" v-model="form.name" class="control" :class="form.errors.name && '!border-red-400'" />
+                    <input id="school-name" v-model="form.name" class="control" :class="form.errors.name && 'border-red-400!'" />
                     <p v-if="form.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.name }}</p>
                 </div>
                 <div>
                     <label for="school-subdomain" class="label">Subdominio (ej: sanmartin)</label>
-                    <input id="school-subdomain" v-model="form.subdomain" class="control" :class="form.errors.subdomain && '!border-red-400'" />
+                    <input id="school-subdomain" v-model="form.subdomain" class="control" :class="form.errors.subdomain && 'border-red-400!'" />
                     <p v-if="form.errors.subdomain" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.subdomain }}</p>
                     <p v-else class="muted mt-1.5 text-xs">Va a quedar accesible en <span class="font-mono">{{ form.subdomain || '...' }}.app.com</span></p>
                 </div>

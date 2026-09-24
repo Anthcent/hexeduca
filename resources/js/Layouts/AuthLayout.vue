@@ -11,8 +11,8 @@ defineProps({
 
 <template>
     <div class="grid min-h-screen lg:grid-cols-2">
-        <div class="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 p-10 text-white lg:flex">
-            <span class="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full border-[28px] border-white/5" />
+        <div class="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-brand-950 via-brand-900 to-brand-800 p-10 text-white lg:flex">
+            <span class="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full border-28 border-white/5" />
             <span class="pointer-events-none absolute -bottom-16 left-10 size-56 rounded-full bg-brand-400/10 blur-2xl" />
 
             <div class="relative flex items-center gap-3">

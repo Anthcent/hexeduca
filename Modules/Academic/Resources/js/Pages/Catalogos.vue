@@ -160,7 +160,7 @@ function activatePeriodo(id) {
                 <UiButton size="sm" @click="openNivel()"><template #icon><Plus class="size-4" /></template>Nuevo nivel</UiButton>
             </div>
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Grados</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">
@@ -190,7 +190,7 @@ function activatePeriodo(id) {
             </div>
             <p v-if="niveles.length === 0" class="muted px-5 pt-4 text-sm">Creá un nivel académico primero para poder agregar grados.</p>
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Orden</th><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Nivel</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">
@@ -220,7 +220,7 @@ function activatePeriodo(id) {
                 <UiButton size="sm" @click="openSeccion()"><template #icon><Plus class="size-4" /></template>Nueva sección</UiButton>
             </div>
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">
@@ -248,7 +248,7 @@ function activatePeriodo(id) {
                 <UiButton size="sm" @click="openPeriodo()"><template #icon><Plus class="size-4" /></template>Nuevo período</UiButton>
             </div>
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Inicio</th><th class="px-5 py-3">Fin</th><th class="px-5 py-3">Estado</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">
@@ -276,7 +276,7 @@ function activatePeriodo(id) {
         <UiModal :open="dialog === 'nivel'" :title="editing ? 'Editar nivel' : 'Nuevo nivel académico'" @close="closeDialog">
             <form :id="'form-nivel'" @submit.prevent="submitNivel">
                 <label for="nivel-name" class="label">Nombre</label>
-                <input id="nivel-name" v-model="nivelForm.name" class="control" :class="nivelForm.errors.name && '!border-red-400'" />
+                <input id="nivel-name" v-model="nivelForm.name" class="control" :class="nivelForm.errors.name && 'border-red-400!'" />
                 <p v-if="nivelForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ nivelForm.errors.name }}</p>
             </form>
             <template #footer>
@@ -290,19 +290,19 @@ function activatePeriodo(id) {
             <form id="form-grado" class="space-y-4" @submit.prevent="submitGrado">
                 <div>
                     <label for="grado-name" class="label">Nombre (ej: 3ro)</label>
-                    <input id="grado-name" v-model="gradoForm.name" class="control" :class="gradoForm.errors.name && '!border-red-400'" />
+                    <input id="grado-name" v-model="gradoForm.name" class="control" :class="gradoForm.errors.name && 'border-red-400!'" />
                     <p v-if="gradoForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.name }}</p>
                 </div>
                 <div>
                     <label for="grado-nivel" class="label">Nivel académico</label>
-                    <select id="grado-nivel" v-model="gradoForm.nivel_academico_id" class="control" :class="gradoForm.errors.nivel_academico_id && '!border-red-400'">
+                    <select id="grado-nivel" v-model="gradoForm.nivel_academico_id" class="control" :class="gradoForm.errors.nivel_academico_id && 'border-red-400!'">
                         <option v-for="nivel in niveles" :key="nivel.id" :value="nivel.id">{{ nivel.name }}</option>
                     </select>
                     <p v-if="gradoForm.errors.nivel_academico_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.nivel_academico_id }}</p>
                 </div>
                 <div>
                     <label for="grado-order" class="label">Orden</label>
-                    <input id="grado-order" v-model="gradoForm.order" type="number" min="1" class="control" :class="gradoForm.errors.order && '!border-red-400'" />
+                    <input id="grado-order" v-model="gradoForm.order" type="number" min="1" class="control" :class="gradoForm.errors.order && 'border-red-400!'" />
                     <p v-if="gradoForm.errors.order" class="mt-1.5 text-xs font-semibold text-red-600">{{ gradoForm.errors.order }}</p>
                 </div>
             </form>
@@ -316,7 +316,7 @@ function activatePeriodo(id) {
         <UiModal :open="dialog === 'seccion'" :title="editing ? 'Editar sección' : 'Nueva sección'" @close="closeDialog">
             <form id="form-seccion" @submit.prevent="submitSeccion">
                 <label for="seccion-name" class="label">Nombre (ej: C)</label>
-                <input id="seccion-name" v-model="seccionForm.name" class="control" :class="seccionForm.errors.name && '!border-red-400'" />
+                <input id="seccion-name" v-model="seccionForm.name" class="control" :class="seccionForm.errors.name && 'border-red-400!'" />
                 <p v-if="seccionForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ seccionForm.errors.name }}</p>
             </form>
             <template #footer>
@@ -330,17 +330,17 @@ function activatePeriodo(id) {
             <form id="form-periodo" class="space-y-4" @submit.prevent="submitPeriodo">
                 <div>
                     <label for="periodo-name" class="label">Nombre (ej: 2026-2027)</label>
-                    <input id="periodo-name" v-model="periodoForm.name" class="control" :class="periodoForm.errors.name && '!border-red-400'" />
+                    <input id="periodo-name" v-model="periodoForm.name" class="control" :class="periodoForm.errors.name && 'border-red-400!'" />
                     <p v-if="periodoForm.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.name }}</p>
                 </div>
                 <div>
                     <label for="periodo-start" class="label">Inicio</label>
-                    <input id="periodo-start" v-model="periodoForm.starts_on" type="date" class="control" :class="periodoForm.errors.starts_on && '!border-red-400'" />
+                    <input id="periodo-start" v-model="periodoForm.starts_on" type="date" class="control" :class="periodoForm.errors.starts_on && 'border-red-400!'" />
                     <p v-if="periodoForm.errors.starts_on" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.starts_on }}</p>
                 </div>
                 <div>
                     <label for="periodo-end" class="label">Fin</label>
-                    <input id="periodo-end" v-model="periodoForm.ends_on" type="date" class="control" :class="periodoForm.errors.ends_on && '!border-red-400'" />
+                    <input id="periodo-end" v-model="periodoForm.ends_on" type="date" class="control" :class="periodoForm.errors.ends_on && 'border-red-400!'" />
                     <p v-if="periodoForm.errors.ends_on" class="mt-1.5 text-xs font-semibold text-red-600">{{ periodoForm.errors.ends_on }}</p>
                 </div>
             </form>

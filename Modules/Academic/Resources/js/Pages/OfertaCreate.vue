@@ -87,7 +87,7 @@ function submit() {
                 <fieldset :disabled="!hasActivePeriodo" class="space-y-4">
                     <div>
                         <label for="grado_id" class="label">Grado</label>
-                        <select id="grado_id" v-model="form.grado_id" class="control" :class="form.errors.grado_id && '!border-red-400'">
+                        <select id="grado_id" v-model="form.grado_id" class="control" :class="form.errors.grado_id && 'border-red-400!'">
                             <option value="" disabled>Seleccioná un grado</option>
                             <option v-for="grado in grados" :key="grado.id" :value="grado.id">
                                 {{ grado.name }}
@@ -98,7 +98,7 @@ function submit() {
 
                     <div>
                         <label for="seccion_id" class="label">Sección</label>
-                        <select id="seccion_id" v-model="form.seccion_id" class="control" :class="form.errors.seccion_id && '!border-red-400'">
+                        <select id="seccion_id" v-model="form.seccion_id" class="control" :class="form.errors.seccion_id && 'border-red-400!'">
                             <option value="" disabled>Seleccioná una sección</option>
                             <option v-for="seccion in secciones" :key="seccion.id" :value="seccion.id">
                                 {{ seccion.name }}
@@ -109,7 +109,7 @@ function submit() {
 
                     <div>
                         <label for="teacher_id" class="label">Docente (opcional)</label>
-                        <select id="teacher_id" v-model="form.teacher_id" class="control" :class="form.errors.teacher_id && '!border-red-400'">
+                        <select id="teacher_id" v-model="form.teacher_id" class="control" :class="form.errors.teacher_id && 'border-red-400!'">
                             <option value="">Sin docente asignado</option>
                             <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
                                 {{ teacher.name }}
@@ -126,7 +126,7 @@ function submit() {
                             type="number"
                             min="1"
                             class="control"
-                            :class="form.errors.capacity && '!border-red-400'"
+                            :class="form.errors.capacity && 'border-red-400!'"
                         />
                         <p v-if="form.errors.capacity" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.capacity }}</p>
                     </div>

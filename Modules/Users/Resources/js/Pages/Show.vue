@@ -50,7 +50,7 @@ function destroy() {
                 <Link
                     v-if="props.can.edit"
                     :href="route('users.edit', props.user.id)"
-                    class="inline-flex h-11 items-center gap-2 rounded-xl border bg-[rgb(var(--surface))] px-4 text-sm font-semibold text-[rgb(var(--text))] shadow-sm transition hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-950/40"
+                    class="inline-flex h-11 items-center gap-2 rounded-xl border bg-[rgb(var(--surface))] px-4 text-sm font-semibold text-[rgb(var(--text))] shadow-xs transition hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-950/40"
                 >
                     <PencilLine class="size-4" />Editar rol
                 </Link>

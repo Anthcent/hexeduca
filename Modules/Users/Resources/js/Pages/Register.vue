@@ -30,7 +30,7 @@ function submit() {
         <form class="mt-6 space-y-5" @submit.prevent="submit">
             <div>
                 <label for="school_id" class="label">Escuela</label>
-                <select id="school_id" v-model="form.school_id" class="control" :class="form.errors.school_id && '!border-red-400'">
+                <select id="school_id" v-model="form.school_id" class="control" :class="form.errors.school_id && 'border-red-400!'">
                     <option value="" disabled>Seleccionar escuela</option>
                     <option v-for="school in props.schools" :key="school.id" :value="school.id">{{ school.name }}</option>
                 </select>
@@ -39,19 +39,19 @@ function submit() {
 
             <div>
                 <label for="name" class="label">Nombre completo</label>
-                <input id="name" v-model="form.name" type="text" autocomplete="name" class="control" :class="form.errors.name && '!border-red-400'" />
+                <input id="name" v-model="form.name" type="text" autocomplete="name" class="control" :class="form.errors.name && 'border-red-400!'" />
                 <p v-if="form.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.name }}</p>
             </div>
 
             <div>
                 <label for="email" class="label">Email</label>
-                <input id="email" v-model="form.email" type="email" autocomplete="username" class="control" :class="form.errors.email && '!border-red-400'" />
+                <input id="email" v-model="form.email" type="email" autocomplete="username" class="control" :class="form.errors.email && 'border-red-400!'" />
                 <p v-if="form.errors.email" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.email }}</p>
             </div>
 
             <div>
                 <label for="password" class="label">Contraseña</label>
-                <input id="password" v-model="form.password" type="password" autocomplete="new-password" class="control" :class="form.errors.password && '!border-red-400'" />
+                <input id="password" v-model="form.password" type="password" autocomplete="new-password" class="control" :class="form.errors.password && 'border-red-400!'" />
                 <p v-if="form.errors.password" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.password }}</p>
             </div>
 

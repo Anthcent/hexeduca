@@ -24,8 +24,8 @@ function destroy(id) {
     <h1 class="text-xl font-semibold mb-4">Niveles académicos</h1>
 
     <form class="flex gap-2 mb-6" @submit.prevent="create">
-      <input v-model="name" type="text" placeholder="Nombre del nivel" class="border rounded px-3 py-2" />
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded">Crear</button>
+      <input v-model="name" type="text" placeholder="Nombre del nivel" class="border rounded-sm px-3 py-2" />
+      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-sm">Crear</button>
     </form>
 
     <ul class="divide-y">

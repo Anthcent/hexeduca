@@ -69,7 +69,7 @@ function submit() {
                         id="oferta_academica_id"
                         v-model="form.oferta_academica_id"
                         class="control"
-                        :class="form.errors.oferta_academica_id && '!border-red-400'"
+                        :class="form.errors.oferta_academica_id && 'border-red-400!'"
                     >
                         <option value="" disabled>Seleccioná una oferta</option>
                         <option v-for="oferta in ofertas" :key="oferta.id" :value="oferta.id">
@@ -81,7 +81,7 @@ function submit() {
 
                 <div>
                     <label for="student_id" class="label">Estudiante</label>
-                    <select id="student_id" v-model="form.student_id" class="control" :class="form.errors.student_id && '!border-red-400'">
+                    <select id="student_id" v-model="form.student_id" class="control" :class="form.errors.student_id && 'border-red-400!'">
                         <option value="" disabled>Seleccioná un estudiante</option>
                         <option v-for="student in students" :key="student.id" :value="student.id">
                             {{ student.name }}

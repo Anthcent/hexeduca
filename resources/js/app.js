@@ -5,6 +5,8 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createPinia } from 'pinia';
 import { ZiggyVue } from 'ziggy-js';
+import ui from '@nuxt/ui/vue-plugin';
+import UApp from '@nuxt/ui/components/App.vue';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Educativo';
 
@@ -30,8 +32,10 @@ createInertiaApp({
         return resolvePageComponent(`./Pages/${name}.vue`, rootPages);
     },
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
+        // UApp provides the global config plus the toast, tooltip and overlay hosts.
+        createApp({ render: () => h(UApp, null, () => h(App, props)) })
             .use(plugin)
+            .use(ui)
             .use(createPinia())
             .use(ZiggyVue)
             .mount(el);

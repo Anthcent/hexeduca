@@ -16,6 +16,9 @@
         @inertiaHead
     </head>
     <body class="antialiased">
-        @inertia
+        {{-- Nuxt UI: isolate the app so overlays teleported to <body> stack above it. --}}
+        <div class="isolate">
+            @inertia
+        </div>
     </body>
 </html>

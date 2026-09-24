@@ -40,7 +40,7 @@ function submit() {
             <form class="space-y-5" @submit.prevent="submit">
                 <div v-if="!props.school">
                     <label for="school_id" class="label">Escuela</label>
-                    <select id="school_id" v-model="form.school_id" class="control" :class="form.errors.school_id && '!border-red-400'">
+                    <select id="school_id" v-model="form.school_id" class="control" :class="form.errors.school_id && 'border-red-400!'">
                         <option value="" disabled>Seleccionar escuela</option>
                         <option v-for="school in props.schools" :key="school.id" :value="school.id">{{ school.name }}</option>
                     </select>
@@ -49,19 +49,19 @@ function submit() {
 
                 <div>
                     <label for="name" class="label">Nombre completo</label>
-                    <input id="name" v-model="form.name" type="text" autocomplete="off" class="control" :class="form.errors.name && '!border-red-400'" />
+                    <input id="name" v-model="form.name" type="text" autocomplete="off" class="control" :class="form.errors.name && 'border-red-400!'" />
                     <p v-if="form.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.name }}</p>
                 </div>
 
                 <div>
                     <label for="email" class="label">Email</label>
-                    <input id="email" v-model="form.email" type="email" autocomplete="off" class="control" :class="form.errors.email && '!border-red-400'" />
+                    <input id="email" v-model="form.email" type="email" autocomplete="off" class="control" :class="form.errors.email && 'border-red-400!'" />
                     <p v-if="form.errors.email" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.email }}</p>
                 </div>
 
                 <div>
                     <label for="role" class="label">Rol</label>
-                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && '!border-red-400'">
+                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && 'border-red-400!'">
                         <option v-for="role in props.roles" :key="role" :value="role">{{ role }}</option>
                     </select>
                     <p v-if="form.errors.role" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.role }}</p>
@@ -71,7 +71,7 @@ function submit() {
                     <div class="grid gap-5 sm:grid-cols-2">
                         <div>
                             <label for="password" class="label">Contraseña inicial</label>
-                            <input id="password" v-model="form.password" type="password" autocomplete="new-password" class="control" :class="form.errors.password && '!border-red-400'" />
+                            <input id="password" v-model="form.password" type="password" autocomplete="new-password" class="control" :class="form.errors.password && 'border-red-400!'" />
                         </div>
                         <div>
                             <label for="password_confirmation" class="label">Confirmar contraseña</label>
@@ -84,7 +84,7 @@ function submit() {
 
                 <div class="flex items-center gap-2">
                     <UiButton type="submit" :disabled="form.processing" :loading="form.processing">Crear usuario</UiButton>
-                    <Link :href="route('users.index')" class="inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold text-[rgb(var(--muted))] transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]">Cancelar</Link>
+                    <Link :href="route('users.index')" class="inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold muted transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]">Cancelar</Link>
                 </div>
             </form>
         </div>

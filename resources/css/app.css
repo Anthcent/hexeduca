@@ -1,6 +1,79 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import '@nuxt/ui';
+@import './tailwind-v3-compat.css';
+
+@plugin '@tailwindcss/forms';
+
+/* Class sources (automatic detection is not relied on for module pages). */
+@source '../views';
+@source '../js';
+@source '../../Modules/*/Resources/js';
+@source '../../Modules/*/Resources/views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* The layout toggles the `dark` class on <html>; same selector Nuxt UI uses. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    /*
+     * In the v3 config `amber`, `sky` and `lime` were single colors, which replaced the
+     * default scales: `amber-500`, `sky-600`, `lime-*`, etc. generated no CSS. The scales
+     * are removed again so existing markup keeps rendering exactly as before.
+     */
+    --color-amber-*: initial;
+    --color-sky-*: initial;
+    --color-lime-*: initial;
+
+    --color-brand-50: #edfdf6;
+    --color-brand-100: #d4f8e8;
+    --color-brand-200: #acf0d4;
+    --color-brand-300: #76e2b9;
+    --color-brand-400: #3ccb98;
+    --color-brand-500: #18a879;
+    --color-brand-600: #0f8561;
+    --color-brand-700: #0b6b50;
+    --color-brand-800: #0a5541;
+    --color-brand-900: #094637;
+    --color-brand-950: #04271f;
+
+    --color-ink: #0c1814;
+    --color-lime: #b7e35b;
+    --color-amber: #f0a63b;
+    --color-sky: #4ba6c8;
+
+    --font-sans: Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: Manrope, Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --shadow-soft: 0 10px 30px rgba(7, 62, 45, 0.08);
+    --shadow-lift: 0 22px 55px rgba(5, 45, 34, 0.16);
+    --shadow-focus: 0 0 0 4px rgba(24, 168, 121, 0.18);
+
+    --radius-2xl: 1.25rem;
+    --radius-3xl: 1.75rem;
+
+    --animate-float-in: float-in 0.38s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    --animate-pop-in: pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    --animate-progress-in: progress-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    --animate-soft-pulse: soft-pulse 1.8s ease-in-out infinite;
+
+    @keyframes float-in {
+        0% { opacity: 0; transform: translateY(12px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pop-in {
+        0% { opacity: 0; transform: scale(0.94); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes progress-in {
+        0% { transform: scaleX(0); }
+        100% { transform: scaleX(1); }
+    }
+    @keyframes soft-pulse {
+        0%, 100% { opacity: 0.45; }
+        50% { opacity: 1; }
+    }
+}
 
 @layer base {
     :root {
@@ -28,6 +101,8 @@
     }
     body {
         @apply m-0 min-w-[320px] bg-[rgb(var(--canvas))] font-sans text-[rgb(var(--text))] antialiased;
+        /* Nuxt UI sets `scheme-light dark:scheme-dark` on body; keep native controls unchanged. */
+        color-scheme: normal;
     }
     * {
         @apply border-[rgb(var(--line))];
@@ -36,10 +111,22 @@
         font: inherit;
     }
     button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-        @apply outline-none ring-4 ring-brand-500/20;
+        @apply outline-hidden ring-4 ring-brand-500/20;
+    }
+
+    /*
+     * @tailwindcss/forms styles every native field, Nuxt UI's included. Nuxt UI fields
+     * (marked with data-slot) draw their own focus state, so drop the plugin's blue ring.
+     */
+    :is(input, textarea)[data-slot]:focus {
+        box-shadow: none;
     }
 }
 
+/*
+ * Kept as component classes (not @utility) so any utility on the same element
+ * still wins, exactly as with Tailwind v3's components layer.
+ */
 @layer components {
     .surface {
         @apply border bg-[rgb(var(--surface))] shadow-soft;
@@ -51,16 +138,16 @@
         @apply text-[rgb(var(--muted))];
     }
     .section-card {
-        @apply surface overflow-hidden rounded-[24px];
+        @apply overflow-hidden rounded-[24px] border bg-[rgb(var(--surface))] shadow-soft;
     }
     .control {
-        @apply h-11 w-full rounded-xl border bg-[rgb(var(--surface))] px-3.5 text-sm text-[rgb(var(--text))] placeholder:text-[rgb(var(--muted))] transition hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-4 focus:ring-brand-500/15;
+        @apply h-11 w-full rounded-xl border bg-[rgb(var(--surface))] px-3.5 text-sm text-[rgb(var(--text))] placeholder:text-[rgb(var(--muted))] transition hover:border-brand-300 focus:border-brand-500 focus:outline-hidden focus:ring-4 focus:ring-brand-500/15;
     }
     .label {
         @apply mb-2 block text-sm font-semibold text-[rgb(var(--text))];
     }
     .kbd {
-        @apply rounded-md border bg-[rgb(var(--surface-muted))] px-1.5 py-0.5 text-[11px] font-semibold text-[rgb(var(--muted))] shadow-sm;
+        @apply rounded-md border bg-[rgb(var(--surface-muted))] px-1.5 py-0.5 text-[11px] font-semibold text-[rgb(var(--muted))] shadow-xs;
     }
 }
 

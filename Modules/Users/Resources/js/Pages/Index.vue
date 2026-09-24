@@ -50,7 +50,7 @@ function roleTone(role) {
 
         <div class="section-card">
             <table class="w-full text-left">
-                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider text-[rgb(var(--muted))]">
+                <thead class="bg-[rgb(var(--surface-muted))] text-xs uppercase tracking-wider muted">
                     <tr><th class="px-5 py-3">Nombre</th><th class="px-5 py-3">Email</th><th class="px-5 py-3">Rol</th><th class="px-5 py-3"></th></tr>
                 </thead>
                 <tbody class="divide-y">

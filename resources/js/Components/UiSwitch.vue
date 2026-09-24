@@ -12,6 +12,6 @@ defineEmits(['update:modelValue'])
     :class="modelValue ? 'bg-brand-500' : 'bg-slate-300 dark:bg-slate-600'"
     @click="$emit('update:modelValue', !modelValue)"
   >
-    <span class="block size-5 rounded-full bg-white shadow-sm transition-transform" :class="modelValue && 'translate-x-5'" />
+    <span class="block size-5 rounded-full bg-white shadow-xs transition-transform" :class="modelValue && 'translate-x-5'" />
   </button>
 </template>
