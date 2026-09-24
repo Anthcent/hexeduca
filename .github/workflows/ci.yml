@@ -1,0 +1,102 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
+        with:
+          php-version: "8.3"
+          coverage: none
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci
+      - run: composer validate --strict
+      - run: php vendor/bin/pint --test
+      - name: PHP suites
+        run: |
+          set -euo pipefail
+          for suite in Unit Feature Architecture Isolated; do
+            listing="$(php artisan test --testsuite="$suite" --list-tests --ci --colors=never)"
+            test_count="$(printf '%s\n' "$listing" | awk '/^ - / { count++ } END { print count+0 }')"
+            if [ "$test_count" -eq 0 ]; then
+              echo "::error title=Empty Pest suite::$suite discovered zero tests"
+              exit 1
+            fi
+            echo "$suite: $test_count tests discovered"
+            php artisan test --testsuite="$suite" --ci --stop-on-failure --profile
+          done
+      - run: npm run build
+  production-like:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_DB: testing
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: testing
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@b604ade2a87db23f8871b7182e69ec5e75effb45 # v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_pgsql, redis
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Verify PostgreSQL and Redis connections
+        timeout-minutes: 2
+        run: |
+          php artisan config:clear
+          php -r '$app=require "bootstrap/app.php"; $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap(); $driver=$app->make("db")->connection()->getDriverName(); fwrite(STDOUT, "Database driver: {$driver}\n"); if ($driver !== "pgsql") { throw new RuntimeException("Expected pgsql, got {$driver}"); } $app->make("db")->select("select 1"); $pong=$app->make("redis")->connection()->ping(); fwrite(STDOUT, "Redis ping: ".var_export($pong, true)."\n"); if (!in_array($pong, [true, "PONG", "+PONG"], true)) { throw new RuntimeException("Redis ping failed"); }'
+      - name: Run migrations on PostgreSQL
+        timeout-minutes: 5
+        run: php artisan migrate:fresh --force
+      - name: Production-like Feature suite
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          listing="$(php artisan test --testsuite=Feature --list-tests --ci --colors=never)"
+          test_count="$(printf '%s\n' "$listing" | awk '/^ - / { count++ } END { print count+0 }')"
+          if [ "$test_count" -eq 0 ]; then
+            echo "::error title=Empty Pest suite::Feature discovered zero tests"
+            exit 1
+          fi
+          echo "Feature: $test_count tests discovered"
+          php artisan test --testsuite=Feature --ci --stop-on-failure --profile
