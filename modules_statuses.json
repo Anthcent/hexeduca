@@ -12,5 +12,6 @@
     "Grades": true,
     "Files": true,
     "Admin": true,
-    "Notifications": true
+    "Notifications": true,
+    "Subjects": true
 }

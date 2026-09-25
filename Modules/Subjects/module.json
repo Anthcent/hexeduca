@@ -1,0 +1,24 @@
+{
+    "name": "Subjects",
+    "alias": "subjects",
+    "description": "Study plans (Planes de estudio): staff manage each plan's subjects per grade level, assign plans per academic period to the school, a grade level, or a single offer, and exclude subjects per assignment.",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "AcademicPeriods",
+        "AcademicOffers",
+        "GradeLevels"
+    ],
+    "permissions": [
+        {"name": "subjects.manage", "roles": ["staff/admin"]}
+    ],
+    "navigation": [
+        {"label": "Planes de estudio", "route": "subjects.index", "icon": "BookOpen", "group": "academico", "permission": "subjects.manage"}
+    ],
+    "providers": [
+        "Modules\\Subjects\\Infrastructure\\Providers\\SubjectsServiceProvider"
+    ],
+    "files": []
+}
