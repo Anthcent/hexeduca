@@ -48,7 +48,7 @@ function destroy() {
     <Head :title="user.name" />
 
     <DashboardLayout active="usuarios">
-        <PageHeader eyebrow="Usuarios" :title="user.name" :description="user.email">
+        <PageHeader eyebrow="Usuarios" :title="user.name" :description="user.email" icon="i-lucide-users">
             <template #leading>
                 <UButton :to="route('users.index', undefined, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">
                     Volver a usuarios

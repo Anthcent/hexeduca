@@ -118,11 +118,11 @@ function rowActions(school) {
     <Head title="Instituciones" />
 
     <DashboardLayout active="instituciones">
-        <PageHeader eyebrow="Plataforma" title="Instituciones">
+        <PageHeader eyebrow="Plataforma" title="Instituciones" icon="i-lucide-school">
             <template #description>
                 Cada institución es un tenant independiente, identificado por su propio subdominio (ej. <UKbd value="demo.app.com" />).
             </template>
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" @click="openCreate">Nueva institución</UButton>
             </template>
         </PageHeader>

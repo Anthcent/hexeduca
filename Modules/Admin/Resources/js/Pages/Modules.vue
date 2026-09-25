@@ -119,9 +119,10 @@ const entitlementColumns = [
             eyebrow="Plataforma"
             title="Módulos"
             description="Activación global de módulos y acceso por institución."
+            icon="i-lucide-blocks"
         >
-            <template #actions>
-                <UButton color="neutral" variant="outline" icon="i-lucide-refresh-ccw" size="lg" :loading="syncing" @click="syncModules">
+            <template #notch>
+                <UButton icon="i-lucide-refresh-ccw" size="lg" :loading="syncing" @click="syncModules">
                     Sincronizar manifiestos
                 </UButton>
             </template>

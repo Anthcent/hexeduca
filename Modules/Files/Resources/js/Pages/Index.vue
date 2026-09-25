@@ -176,6 +176,7 @@ function confirmDelete() {
             eyebrow="Documentos"
             title="Archivos"
             description="Repositorio privado de la institución. Solo el personal y los docentes pueden ver y descargar estos archivos."
+            icon="i-lucide-folder-open"
         />
 
         <div class="grid items-start gap-6" :class="canUpload && 'xl:grid-cols-[minmax(0,1fr)_22rem]'">

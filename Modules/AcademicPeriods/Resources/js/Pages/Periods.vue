@@ -101,8 +101,9 @@ function activate(period) {
             eyebrow="Académico"
             title="Períodos académicos"
             description="Años escolares de la institución. Solo un período puede estar activo a la vez."
+            icon="i-lucide-calendar-range"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" @click="openCreate">Nuevo período</UButton>
             </template>
         </PageHeader>

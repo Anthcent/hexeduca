@@ -37,6 +37,7 @@ function create() {
             eyebrow="Matrículas"
             title="Nueva matrícula"
             description="Inscribe a un estudiante en una oferta académica activa."
+            icon="i-lucide-clipboard-list"
         />
 
         <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="create">

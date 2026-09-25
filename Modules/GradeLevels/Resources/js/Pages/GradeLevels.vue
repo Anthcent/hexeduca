@@ -88,8 +88,9 @@ function confirmDelete() {
             eyebrow="Académico"
             title="Grados"
             description="Años de estudio de cada nivel académico, en el orden en que se cursan."
+            icon="i-lucide-list-ordered"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" :disabled="academicLevels.length === 0" @click="openCreate">Nuevo grado</UButton>
             </template>
         </PageHeader>

@@ -72,7 +72,7 @@ function markAllAsRead() {
     <Head title="Notificaciones" />
 
     <DashboardLayout active="module:notifications:notifications.index">
-        <PageHeader eyebrow="Comunicación" title="Notificaciones">
+        <PageHeader eyebrow="Comunicación" title="Notificaciones" icon="i-lucide-bell">
             <template #description>
                 Avisos y comunicados de la institución.
                 <template v-if="unreadCount > 0">Tienes {{ unreadCount }} sin leer.</template>
@@ -80,16 +80,18 @@ function markAllAsRead() {
             <template #actions>
                 <UButton
                     color="neutral"
-                    variant="outline"
+                    variant="ghost"
                     size="lg"
                     icon="i-lucide-check-check"
                     :disabled="unreadCount === 0"
+                    class="bg-white/10 text-white ring-1 ring-inset ring-white/25 hover:bg-white/20 disabled:opacity-50"
                     @click="markAllAsRead"
                 >
                     Marcar todas como leídas
                 </UButton>
+            </template>
+            <template v-if="canSend" #notch>
                 <UButton
-                    v-if="canSend"
                     :to="route('notifications.create', undefined, false)"
                     size="lg"
                     icon="i-lucide-plus"

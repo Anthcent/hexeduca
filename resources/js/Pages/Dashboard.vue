@@ -64,8 +64,9 @@ const enrollAction = computed(() => quickActions.value.find((action) => action.t
             eyebrow="Panel principal"
             :title="greeting"
             description="Este es el estado actual de la institución y las tareas que requieren atención. Los datos son de muestra."
+            icon="i-lucide-layout-dashboard"
         >
-            <template v-if="primaryAction" #actions>
+            <template v-if="primaryAction" #notch>
                 <UButton :to="primaryAction.to" :icon="primaryAction.icon" size="lg">{{ primaryAction.label }}</UButton>
             </template>
         </PageHeader>

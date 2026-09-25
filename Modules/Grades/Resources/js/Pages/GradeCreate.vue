@@ -30,6 +30,7 @@ function submit() {
             eyebrow="Académico"
             title="Cargar nota"
             description="Registra la calificación de un estudiante en una oferta académica del período activo."
+            icon="i-lucide-clipboard-check"
         />
 
         <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="submit">

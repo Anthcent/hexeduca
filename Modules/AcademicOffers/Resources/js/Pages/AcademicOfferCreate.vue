@@ -41,6 +41,7 @@ function create() {
             eyebrow="Académico"
             title="Nueva oferta académica"
             description="Combina un grado y una sección para abrir un cupo dentro del período activo."
+            icon="i-lucide-book-open"
         />
 
         <UAlert

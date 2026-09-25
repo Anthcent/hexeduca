@@ -35,6 +35,7 @@ function submit() {
             eyebrow="Comunicación"
             title="Nuevo anuncio"
             description="Cada destinatario lo recibirá en su bandeja de notificaciones."
+            icon="i-lucide-megaphone"
         >
             <template #leading>
                 <UButton

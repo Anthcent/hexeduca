@@ -65,8 +65,9 @@ function confirmDelete() {
             eyebrow="Académico"
             title="Secciones"
             description="Divisiones de cada grado (por ejemplo A, B o C) que se combinan en las ofertas académicas."
+            icon="i-lucide-columns-3"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" @click="openCreate">Nueva sección</UButton>
             </template>
         </PageHeader>

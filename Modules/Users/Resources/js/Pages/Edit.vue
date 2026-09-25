@@ -32,7 +32,7 @@ function submit() {
     <Head :title="`Editar rol · ${user.name}`" />
 
     <DashboardLayout active="usuarios">
-        <PageHeader eyebrow="Usuarios" title="Editar rol" :description="`${user.name} · ${user.email}`">
+        <PageHeader eyebrow="Usuarios" title="Editar rol" :description="`${user.name} · ${user.email}`" icon="i-lucide-users">
             <template #leading>
                 <UButton :to="route('users.show', user.id, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">
                     Volver a la ficha

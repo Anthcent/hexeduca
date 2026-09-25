@@ -79,8 +79,9 @@ function resetFilters() {
             eyebrow="Administración"
             title="Usuarios"
             description="Personal, docentes y estudiantes con acceso al sistema."
+            icon="i-lucide-users"
         >
-            <template #actions>
+            <template #notch>
                 <UButton :to="route('users.create', undefined, false)" icon="i-lucide-user-plus" size="lg">Nuevo usuario</UButton>
             </template>
         </PageHeader>

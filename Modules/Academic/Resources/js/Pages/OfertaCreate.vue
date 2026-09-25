@@ -67,9 +67,10 @@ function submit() {
             eyebrow="Académico"
             title="Crear oferta académica"
             description="Combina un grado y una sección para abrir un cupo dentro del período activo."
+            icon="i-lucide-book-open"
         >
-            <template #actions>
-                <UButton :to="route('academic.catalogos', undefined, false)" color="neutral" variant="outline" icon="i-lucide-library" size="lg">
+            <template #notch>
+                <UButton :to="route('academic.catalogos', undefined, false)" icon="i-lucide-library" size="lg">
                     Base académica
                 </UButton>
             </template>

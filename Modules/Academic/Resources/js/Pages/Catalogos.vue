@@ -259,8 +259,9 @@ function periodoActions(row) {
             eyebrow="Académico"
             title="Base académica"
             description="Niveles, grados, secciones y períodos son la base con la que se arman las ofertas académicas y las matrículas."
+            icon="i-lucide-library"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" :disabled="!canCreate" @click="openNew">{{ panel.newLabel }}</UButton>
             </template>
         </PageHeader>

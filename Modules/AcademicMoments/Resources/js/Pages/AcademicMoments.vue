@@ -72,8 +72,9 @@ function confirmDelete() {
             eyebrow="Académico"
             title="Momentos académicos"
             :description="activePeriod ? `Cortes de evaluación del período ${activePeriod.name}.` : 'Cortes de evaluación del período académico activo.'"
+            icon="i-lucide-milestone"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" :disabled="!activePeriod" @click="openCreate">Nuevo momento</UButton>
             </template>
         </PageHeader>

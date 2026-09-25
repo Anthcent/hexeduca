@@ -65,8 +65,9 @@ function confirmDelete() {
             eyebrow="Académico"
             title="Niveles académicos"
             description="Etapas de la institución (por ejemplo Primaria o Secundaria) a las que pertenecen los grados."
+            icon="i-lucide-layers"
         >
-            <template #actions>
+            <template #notch>
                 <UButton icon="i-lucide-plus" size="lg" @click="openCreate">Nuevo nivel</UButton>
             </template>
         </PageHeader>

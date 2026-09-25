@@ -45,6 +45,7 @@ function submit() {
             eyebrow="Usuarios"
             title="Nuevo usuario"
             :description="school ? `La cuenta se creará en ${school.name}.` : 'Crea una cuenta y asígnale una institución y un rol.'"
+            icon="i-lucide-users"
         >
             <template #leading>
                 <UButton :to="route('users.index', undefined, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">

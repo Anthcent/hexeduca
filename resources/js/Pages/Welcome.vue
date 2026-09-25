@@ -5,7 +5,7 @@ import PageHeader from '@/Components/PageHeader.vue';
 
 <template>
     <DashboardLayout active="resumen">
-        <PageHeader eyebrow="Educativo" title="Bienvenido" />
+        <PageHeader eyebrow="Educativo" title="Bienvenido" icon="i-lucide-graduation-cap" />
 
         <UCard class="shadow-card">
             <p class="text-sm text-muted">

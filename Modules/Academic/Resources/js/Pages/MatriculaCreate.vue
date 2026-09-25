@@ -50,9 +50,10 @@ function submit() {
             eyebrow="Matrículas"
             title="Inscribir estudiante"
             description="Asigna un estudiante a una oferta académica del período activo."
+            icon="i-lucide-clipboard-list"
         >
-            <template #actions>
-                <UButton :to="route('academic.ofertas.create', undefined, false)" color="neutral" variant="outline" icon="i-lucide-book-plus" size="lg">
+            <template #notch>
+                <UButton :to="route('academic.ofertas.create', undefined, false)" icon="i-lucide-book-plus" size="lg">
                     Nueva oferta
                 </UButton>
             </template>
