@@ -50,24 +50,35 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'role' => $request->user()->getRoleNames()->first(),
+                    // Lets the shell show only the actions the user may take
+                    // (quick actions); routes still enforce every check.
+                    'permissions' => $request->user()->getAllPermissions()->pluck('name')->values()->all(),
                 ] : null,
             ],
+            // The school resolved from the subdomain (null on the landlord
+            // host), shown in the sidebar brand block and on the login page.
+            'school' => function () {
+                $school = app(TenantContext::class)->current();
+
+                return $school ? ['name' => $school->name, 'subdomain' => $school->subdomain] : null;
+            },
             // Module keys the current request may use, so the frontend nav
-            // (see DashboardLayout.vue) can hide links to modules that are
+            // (see resources/js/Layouts/navigation.js) can hide links to modules that are
             // inactive or the current school isn't entitled to.
             'modules' => fn () => app(ModuleAccess::class)->availableKeys(
                 app(TenantContext::class)->current()
             ),
             // Manifest-declared nav entries (module.json `navigation`) for
-            // every module the current request may use. DashboardLayout.vue
-            // renders these after its hardcoded items. See
+            // every module the current request may use. The sidebar
+            // (resources/js/Layouts/navigation.js) places them in their
+            // `group` next to the core items. See
             // sdd/module-developer-platform R4.3.
             'moduleNav' => fn () => $this->moduleNavigation($request),
         ]);
     }
 
     /**
-     * @return list<array{key: string, label: string, icon: ?string, href: string}>
+     * @return list<array{key: string, label: string, icon: ?string, group: ?string, href: string}>
      */
     private function moduleNavigation(Request $request): array
     {
@@ -96,6 +107,8 @@ class HandleInertiaRequests extends Middleware
                     'key' => $key.':'.$item['route'],
                     'label' => $item['label'],
                     'icon' => $item['icon'] ?? null,
+                    // Optional sidebar group key (see stubs/modules/module-md.stub).
+                    'group' => $item['group'] ?? null,
                     'href' => route($item['route']),
                 ];
             }

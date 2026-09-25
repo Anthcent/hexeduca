@@ -1,8 +1,15 @@
 <script setup>
 import { computed, ref, watch } from 'vue';
-import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { useToast } from '@nuxt/ui/composables/useToast';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import DataToolbar from '@/Components/DataToolbar.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
+import PaginationBar from '@/Components/PaginationBar.vue';
+import { tableUi } from '@/Components/tableUi';
+import { useConfirmAction } from '@/composables/useConfirmAction';
 
 const props = defineProps({
     files: { type: Object, required: true },
@@ -11,24 +18,31 @@ const props = defineProps({
     allowedExtensions: { type: Array, required: true },
 });
 
-const page = usePage();
-const toast = useToast();
+// File kinds: label for the badge and chips, plus a literal icon name.
+const KINDS = {
+    pdf: { label: 'PDF', icon: 'i-lucide-file-text' },
+    image: { label: 'Imagen', icon: 'i-lucide-file-image' },
+    word: { label: 'Word', icon: 'i-lucide-file-type' },
+    excel: { label: 'Excel', icon: 'i-lucide-file-spreadsheet' },
+    powerpoint: { label: 'PowerPoint', icon: 'i-lucide-presentation' },
+    other: { label: 'Otro', icon: 'i-lucide-file' },
+};
 
-const TYPE_LABELS = {
-    pdf: 'PDF',
-    jpg: 'JPG',
-    jpeg: 'JPG',
-    png: 'PNG',
-    doc: 'Word',
-    docx: 'Word',
-    xls: 'Excel',
-    xlsx: 'Excel',
-    ppt: 'PowerPoint',
-    pptx: 'PowerPoint',
+const EXTENSION_KINDS = {
+    pdf: 'pdf',
+    jpg: 'image',
+    jpeg: 'image',
+    png: 'image',
+    doc: 'word',
+    docx: 'word',
+    xls: 'excel',
+    xlsx: 'excel',
+    ppt: 'powerpoint',
+    pptx: 'powerpoint',
 };
 
 const items = computed(() => props.files.data ?? []);
-const hasPages = computed(() => props.files.last_page > 1);
+const total = computed(() => props.files.total ?? items.value.length);
 const accept = computed(() => props.allowedExtensions.map((extension) => `.${extension}`).join(','));
 const maxSizeLabel = computed(() => formatSize(props.maxSizeBytes));
 
@@ -51,9 +65,55 @@ function formatDate(value) {
     return value ? dateFormatter.format(new Date(value)) : '';
 }
 
-function typeLabel(extension) {
-    return TYPE_LABELS[extension?.toLowerCase()] ?? extension?.toUpperCase() ?? '';
+function kindOf(file) {
+    return EXTENSION_KINDS[file.extension?.toLowerCase()] ?? 'other';
 }
+
+// Filters: the list is paginated server-side and the controller takes no
+// filters, so search and type chips apply to the current page only.
+
+const search = ref('');
+const kind = ref('all');
+
+const statuses = computed(() => {
+    const counts = items.value.reduce((acc, file) => {
+        const key = kindOf(file);
+        acc[key] = (acc[key] ?? 0) + 1;
+
+        return acc;
+    }, {});
+
+    return [
+        { value: 'all', label: 'Todos', count: items.value.length },
+        ...Object.keys(KINDS).filter((key) => counts[key]).map((key) => ({ value: key, label: KINDS[key].label, count: counts[key] })),
+    ];
+});
+
+const filtered = computed(() => {
+    const term = search.value.trim().toLocaleLowerCase('es');
+
+    return items.value.filter((file) => {
+        if (kind.value !== 'all' && kindOf(file) !== kind.value) return false;
+        if (!term) return true;
+
+        return `${file.name} ${file.uploaderName}`.toLocaleLowerCase('es').includes(term);
+    });
+});
+
+const isFiltered = computed(() => search.value.trim() !== '' || kind.value !== 'all');
+
+function resetFilters() {
+    search.value = '';
+    kind.value = 'all';
+}
+
+const columns = [
+    { accessorKey: 'name', header: 'Nombre' },
+    { accessorKey: 'sizeBytes', header: 'Tamaño', meta: { class: { th: 'w-28' } } },
+    { accessorKey: 'uploaderName', header: 'Subido por' },
+    { accessorKey: 'createdAt', header: 'Fecha' },
+    { id: 'actions', header: '', meta: { class: { th: 'w-28', td: 'text-right' } } },
+];
 
 // Upload
 
@@ -101,263 +161,201 @@ function upload() {
 
 // Delete
 
-const fileToDelete = ref(null);
-const deleting = ref(false);
-
-const confirmOpen = computed({
-    get: () => fileToDelete.value !== null,
-    set: (open) => {
-        if (!open && !deleting.value) {
-            fileToDelete.value = null;
-        }
-    },
-});
-
-function askToDelete(file) {
-    fileToDelete.value = file;
-}
+const { target: fileToDelete, open: deleteOpen, processing: deleting, ask: askToDelete, run: runDelete, clear: clearDelete } = useConfirmAction();
 
 function confirmDelete() {
-    if (!fileToDelete.value) {
-        return;
-    }
-
-    deleting.value = true;
-
-    router.delete(route('files.destroy', fileToDelete.value.id), {
-        preserveScroll: true,
-        onFinish: () => {
-            deleting.value = false;
-            fileToDelete.value = null;
-        },
-    });
+    runDelete((options) => router.delete(route('files.destroy', fileToDelete.value.id), options));
 }
-
-watch(
-    () => page.props.flash?.success,
-    (message) => {
-        if (message) {
-            toast.add({ title: message, color: 'success', icon: 'i-lucide-circle-check' });
-        }
-    },
-    { immediate: true },
-);
-
-watch(
-    () => page.props.flash?.error,
-    (message) => {
-        if (message) {
-            toast.add({ title: message, color: 'error', icon: 'i-lucide-circle-alert' });
-        }
-    },
-    { immediate: true },
-);
 </script>
 
 <template>
     <Head title="Archivos" />
 
     <DashboardLayout active="module:files:files.index">
-        <div class="mb-5">
-            <p class="muted mb-1 text-xs font-bold uppercase tracking-[.14em]">Documentos</p>
-            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Archivos</h1>
-            <p class="muted mt-1 max-w-[60ch] text-sm">
-                Repositorio privado de la institución. Solo el personal y los docentes pueden ver y descargar estos archivos.
-            </p>
-        </div>
+        <PageHeader
+            eyebrow="Documentos"
+            title="Archivos"
+            description="Repositorio privado de la institución. Solo el personal y los docentes pueden ver y descargar estos archivos."
+        />
 
-        <UCard v-if="canUpload" class="mb-5 rounded-[24px] shadow-soft">
-            <form class="space-y-4" novalidate @submit.prevent="upload">
-                <UFormField name="file" :error="uploadError ?? undefined">
-                    <UFileUpload
-                        v-model="form.file"
-                        :accept="accept"
-                        :disabled="form.processing"
-                        :preview="false"
-                        icon="i-lucide-upload"
-                        label="Arrastra un archivo aquí o haz clic para seleccionarlo"
-                        :description="`PDF, JPG, PNG, Word, Excel o PowerPoint · Máximo ${maxSizeLabel}`"
-                        class="min-h-36 w-full"
-                        :ui="{ base: 'rounded-xl' }"
-                    />
-                </UFormField>
-
-                <div v-if="form.file" class="flex items-center gap-3 rounded-xl border px-3 py-2">
-                    <UIcon name="i-lucide-file" class="size-5 shrink-0 text-brand-700 dark:text-brand-200" />
-                    <div class="min-w-0 flex-1">
-                        <p class="truncate text-sm font-semibold" :title="form.file.name">{{ form.file.name }}</p>
-                        <p class="muted text-xs">{{ formatSize(form.file.size) }}</p>
+        <div class="grid items-start gap-6" :class="canUpload && 'xl:grid-cols-[minmax(0,1fr)_22rem]'">
+            <UCard class="shadow-card" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:px-0' }">
+                <template #header>
+                    <div class="space-y-4">
+                        <PanelHeader kicker="Repositorio" :title="total === 1 ? '1 archivo' : `${total} archivos`" />
+                        <DataToolbar
+                            v-if="items.length > 0"
+                            v-model:search="search"
+                            v-model:status="kind"
+                            placeholder="Buscar en esta página"
+                            :statuses="statuses"
+                        />
                     </div>
-                    <UButton
-                        color="neutral"
-                        variant="ghost"
-                        size="sm"
-                        icon="i-lucide-x"
-                        aria-label="Quitar archivo seleccionado"
-                        class="rounded-xl"
-                        :disabled="form.processing"
-                        @click="form.file = null"
-                    />
-                </div>
+                </template>
 
-                <UProgress
-                    v-if="form.processing && uploadProgress !== null"
-                    :model-value="uploadProgress"
-                    size="sm"
-                    aria-label="Progreso de la subida"
+                <EmptyState
+                    v-if="items.length === 0"
+                    icon="i-lucide-folder-open"
+                    title="Todavía no hay archivos"
+                    :description="canUpload ? 'Sube el primero desde el panel de subida.' : 'Cuando se suba un archivo, aparecerá aquí.'"
+                />
+                <EmptyState
+                    v-else-if="filtered.length === 0"
+                    icon="i-lucide-search-x"
+                    title="Sin resultados"
+                    description="Ningún archivo de esta página coincide con la búsqueda o el filtro."
+                    :actions="isFiltered ? [{ label: 'Quitar filtros', color: 'neutral', variant: 'outline', icon: 'i-lucide-rotate-ccw', onClick: resetFilters }] : []"
                 />
 
-                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="muted text-xs">
+                <template v-else>
+                    <UTable :data="filtered" :columns="columns" :ui="tableUi" class="hidden md:block">
+                        <template #name-cell="{ row }">
+                            <div class="flex min-w-0 max-w-md items-center gap-3">
+                                <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                                    <UIcon :name="KINDS[kindOf(row.original)].icon" class="size-[18px]" />
+                                </span>
+                                <div class="min-w-0">
+                                    <p class="truncate font-semibold text-highlighted" :title="row.original.name">{{ row.original.name }}</p>
+                                    <p class="text-xs text-muted">{{ KINDS[kindOf(row.original)].label }}</p>
+                                </div>
+                            </div>
+                        </template>
+                        <template #sizeBytes-cell="{ row }"><span class="tabular-nums">{{ formatSize(row.original.sizeBytes) }}</span></template>
+                        <template #uploaderName-cell="{ row }"><span class="block max-w-48 truncate" :title="row.original.uploaderName">{{ row.original.uploaderName }}</span></template>
+                        <template #createdAt-cell="{ row }">
+                            <time :datetime="row.original.createdAt" class="text-muted">{{ formatDate(row.original.createdAt) }}</time>
+                        </template>
+                        <template #actions-cell="{ row }">
+                            <div class="flex justify-end gap-1">
+                                <UTooltip text="Descargar">
+                                    <UButton
+                                        :to="route('files.download', row.original.id)"
+                                        external
+                                        download
+                                        color="neutral"
+                                        variant="ghost"
+                                        icon="i-lucide-download"
+                                        :aria-label="`Descargar ${row.original.name}`"
+                                    />
+                                </UTooltip>
+                                <UTooltip v-if="row.original.canDelete" text="Eliminar">
+                                    <UButton
+                                        color="error"
+                                        variant="ghost"
+                                        icon="i-lucide-trash-2"
+                                        :aria-label="`Eliminar ${row.original.name}`"
+                                        @click="askToDelete(row.original)"
+                                    />
+                                </UTooltip>
+                            </div>
+                        </template>
+                    </UTable>
+
+                    <ul class="divide-y divide-default md:hidden">
+                        <li v-for="file in filtered" :key="file.id" class="flex items-center gap-3 px-4 py-3.5">
+                            <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                                <UIcon :name="KINDS[kindOf(file)].icon" class="size-[18px]" />
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-sm font-semibold text-highlighted" :title="file.name">{{ file.name }}</p>
+                                <p class="truncate text-xs text-muted">
+                                    {{ formatSize(file.sizeBytes) }} · {{ file.uploaderName }} · {{ formatDate(file.createdAt) }}
+                                </p>
+                            </div>
+                            <UButton
+                                :to="route('files.download', file.id)"
+                                external
+                                download
+                                color="neutral"
+                                variant="ghost"
+                                icon="i-lucide-download"
+                                :aria-label="`Descargar ${file.name}`"
+                            />
+                            <UButton
+                                v-if="file.canDelete"
+                                color="error"
+                                variant="ghost"
+                                icon="i-lucide-trash-2"
+                                :aria-label="`Eliminar ${file.name}`"
+                                @click="askToDelete(file)"
+                            />
+                        </li>
+                    </ul>
+                </template>
+
+                <template v-if="files.last_page > 1" #footer>
+                    <PaginationBar :paginator="files" noun="archivos" />
+                </template>
+            </UCard>
+
+            <UCard v-if="canUpload" class="shadow-card xl:sticky xl:top-4">
+                <template #header>
+                    <PanelHeader kicker="Subida" title="Subir archivo" />
+                </template>
+                <form class="space-y-4" novalidate @submit.prevent="upload">
+                    <UFormField name="file" :error="uploadError ?? undefined">
+                        <UFileUpload
+                            v-model="form.file"
+                            :accept="accept"
+                            :disabled="form.processing"
+                            :preview="false"
+                            icon="i-lucide-upload"
+                            label="Arrastra un archivo aquí o haz clic para seleccionarlo"
+                            :description="`PDF, JPG, PNG, Word, Excel o PowerPoint · Máximo ${maxSizeLabel}`"
+                            class="min-h-40 w-full"
+                        />
+                    </UFormField>
+
+                    <div v-if="form.file" class="flex items-center gap-3 rounded-md bg-elevated px-3 py-2">
+                        <UIcon name="i-lucide-file" class="size-5 shrink-0 text-primary" />
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-semibold text-highlighted" :title="form.file.name">{{ form.file.name }}</p>
+                            <p class="text-xs text-muted">{{ formatSize(form.file.size) }}</p>
+                        </div>
+                        <UButton
+                            color="neutral"
+                            variant="ghost"
+                            size="sm"
+                            icon="i-lucide-x"
+                            aria-label="Quitar archivo seleccionado"
+                            :disabled="form.processing"
+                            @click="form.file = null"
+                        />
+                    </div>
+
+                    <UProgress
+                        v-if="form.processing && uploadProgress !== null"
+                        :model-value="uploadProgress"
+                        size="sm"
+                        aria-label="Progreso de la subida"
+                    />
+
+                    <p class="text-xs text-muted">
                         <template v-if="form.processing && uploadProgress !== null">Subiendo… {{ uploadProgress }} %</template>
                         <template v-else>El archivo quedará disponible para todo el personal y los docentes de la institución.</template>
                     </p>
+
                     <UButton
                         type="submit"
                         size="lg"
                         icon="i-lucide-upload"
+                        block
                         :loading="form.processing"
                         :disabled="!form.file || clientError !== null"
-                        class="justify-center rounded-xl"
                     >
                         Subir archivo
                     </UButton>
-                </div>
-            </form>
-        </UCard>
+                </form>
+            </UCard>
+        </div>
 
-        <UCard :ui="{ body: 'p-0 sm:p-0' }" class="rounded-[24px] shadow-soft">
-            <div v-if="items.length === 0" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
-                <span class="grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200">
-                    <UIcon name="i-lucide-folder-open" class="size-6" />
-                </span>
-                <p class="font-semibold">Todavía no hay archivos.</p>
-                <p class="muted max-w-[42ch] text-sm">
-                    <template v-if="canUpload">Sube el primero con el formulario de arriba.</template>
-                    <template v-else>Cuando se suba un archivo, aparecerá aquí.</template>
-                </p>
-            </div>
-
-            <template v-else>
-                <div
-                    class="muted hidden grid-cols-[minmax(0,1fr)_6rem_10rem_10rem_auto] gap-4 border-b px-5 py-3 text-xs font-bold uppercase tracking-[.1em] md:grid"
-                    aria-hidden="true"
-                >
-                    <span>Nombre</span>
-                    <span>Tamaño</span>
-                    <span>Subido por</span>
-                    <span>Fecha</span>
-                    <span class="w-[5.5rem] text-right">Acciones</span>
-                </div>
-
-                <ul class="divide-y">
-                    <li
-                        v-for="file in items"
-                        :key="file.id"
-                        class="flex flex-col gap-1.5 px-5 py-4 md:grid md:grid-cols-[minmax(0,1fr)_6rem_10rem_10rem_auto] md:items-center md:gap-4"
-                    >
-                        <div class="flex min-w-0 items-center gap-3">
-                            <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-200">
-                                <UIcon name="i-lucide-file" class="size-5" />
-                            </span>
-                            <div class="min-w-0">
-                                <p class="truncate text-sm font-semibold" :title="file.name">{{ file.name }}</p>
-                                <UBadge color="neutral" variant="subtle" size="sm" class="mt-1">{{ typeLabel(file.extension) }}</UBadge>
-                            </div>
-                        </div>
-
-                        <p class="muted text-sm md:text-[rgb(var(--text))]">
-                            <span class="md:hidden">Tamaño: </span>{{ formatSize(file.sizeBytes) }}
-                        </p>
-                        <p class="muted truncate text-sm md:text-[rgb(var(--text))]" :title="file.uploaderName">
-                            <span class="md:hidden">Subido por: </span>{{ file.uploaderName }}
-                        </p>
-                        <p class="muted text-sm">
-                            <time :datetime="file.createdAt">{{ formatDate(file.createdAt) }}</time>
-                        </p>
-
-                        <div class="flex items-center gap-1 md:w-[5.5rem] md:justify-end">
-                            <UTooltip text="Descargar">
-                                <UButton
-                                    :to="route('files.download', file.id)"
-                                    external
-                                    download
-                                    color="neutral"
-                                    variant="ghost"
-                                    icon="i-lucide-download"
-                                    :aria-label="`Descargar ${file.name}`"
-                                    class="rounded-xl"
-                                />
-                            </UTooltip>
-                            <UTooltip v-if="file.canDelete" text="Eliminar">
-                                <UButton
-                                    color="error"
-                                    variant="ghost"
-                                    icon="i-lucide-trash-2"
-                                    :aria-label="`Eliminar ${file.name}`"
-                                    class="rounded-xl"
-                                    @click="askToDelete(file)"
-                                />
-                            </UTooltip>
-                        </div>
-                    </li>
-                </ul>
-            </template>
-        </UCard>
-
-        <nav v-if="hasPages" class="mt-4 flex items-center justify-between gap-3" aria-label="Paginación">
-            <UButton
-                class="rounded-xl"
-                color="neutral"
-                variant="outline"
-                icon="i-lucide-arrow-left"
-                :to="files.prev_page_url ?? undefined"
-                :disabled="!files.prev_page_url"
-            >
-                Anteriores
-            </UButton>
-            <p class="muted text-sm">Página {{ files.current_page }} de {{ files.last_page }}</p>
-            <UButton
-                class="rounded-xl"
-                color="neutral"
-                variant="outline"
-                trailing-icon="i-lucide-arrow-right"
-                :to="files.next_page_url ?? undefined"
-                :disabled="!files.next_page_url"
-            >
-                Siguientes
-            </UButton>
-        </nav>
-
-        <UModal
-            v-model:open="confirmOpen"
+        <ConfirmModal
+            v-model:open="deleteOpen"
             title="¿Eliminar archivo?"
             :description="fileToDelete ? `Se eliminará «${fileToDelete.name}» de forma permanente. Esta acción no se puede deshacer.` : ''"
-            :dismissible="!deleting"
-            :ui="{ content: 'rounded-[24px]' }"
-        >
-            <template #footer>
-                <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <UButton
-                        color="neutral"
-                        variant="ghost"
-                        class="justify-center rounded-xl"
-                        :disabled="deleting"
-                        @click="confirmOpen = false"
-                    >
-                        Cancelar
-                    </UButton>
-                    <UButton
-                        color="error"
-                        icon="i-lucide-trash-2"
-                        class="justify-center rounded-xl"
-                        :loading="deleting"
-                        @click="confirmDelete"
-                    >
-                        Eliminar
-                    </UButton>
-                </div>
-            </template>
-        </UModal>
+            :loading="deleting"
+            @confirm="confirmDelete"
+            @after:leave="clearDelete"
+        />
     </DashboardLayout>
 </template>

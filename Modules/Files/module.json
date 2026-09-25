@@ -13,7 +13,7 @@
         {"name": "files.delete-any", "roles": ["staff/admin"]}
     ],
     "navigation": [
-        {"label": "Archivos", "route": "files.index", "icon": "FolderOpen", "permission": "files.view"}
+        {"label": "Archivos", "route": "files.index", "icon": "FolderOpen", "group": "documentos", "permission": "files.view"}
     ],
     "providers": [
         "Modules\\Files\\Infrastructure\\Providers\\FilesServiceProvider"

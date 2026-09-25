@@ -7,6 +7,15 @@
 
         <title inertia>{{ config('app.name', 'Educativo') }}</title>
 
+        {{-- Apply the stored theme before the first paint (see resources/js/composables/useTheme.js). --}}
+        <script>
+            try {
+                if (localStorage.getItem('educativo-theme') === 'dark') {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        </script>
+
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">

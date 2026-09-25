@@ -1,9 +1,11 @@
 <script setup>
-import { usePage, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { CheckCircle2, XCircle } from 'lucide-vue-next';
+import { Head, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import UiButton from '@/Components/UiButton.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import { nullableField } from '@/lib/forms';
 
 const props = defineProps({
     ofertas: {
@@ -16,10 +18,6 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
-const flashSuccess = computed(() => page.props.flash?.success);
-const flashError = computed(() => page.props.flash?.error);
-
 function ofertaLabel(oferta) {
     return `${oferta.grado?.name ?? ''} ${oferta.seccion?.name ?? ''}`.trim();
 }
@@ -29,69 +27,122 @@ const form = useForm({
     student_id: '',
 });
 
+const ofertaId = nullableField(form, 'oferta_academica_id');
+const studentId = nullableField(form, 'student_id');
+
+const ofertaItems = computed(() => props.ofertas.map((oferta) => ({ id: oferta.id, label: ofertaLabel(oferta) || `Oferta #${oferta.id}` })));
+const selectedOferta = computed(() => ofertaItems.value.find((item) => item.id === ofertaId.value) ?? null);
+const selectedStudent = computed(() => props.students.find((student) => student.id === studentId.value) ?? null);
+const completed = computed(() => [selectedOferta.value, selectedStudent.value].filter(Boolean).length);
+
+const canEnroll = computed(() => props.ofertas.length > 0 && props.students.length > 0);
+
 function submit() {
     form.post(route('academic.matriculas.store'));
 }
 </script>
 
 <template>
+    <Head title="Inscribir estudiante" />
+
     <DashboardLayout active="matriculas">
-        <div class="mb-5">
-            <p class="muted mb-1 text-xs font-bold uppercase tracking-[.14em]">Matrículas</p>
-            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Inscribir estudiante</h1>
-            <p class="muted mt-1 text-sm">Asigná un estudiante a una oferta académica del período activo.</p>
-        </div>
+        <PageHeader
+            eyebrow="Matrículas"
+            title="Inscribir estudiante"
+            description="Asigna un estudiante a una oferta académica del período activo."
+        >
+            <template #actions>
+                <UButton :to="route('academic.ofertas.create', undefined, false)" color="neutral" variant="outline" icon="i-lucide-book-plus" size="lg">
+                    Nueva oferta
+                </UButton>
+            </template>
+        </PageHeader>
 
-        <div class="section-card max-w-xl p-5 sm:p-6">
-            <Transition name="fade">
-                <div
-                    v-if="flashSuccess"
-                    class="mb-4 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-200"
-                >
-                    <CheckCircle2 class="size-4 shrink-0" />
-                    {{ flashSuccess }}
-                </div>
-            </Transition>
-            <Transition name="fade">
-                <div
-                    v-if="flashError"
-                    class="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-                >
-                    <XCircle class="size-4 shrink-0" />
-                    {{ flashError }}
-                </div>
-            </Transition>
+        <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="submit">
+            <UCard class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Inscripción" title="Datos de la matrícula" />
+                </template>
 
-            <form class="space-y-4" @submit.prevent="submit">
-                <div>
-                    <label for="oferta_academica_id" class="label">Oferta académica</label>
-                    <select
-                        id="oferta_academica_id"
-                        v-model="form.oferta_academica_id"
-                        class="control"
-                        :class="form.errors.oferta_academica_id && 'border-red-400!'"
+                <EmptyState
+                    v-if="!canEnroll"
+                    icon="i-lucide-book-open"
+                    :title="ofertas.length === 0 ? 'No hay ofertas académicas' : 'No hay estudiantes registrados'"
+                    :description="ofertas.length === 0
+                        ? 'Crea una oferta académica en el período activo para poder inscribir estudiantes.'
+                        : 'Crea cuentas con el rol Estudiante para poder inscribirlas.'"
+                    class="py-6"
+                />
+
+                <div v-else class="space-y-6">
+                    <UFormField
+                        label="Oferta académica"
+                        name="oferta_academica_id"
+                        required
+                        :error="form.errors.oferta_academica_id"
+                        help="Grado y sección del período activo."
                     >
-                        <option value="" disabled>Seleccioná una oferta</option>
-                        <option v-for="oferta in ofertas" :key="oferta.id" :value="oferta.id">
-                            {{ ofertaLabel(oferta) }}
-                        </option>
-                    </select>
-                    <p v-if="form.errors.oferta_academica_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.oferta_academica_id }}</p>
+                        <USelectMenu
+                            v-model="ofertaId"
+                            :items="ofertaItems"
+                            value-key="id"
+                            placeholder="Selecciona una oferta"
+                            icon="i-lucide-book-open"
+                            size="lg"
+                            class="w-full"
+                        />
+                    </UFormField>
+
+                    <UFormField label="Estudiante" name="student_id" required :error="form.errors.student_id">
+                        <USelectMenu
+                            v-model="studentId"
+                            :items="students"
+                            value-key="id"
+                            label-key="name"
+                            placeholder="Selecciona un estudiante"
+                            icon="i-lucide-user-round"
+                            size="lg"
+                            class="w-full"
+                        />
+                    </UFormField>
                 </div>
 
-                <div>
-                    <label for="student_id" class="label">Estudiante</label>
-                    <select id="student_id" v-model="form.student_id" class="control" :class="form.errors.student_id && 'border-red-400!'">
-                        <option value="" disabled>Seleccioná un estudiante</option>
-                        <option v-for="student in students" :key="student.id" :value="student.id">
-                            {{ student.name }}
-                        </option>
-                    </select>
-                    <p v-if="form.errors.student_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.student_id }}</p>
-                </div>
+                <template v-if="canEnroll" #footer>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <UButton color="neutral" variant="ghost" size="lg" class="justify-center" :disabled="form.processing || completed === 0" @click="form.reset()">
+                            Limpiar
+                        </UButton>
+                        <UButton type="submit" icon="i-lucide-check" size="lg" class="justify-center" :loading="form.processing">
+                            Inscribir estudiante
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
 
-                <UiButton type="submit" :loading="form.processing">Inscribir estudiante</UiButton>
-            </form>
-        </div>
+            <UCard class="shadow-card lg:sticky lg:top-4">
+                <template #header>
+                    <PanelHeader kicker="Resumen" title="Nueva matrícula">
+                        <span class="text-sm tabular-nums text-muted">{{ completed }}/2</span>
+                    </PanelHeader>
+                </template>
+                <UProgress :model-value="completed" :max="2" size="sm" class="mb-5" aria-label="Datos completados" />
+                <dl class="space-y-4 text-sm">
+                    <div class="flex items-start gap-3">
+                        <UIcon name="i-lucide-book-open" class="mt-0.5 size-4 shrink-0 text-muted" />
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Oferta</dt>
+                            <dd class="mt-1 font-medium text-highlighted">{{ selectedOferta?.label ?? 'Sin seleccionar' }}</dd>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <UIcon name="i-lucide-user-round" class="mt-0.5 size-4 shrink-0 text-muted" />
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Estudiante</dt>
+                            <dd class="mt-1 truncate font-medium text-highlighted">{{ selectedStudent?.name ?? 'Sin seleccionar' }}</dd>
+                        </div>
+                    </div>
+                </dl>
+            </UCard>
+        </form>
     </DashboardLayout>
 </template>

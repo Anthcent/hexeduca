@@ -1,8 +1,11 @@
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Head, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import UiButton from '@/Components/UiButton.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import { nullableField } from '@/lib/forms';
+import { roleItems, roleLabel } from '../roles';
 
 const props = defineProps({
     roles: { type: Array, default: () => [] },
@@ -19,6 +22,14 @@ const form = useForm({
     password_confirmation: '',
 });
 
+const roleOptions = computed(() => roleItems(props.roles));
+
+const schoolId = nullableField(form, 'school_id');
+
+const schoolName = computed(() => props.school?.name
+    ?? props.schools.find((school) => school.id === form.school_id)?.name
+    ?? null);
+
 function submit() {
     form.post(route('users.store'), {
         onFinish: () => form.reset('password', 'password_confirmation'),
@@ -27,66 +38,111 @@ function submit() {
 </script>
 
 <template>
+    <Head title="Nuevo usuario" />
+
     <DashboardLayout active="usuarios">
-        <div class="mb-6">
-            <Link :href="route('users.index')" class="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:underline dark:text-brand-300">
-                <ArrowLeft class="size-4" />Usuarios
-            </Link>
-            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Nuevo usuario</h1>
-            <p v-if="props.school" class="muted mt-1 text-sm">Se va a crear en {{ props.school.name }}.</p>
-        </div>
+        <PageHeader
+            eyebrow="Usuarios"
+            title="Nuevo usuario"
+            :description="school ? `La cuenta se creará en ${school.name}.` : 'Crea una cuenta y asígnale una institución y un rol.'"
+        >
+            <template #leading>
+                <UButton :to="route('users.index', undefined, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">
+                    Volver a usuarios
+                </UButton>
+            </template>
+        </PageHeader>
 
-        <div class="section-card max-w-[520px] p-6">
-            <form class="space-y-5" @submit.prevent="submit">
-                <div v-if="!props.school">
-                    <label for="school_id" class="label">Escuela</label>
-                    <select id="school_id" v-model="form.school_id" class="control" :class="form.errors.school_id && 'border-red-400!'">
-                        <option value="" disabled>Seleccionar escuela</option>
-                        <option v-for="school in props.schools" :key="school.id" :value="school.id">{{ school.name }}</option>
-                    </select>
-                    <p v-if="form.errors.school_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.school_id }}</p>
-                </div>
+        <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="submit">
+            <UCard class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Cuenta" title="Datos del usuario" />
+                </template>
 
-                <div>
-                    <label for="name" class="label">Nombre completo</label>
-                    <input id="name" v-model="form.name" type="text" autocomplete="off" class="control" :class="form.errors.name && 'border-red-400!'" />
-                    <p v-if="form.errors.name" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.name }}</p>
-                </div>
+                <div class="space-y-6">
+                    <UFormField v-if="!school" label="Institución" name="school_id" required :error="form.errors.school_id">
+                        <USelectMenu
+                            v-model="schoolId"
+                            :items="schools"
+                            value-key="id"
+                            label-key="name"
+                            placeholder="Selecciona una institución"
+                            icon="i-lucide-school"
+                            size="lg"
+                            class="w-full"
+                        />
+                    </UFormField>
 
-                <div>
-                    <label for="email" class="label">Email</label>
-                    <input id="email" v-model="form.email" type="email" autocomplete="off" class="control" :class="form.errors.email && 'border-red-400!'" />
-                    <p v-if="form.errors.email" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.email }}</p>
-                </div>
-
-                <div>
-                    <label for="role" class="label">Rol</label>
-                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && 'border-red-400!'">
-                        <option v-for="role in props.roles" :key="role" :value="role">{{ role }}</option>
-                    </select>
-                    <p v-if="form.errors.role" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.role }}</p>
-                </div>
-
-                <div>
-                    <div class="grid gap-5 sm:grid-cols-2">
-                        <div>
-                            <label for="password" class="label">Contraseña inicial</label>
-                            <input id="password" v-model="form.password" type="password" autocomplete="new-password" class="control" :class="form.errors.password && 'border-red-400!'" />
-                        </div>
-                        <div>
-                            <label for="password_confirmation" class="label">Confirmar contraseña</label>
-                            <input id="password_confirmation" v-model="form.password_confirmation" type="password" autocomplete="new-password" class="control" />
-                        </div>
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <UFormField label="Nombre completo" name="name" required :error="form.errors.name">
+                            <UInput v-model="form.name" autocomplete="off" size="lg" class="w-full" />
+                        </UFormField>
+                        <UFormField label="Email" name="email" required :error="form.errors.email">
+                            <UInput v-model="form.email" type="email" autocomplete="off" icon="i-lucide-mail" size="lg" class="w-full" />
+                        </UFormField>
                     </div>
-                    <p v-if="form.errors.password" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.password }}</p>
-                    <p v-else class="muted mt-1.5 text-xs">Mínimo 8 caracteres. Compartila con el usuario por un canal seguro.</p>
+
+                    <UFormField label="Rol" name="role" required :error="form.errors.role">
+                        <URadioGroup
+                            v-model="form.role"
+                            :items="roleOptions"
+                            variant="card"
+                            orientation="horizontal"
+                            :ui="{ fieldset: 'grid gap-3 sm:grid-cols-2 xl:grid-cols-4' }"
+                        />
+                    </UFormField>
+
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <UFormField
+                            label="Contraseña inicial"
+                            name="password"
+                            required
+                            :error="form.errors.password"
+                            help="Mínimo 8 caracteres. Compártela con el usuario por un canal seguro."
+                        >
+                            <UInput v-model="form.password" type="password" autocomplete="new-password" size="lg" class="w-full" />
+                        </UFormField>
+                        <UFormField label="Confirmar contraseña" name="password_confirmation" required>
+                            <UInput v-model="form.password_confirmation" type="password" autocomplete="new-password" size="lg" class="w-full" />
+                        </UFormField>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <UiButton type="submit" :disabled="form.processing" :loading="form.processing">Crear usuario</UiButton>
-                    <Link :href="route('users.index')" class="inline-flex h-11 items-center rounded-xl px-4 text-sm font-semibold muted transition hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]">Cancelar</Link>
-                </div>
-            </form>
-        </div>
+                <template #footer>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <UButton :to="route('users.index', undefined, false)" color="neutral" variant="ghost" size="lg" class="justify-center">
+                            Cancelar
+                        </UButton>
+                        <UButton type="submit" icon="i-lucide-user-plus" size="lg" class="justify-center" :loading="form.processing">
+                            Crear usuario
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
+
+            <UCard class="shadow-card lg:sticky lg:top-4">
+                <template #header>
+                    <PanelHeader kicker="Resumen" title="Nueva cuenta" />
+                </template>
+                <dl class="space-y-4 text-sm">
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Nombre</dt>
+                        <dd class="mt-1 truncate font-medium text-highlighted">{{ form.name || '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Email</dt>
+                        <dd class="mt-1 truncate font-medium text-highlighted">{{ form.email || '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Institución</dt>
+                        <dd class="mt-1 font-medium text-highlighted">{{ schoolName ?? '—' }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Rol</dt>
+                        <dd class="mt-1 font-medium text-highlighted">{{ roleLabel(form.role) }}</dd>
+                    </div>
+                </dl>
+            </UCard>
+        </form>
     </DashboardLayout>
 </template>

@@ -48,6 +48,8 @@
     --shadow-soft: 0 10px 30px rgba(7, 62, 45, 0.08);
     --shadow-lift: 0 22px 55px rgba(5, 45, 34, 0.16);
     --shadow-focus: 0 0 0 4px rgba(24, 168, 121, 0.18);
+    /* Calm card/popover elevation for the app shell and redesigned pages. */
+    --shadow-card: 0 4px 14px rgba(4, 39, 31, 0.05);
 
     --radius-2xl: 1.25rem;
     --radius-3xl: 1.75rem;
@@ -180,6 +182,37 @@
     .kbd {
         @apply rounded-md border bg-[rgb(var(--surface-muted))] px-1.5 py-0.5 text-[11px] font-semibold text-[rgb(var(--muted))] shadow-xs;
     }
+}
+
+/*
+ * App shell sidebar: a dark brand surface in both themes. Nuxt UI components read
+ * their colors from the --ui-* tokens, so remapping them here makes the nav menu,
+ * buttons and user block inside the sidebar (and its mobile slideover) light-on-dark.
+ * In dark mode it gets its own surface so it doesn't melt into the dark canvas.
+ */
+.app-sidebar {
+    --sidebar-bg: var(--color-brand-950);
+    --ui-bg: var(--sidebar-bg);
+    --ui-bg-muted: rgb(255 255 255 / 0.05);
+    --ui-bg-elevated: rgb(255 255 255 / 0.09);
+    --ui-bg-accented: rgb(255 255 255 / 0.14);
+    --ui-border: rgb(255 255 255 / 0.09);
+    --ui-border-muted: rgb(255 255 255 / 0.07);
+    --ui-border-accented: rgb(255 255 255 / 0.16);
+    --ui-text: rgb(236 253 245 / 0.9);
+    --ui-text-toned: rgb(236 253 245 / 0.92);
+    --ui-text-highlighted: #ffffff;
+    --ui-text-muted: rgb(212 248 232 / 0.72);
+    --ui-text-dimmed: rgb(172 240 212 / 0.6);
+    background-color: var(--sidebar-bg);
+    color: var(--ui-text);
+    color-scheme: dark;
+}
+.dark .app-sidebar {
+    --sidebar-bg: #0a2a21;
+}
+.app-sidebar :is(a, button):focus-visible {
+    box-shadow: 0 0 0 2px var(--color-brand-300);
 }
 
 .scrollbar-thin {

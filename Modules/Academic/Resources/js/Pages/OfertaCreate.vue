@@ -1,9 +1,10 @@
 <script setup>
-import { usePage, useForm } from '@inertiajs/vue3';
 import { computed } from 'vue';
-import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-vue-next';
+import { Head, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import UiButton from '@/Components/UiButton.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import { nullableField } from '@/lib/forms';
 
 const props = defineProps({
     grados: {
@@ -28,10 +29,6 @@ const props = defineProps({
     },
 });
 
-const page = usePage();
-const flashSuccess = computed(() => page.props.flash?.success);
-const flashError = computed(() => page.props.flash?.error);
-
 const form = useForm({
     grado_id: '',
     seccion_id: '',
@@ -39,101 +36,148 @@ const form = useForm({
     capacity: '',
 });
 
+const gradoId = nullableField(form, 'grado_id');
+const seccionId = nullableField(form, 'seccion_id');
+const teacherId = nullableField(form, 'teacher_id');
+const capacity = nullableField(form, 'capacity');
+
+const gradoName = computed(() => props.grados.find((grado) => grado.id === gradoId.value)?.name ?? null);
+const seccionName = computed(() => props.secciones.find((seccion) => seccion.id === seccionId.value)?.name ?? null);
+const teacherName = computed(() => props.teachers.find((teacher) => teacher.id === teacherId.value)?.name ?? null);
+
+const summary = computed(() => [
+    { label: 'Período', value: props.periodoName ?? 'Sin período activo', icon: 'i-lucide-calendar-range' },
+    { label: 'Grado y sección', value: [gradoName.value, seccionName.value].filter(Boolean).join(' · ') || 'Sin seleccionar', icon: 'i-lucide-graduation-cap' },
+    { label: 'Docente', value: teacherName.value ?? 'Sin docente asignado', icon: 'i-lucide-user-round' },
+    { label: 'Capacidad', value: capacity.value ? `${capacity.value} estudiantes` : 'Sin definir', icon: 'i-lucide-users' },
+]);
+
+const completed = computed(() => [gradoId.value, seccionId.value, capacity.value].filter(Boolean).length);
+
 function submit() {
     form.post(route('academic.ofertas.store'));
 }
 </script>
 
 <template>
+    <Head title="Crear oferta académica" />
+
     <DashboardLayout active="academico">
-        <div class="mb-5">
-            <p class="muted mb-1 text-xs font-bold uppercase tracking-[.14em]">Base académica</p>
-            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Crear oferta académica</h1>
-            <p class="muted mt-1 text-sm">Combiná un grado y una sección para abrir un cupo dentro del período activo.</p>
-        </div>
+        <PageHeader
+            eyebrow="Académico"
+            title="Crear oferta académica"
+            description="Combina un grado y una sección para abrir un cupo dentro del período activo."
+        >
+            <template #actions>
+                <UButton :to="route('academic.catalogos', undefined, false)" color="neutral" variant="outline" icon="i-lucide-library" size="lg">
+                    Base académica
+                </UButton>
+            </template>
+        </PageHeader>
 
-        <div class="section-card max-w-xl p-5 sm:p-6">
-            <Transition name="fade">
-                <div
-                    v-if="flashSuccess"
-                    class="mb-4 flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-200"
-                >
-                    <CheckCircle2 class="size-4 shrink-0" />
-                    {{ flashSuccess }}
-                </div>
-            </Transition>
-            <Transition name="fade">
-                <div
-                    v-if="flashError"
-                    class="mb-4 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300"
-                >
-                    <XCircle class="size-4 shrink-0" />
-                    {{ flashError }}
-                </div>
-            </Transition>
+        <UAlert
+            v-if="!hasActivePeriodo"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-triangle-alert"
+            title="No hay un período académico activo"
+            description="No se pueden crear ofertas hasta activar un período en la base académica."
+            class="mb-6"
+        />
 
-            <div
-                v-if="!hasActivePeriodo"
-                class="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
-            >
-                <AlertTriangle class="mt-0.5 size-4 shrink-0" />
-                No hay un período académico activo para esta institución. No se pueden crear ofertas hasta activar uno.
-            </div>
-            <p v-else class="muted mb-4 text-sm">
-                Período activo: <span class="font-semibold text-[rgb(var(--text))]">{{ periodoName }}</span>
-            </p>
+        <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="submit">
+            <UCard class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Oferta" title="Datos de la oferta">
+                        <UBadge v-if="hasActivePeriodo" color="primary" variant="subtle" icon="i-lucide-calendar-range" class="rounded-full">
+                            {{ periodoName }}
+                        </UBadge>
+                    </PanelHeader>
+                </template>
 
-            <form class="space-y-4" @submit.prevent="submit">
-                <fieldset :disabled="!hasActivePeriodo" class="space-y-4">
-                    <div>
-                        <label for="grado_id" class="label">Grado</label>
-                        <select id="grado_id" v-model="form.grado_id" class="control" :class="form.errors.grado_id && 'border-red-400!'">
-                            <option value="" disabled>Seleccioná un grado</option>
-                            <option v-for="grado in grados" :key="grado.id" :value="grado.id">
-                                {{ grado.name }}
-                            </option>
-                        </select>
-                        <p v-if="form.errors.grado_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.grado_id }}</p>
+                <fieldset :disabled="!hasActivePeriodo" class="space-y-6 disabled:opacity-60">
+                    <div class="grid gap-6 sm:grid-cols-2">
+                        <UFormField label="Grado" name="grado_id" required :error="form.errors.grado_id">
+                            <USelectMenu
+                                v-model="gradoId"
+                                :items="grados"
+                                value-key="id"
+                                label-key="name"
+                                placeholder="Selecciona un grado"
+                                icon="i-lucide-graduation-cap"
+                                size="lg"
+                                class="w-full"
+                                :disabled="!hasActivePeriodo"
+                            />
+                        </UFormField>
+
+                        <UFormField label="Sección" name="seccion_id" required :error="form.errors.seccion_id">
+                            <USelectMenu
+                                v-model="seccionId"
+                                :items="secciones"
+                                value-key="id"
+                                label-key="name"
+                                placeholder="Selecciona una sección"
+                                icon="i-lucide-users"
+                                size="lg"
+                                class="w-full"
+                                :disabled="!hasActivePeriodo"
+                            />
+                        </UFormField>
                     </div>
 
-                    <div>
-                        <label for="seccion_id" class="label">Sección</label>
-                        <select id="seccion_id" v-model="form.seccion_id" class="control" :class="form.errors.seccion_id && 'border-red-400!'">
-                            <option value="" disabled>Seleccioná una sección</option>
-                            <option v-for="seccion in secciones" :key="seccion.id" :value="seccion.id">
-                                {{ seccion.name }}
-                            </option>
-                        </select>
-                        <p v-if="form.errors.seccion_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.seccion_id }}</p>
-                    </div>
+                    <div class="grid gap-6 sm:grid-cols-[minmax(0,1fr)_12rem]">
+                        <UFormField label="Docente" name="teacher_id" hint="Opcional" :error="form.errors.teacher_id">
+                            <USelectMenu
+                                v-model="teacherId"
+                                :items="teachers"
+                                value-key="id"
+                                label-key="name"
+                                placeholder="Sin docente asignado"
+                                icon="i-lucide-user-round"
+                                size="lg"
+                                class="w-full"
+                                clear
+                                @clear="teacherId = null"
+                                :disabled="!hasActivePeriodo"
+                            />
+                        </UFormField>
 
-                    <div>
-                        <label for="teacher_id" class="label">Docente (opcional)</label>
-                        <select id="teacher_id" v-model="form.teacher_id" class="control" :class="form.errors.teacher_id && 'border-red-400!'">
-                            <option value="">Sin docente asignado</option>
-                            <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
-                                {{ teacher.name }}
-                            </option>
-                        </select>
-                        <p v-if="form.errors.teacher_id" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.teacher_id }}</p>
+                        <UFormField label="Capacidad" name="capacity" required :error="form.errors.capacity">
+                            <UInputNumber v-model="capacity" :min="1" placeholder="Ej.: 30" size="lg" class="w-full" :disabled="!hasActivePeriodo" />
+                        </UFormField>
                     </div>
-
-                    <div>
-                        <label for="capacity" class="label">Capacidad</label>
-                        <input
-                            id="capacity"
-                            v-model="form.capacity"
-                            type="number"
-                            min="1"
-                            class="control"
-                            :class="form.errors.capacity && 'border-red-400!'"
-                        />
-                        <p v-if="form.errors.capacity" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.capacity }}</p>
-                    </div>
-
-                    <UiButton type="submit" :loading="form.processing">Crear oferta</UiButton>
                 </fieldset>
-            </form>
-        </div>
+
+                <template #footer>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <UButton color="neutral" variant="ghost" size="lg" class="justify-center" :disabled="!hasActivePeriodo || form.processing" @click="form.reset()">
+                            Limpiar
+                        </UButton>
+                        <UButton type="submit" icon="i-lucide-check" size="lg" class="justify-center" :loading="form.processing" :disabled="!hasActivePeriodo">
+                            Crear oferta
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
+
+            <UCard class="shadow-card lg:sticky lg:top-4">
+                <template #header>
+                    <PanelHeader kicker="Resumen" title="Nueva oferta">
+                        <span class="text-sm tabular-nums text-muted">{{ completed }}/3</span>
+                    </PanelHeader>
+                </template>
+                <UProgress :model-value="completed" :max="3" size="sm" class="mb-5" aria-label="Datos obligatorios completados" />
+                <dl class="space-y-4 text-sm">
+                    <div v-for="item in summary" :key="item.label" class="flex items-start gap-3">
+                        <UIcon :name="item.icon" class="mt-0.5 size-4 shrink-0 text-muted" />
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-muted">{{ item.label }}</dt>
+                            <dd class="mt-1 truncate font-medium text-highlighted">{{ item.value }}</dd>
+                        </div>
+                    </div>
+                </dl>
+            </UCard>
+        </form>
     </DashboardLayout>
 </template>

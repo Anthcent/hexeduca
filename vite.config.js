@@ -26,9 +26,13 @@ export default defineConfig({
             // Bundle the icons used by name (e.g. `icon="i-lucide-bell"`) and Nuxt UI's
             // own defaults, so they never fall back to fetching from api.iconify.design.
             // The scan only sees literal names: never build an icon name at runtime.
+            // Besides .vue files it reads the plain JS under resources/js, where the
+            // shell navigation (resources/js/Layouts/navigation.js) names its icons.
             icon: {
                 clientBundle: {
-                    scan: true,
+                    scan: {
+                        globInclude: ['**/*.vue', 'resources/js/**/*.js'],
+                    },
                 },
             },
             ui: {

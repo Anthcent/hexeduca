@@ -1,34 +1,41 @@
 <script setup>
 import { computed, ref } from 'vue';
-import { usePage, useForm, Link } from '@inertiajs/vue3';
-import { ArrowLeft, CheckCircle2, PencilLine, Trash2 } from 'lucide-vue-next';
+import { Head, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import UiBadge from '@/Components/UiBadge.vue';
-import UiButton from '@/Components/UiButton.vue';
-import UiModal from '@/Components/UiModal.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import { roleColor, roleLabel } from '../roles';
 
 const props = defineProps({
     user: { type: Object, required: true },
     can: { type: Object, default: () => ({ edit: false, delete: false }) },
 });
 
-const page = usePage();
-const flash = computed(() => page.props.flash ?? {});
-
 const confirmingDelete = ref(false);
 const deleteForm = useForm({});
 
 const createdAt = computed(() => {
-    if (! props.user.created_at) return '—';
+    if (!props.user.created_at) return '—';
+
     return new Date(props.user.created_at).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' });
 });
 
-function roleTone(role) {
-    if (role === 'super-admin') return 'brand';
-    if (role === 'staff/admin') return 'success';
-    if (role === 'teacher') return 'warning';
-    return 'neutral';
-}
+const initials = computed(() => (props.user.name ?? '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase());
+
+const details = computed(() => [
+    { label: 'Nombre completo', value: props.user.name, icon: 'i-lucide-user-round' },
+    { label: 'Email', value: props.user.email, icon: 'i-lucide-mail' },
+    { label: 'Institución', value: props.user.school ?? 'Plataforma (sin institución)', icon: 'i-lucide-school' },
+    { label: 'Alta en el sistema', value: createdAt.value, icon: 'i-lucide-calendar' },
+]);
+
+const hasActions = computed(() => props.can.edit || props.can.delete);
 
 function destroy() {
     deleteForm.delete(route('users.destroy', props.user.id), {
@@ -38,72 +45,92 @@ function destroy() {
 </script>
 
 <template>
+    <Head :title="user.name" />
+
     <DashboardLayout active="usuarios">
-        <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
-            <div>
-                <Link :href="route('users.index')" class="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:underline dark:text-brand-300">
-                    <ArrowLeft class="size-4" />Usuarios
-                </Link>
-                <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">{{ props.user.name }}</h1>
-            </div>
-            <div class="flex gap-2">
-                <Link
-                    v-if="props.can.edit"
-                    :href="route('users.edit', props.user.id)"
-                    class="inline-flex h-11 items-center gap-2 rounded-xl border bg-[rgb(var(--surface))] px-4 text-sm font-semibold text-[rgb(var(--text))] shadow-xs transition hover:border-brand-300 hover:bg-brand-50 dark:hover:bg-brand-950/40"
-                >
-                    <PencilLine class="size-4" />Editar rol
-                </Link>
-                <UiButton v-if="props.can.delete" variant="danger" @click="confirmingDelete = true">
-                    <template #icon><Trash2 class="size-4" /></template>Eliminar
-                </UiButton>
-            </div>
+        <PageHeader eyebrow="Usuarios" :title="user.name" :description="user.email">
+            <template #leading>
+                <UButton :to="route('users.index', undefined, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">
+                    Volver a usuarios
+                </UButton>
+            </template>
+        </PageHeader>
+
+        <div class="grid items-start gap-6" :class="hasActions && 'lg:grid-cols-[minmax(0,1fr)_20rem]'">
+            <UCard class="shadow-card">
+                <template #header>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <UAvatar :text="initials" :alt="user.name" size="xl" class="rounded-lg bg-primary/10" :ui="{ fallback: 'font-bold text-primary' }" />
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold uppercase tracking-[.12em] text-muted">Ficha de usuario</p>
+                            <h2 class="mt-0.5 truncate text-base font-bold text-highlighted">{{ user.name }}</h2>
+                        </div>
+                        <UBadge :color="roleColor(user.role)" variant="subtle" size="lg" class="rounded-full">{{ roleLabel(user.role) }}</UBadge>
+                    </div>
+                </template>
+
+                <dl class="grid gap-x-8 gap-y-6 sm:grid-cols-2">
+                    <div v-for="item in details" :key="item.label" class="flex min-w-0 gap-3">
+                        <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-elevated text-muted">
+                            <UIcon :name="item.icon" class="size-4" />
+                        </span>
+                        <div class="min-w-0">
+                            <dt class="text-xs font-semibold uppercase tracking-wide text-muted">{{ item.label }}</dt>
+                            <dd class="mt-1 break-words text-sm font-medium text-highlighted">{{ item.value }}</dd>
+                        </div>
+                    </div>
+                </dl>
+            </UCard>
+
+            <UCard v-if="hasActions" class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Acciones" title="Gestionar usuario" />
+                </template>
+                <div class="flex flex-col gap-2">
+                    <UButton
+                        v-if="can.edit"
+                        :to="route('users.edit', user.id, false)"
+                        icon="i-lucide-shield-check"
+                        size="lg"
+                        block
+                    >
+                        Cambiar rol
+                    </UButton>
+                    <UButton
+                        v-if="can.delete"
+                        color="error"
+                        variant="soft"
+                        icon="i-lucide-trash-2"
+                        size="lg"
+                        block
+                        @click="confirmingDelete = true"
+                    >
+                        Eliminar usuario
+                    </UButton>
+                </div>
+            </UCard>
         </div>
 
-        <Transition name="fade">
-            <div
-                v-if="flash.success || flash.error"
-                class="mb-5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm font-semibold"
-                :class="flash.success ? 'border-brand-200 bg-brand-50 text-brand-800 dark:border-brand-800 dark:bg-brand-950 dark:text-brand-200' : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300'"
-            >
-                <CheckCircle2 class="size-4 shrink-0" />
-                {{ flash.success || flash.error }}
-            </div>
-        </Transition>
-
-        <div class="section-card max-w-[640px]">
-            <dl class="divide-y">
-                <div class="grid gap-1 px-6 py-4 sm:grid-cols-[160px_1fr]">
-                    <dt class="muted text-xs font-bold uppercase tracking-wider">Nombre</dt>
-                    <dd class="text-sm font-bold">{{ props.user.name }}</dd>
-                </div>
-                <div class="grid gap-1 px-6 py-4 sm:grid-cols-[160px_1fr]">
-                    <dt class="muted text-xs font-bold uppercase tracking-wider">Email</dt>
-                    <dd class="text-sm">{{ props.user.email }}</dd>
-                </div>
-                <div class="grid gap-1 px-6 py-4 sm:grid-cols-[160px_1fr]">
-                    <dt class="muted text-xs font-bold uppercase tracking-wider">Rol</dt>
-                    <dd><UiBadge :tone="roleTone(props.user.role)">{{ props.user.role ?? 'sin rol' }}</UiBadge></dd>
-                </div>
-                <div class="grid gap-1 px-6 py-4 sm:grid-cols-[160px_1fr]">
-                    <dt class="muted text-xs font-bold uppercase tracking-wider">Escuela</dt>
-                    <dd class="text-sm">{{ props.user.school ?? 'Plataforma (sin escuela)' }}</dd>
-                </div>
-                <div class="grid gap-1 px-6 py-4 sm:grid-cols-[160px_1fr]">
-                    <dt class="muted text-xs font-bold uppercase tracking-wider">Alta</dt>
-                    <dd class="text-sm">{{ createdAt }}</dd>
-                </div>
-            </dl>
-        </div>
-
-        <UiModal :open="confirmingDelete" title="Eliminar usuario" @close="confirmingDelete = false">
-            <template #description>
-                Vas a eliminar a <strong>{{ props.user.name }}</strong> ({{ props.user.email }}). Esta acción no se puede deshacer.
+        <UModal
+            v-model:open="confirmingDelete"
+            title="¿Eliminar usuario?"
+            :dismissible="!deleteForm.processing"
+        >
+            <template #body>
+                <p class="text-sm text-muted">
+                    Vas a eliminar a <strong class="text-highlighted">{{ user.name }}</strong> ({{ user.email }}). Esta acción no se puede deshacer.
+                </p>
             </template>
             <template #footer>
-                <UiButton variant="ghost" @click="confirmingDelete = false">Cancelar</UiButton>
-                <UiButton variant="danger" :loading="deleteForm.processing" @click="destroy">Eliminar</UiButton>
+                <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <UButton color="neutral" variant="ghost" class="justify-center" :disabled="deleteForm.processing" @click="confirmingDelete = false">
+                        Cancelar
+                    </UButton>
+                    <UButton color="error" icon="i-lucide-trash-2" class="justify-center" :loading="deleteForm.processing" @click="destroy">
+                        Eliminar
+                    </UButton>
+                </div>
             </template>
-        </UiModal>
+        </UModal>
     </DashboardLayout>
 </template>

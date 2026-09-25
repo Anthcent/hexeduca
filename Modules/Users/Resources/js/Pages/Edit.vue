@@ -1,8 +1,10 @@
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3';
-import { ArrowLeft } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Head, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import UiButton from '@/Components/UiButton.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import { roleColor, roleItems, roleLabel } from '../roles';
 
 const props = defineProps({
     user: {
@@ -19,34 +21,67 @@ const form = useForm({
     role: props.user.role,
 });
 
+const roleOptions = computed(() => roleItems(props.roles));
+
 function submit() {
     form.put(route('users.update', props.user.id));
 }
 </script>
 
 <template>
+    <Head :title="`Editar rol · ${user.name}`" />
+
     <DashboardLayout active="usuarios">
-        <div class="mb-6">
-            <Link :href="route('users.index')" class="mb-2 inline-flex items-center gap-1.5 text-sm font-bold text-brand-700 hover:underline dark:text-brand-300">
-                <ArrowLeft class="size-4" />Usuarios
-            </Link>
-            <h1 class="font-display text-2xl font-extrabold tracking-tight sm:text-3xl">Editar rol</h1>
-        </div>
+        <PageHeader eyebrow="Usuarios" title="Editar rol" :description="`${user.name} · ${user.email}`">
+            <template #leading>
+                <UButton :to="route('users.show', user.id, false)" color="neutral" variant="link" icon="i-lucide-arrow-left" class="px-0">
+                    Volver a la ficha
+                </UButton>
+            </template>
+        </PageHeader>
 
-        <div class="section-card max-w-[420px] p-6">
-            <p class="muted mb-5 text-sm">{{ props.user.name }} · {{ props.user.email }}</p>
+        <form class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" novalidate @submit.prevent="submit">
+            <UCard class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Permisos" title="Rol en el sistema" />
+                </template>
 
-            <form class="space-y-5" @submit.prevent="submit">
-                <div>
-                    <label for="role" class="label">Rol</label>
-                    <select id="role" v-model="form.role" class="control" :class="form.errors.role && 'border-red-400!'">
-                        <option v-for="role in props.roles" :key="role" :value="role">{{ role }}</option>
-                    </select>
-                    <p v-if="form.errors.role" class="mt-1.5 text-xs font-semibold text-red-600">{{ form.errors.role }}</p>
-                </div>
+                <UFormField name="role" label="Rol" required :error="form.errors.role" help="El rol define a qué secciones puede acceder el usuario.">
+                    <URadioGroup
+                        v-model="form.role"
+                        :items="roleOptions"
+                        variant="card"
+                        :ui="{ fieldset: 'grid gap-3 sm:grid-cols-2' }"
+                    />
+                </UFormField>
 
-                <UiButton type="submit" :disabled="form.processing" :loading="form.processing">Actualizar rol</UiButton>
-            </form>
-        </div>
+                <template #footer>
+                    <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <UButton :to="route('users.show', user.id, false)" color="neutral" variant="ghost" size="lg" class="justify-center">
+                            Cancelar
+                        </UButton>
+                        <UButton type="submit" icon="i-lucide-check" size="lg" class="justify-center" :loading="form.processing" :disabled="form.processing">
+                            Actualizar rol
+                        </UButton>
+                    </div>
+                </template>
+            </UCard>
+
+            <UCard class="shadow-card">
+                <template #header>
+                    <PanelHeader kicker="Resumen" title="Cambio de rol" />
+                </template>
+                <dl class="space-y-4 text-sm">
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Rol actual</dt>
+                        <dd class="mt-1.5"><UBadge :color="roleColor(user.role)" variant="subtle" class="rounded-full">{{ roleLabel(user.role) }}</UBadge></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-muted">Nuevo rol</dt>
+                        <dd class="mt-1.5"><UBadge :color="roleColor(form.role)" variant="subtle" class="rounded-full">{{ roleLabel(form.role) }}</UBadge></dd>
+                    </div>
+                </dl>
+            </UCard>
+        </form>
     </DashboardLayout>
 </template>

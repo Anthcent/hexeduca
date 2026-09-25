@@ -1,13 +1,14 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
-import { usePage, Link } from '@inertiajs/vue3';
-import {
-    Bell, Blocks, ChevronDown, GraduationCap, LayoutDashboard, ListChecks, LogOut, Menu,
-    Moon, PanelLeftClose, PanelLeftOpen, Search, Sun, Users, X,
-} from 'lucide-vue-next';
+import { computed, toRef, watch } from 'vue';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { useToast } from '@nuxt/ui/composables/useToast';
 import SchoolContextBar from '@/Components/school/SchoolContextBar.vue';
+import { useTheme } from '@/composables/useTheme';
+import { ROLE_LABELS, toPath, useShellNavigation } from './navigation';
 
 const props = defineProps({
+    // Key of the nav entry to highlight when the current URL matches none
+    // (see navigation.js); kept so every page can keep passing it.
     active: {
         type: String,
         default: 'resumen',
@@ -15,231 +16,250 @@ const props = defineProps({
 });
 
 const page = usePage();
-const user = computed(() => page.props.auth?.user ?? null);
-const isLandlord = computed(() => user.value?.role === 'super-admin');
-const availableModules = computed(() => page.props.modules ?? []);
+const { user, isLandlord, navigationLists, quickActions, searchGroups } = useShellNavigation(toRef(props, 'active'));
+const { dark, toggleTheme } = useTheme();
+
+const school = computed(() => page.props.school ?? null);
+const brandName = computed(() => school.value?.name ?? (isLandlord.value ? 'Panel central' : 'Gestión escolar'));
+const homePath = computed(() => route('dashboard', undefined, false));
+const roleLabel = computed(() => ROLE_LABELS[user.value?.role] ?? user.value?.role ?? '');
+
 // Shared by the Notifications module only when it is usable for this user;
-// absent or null otherwise.
+// absent or null otherwise, and then the bell stays disabled.
 const notificationsBell = computed(() => page.props.notifications ?? null);
 const unreadNotifications = computed(() => notificationsBell.value?.unreadCount ?? 0);
+const inboxPath = computed(() => (notificationsBell.value ? toPath(notificationsBell.value.inboxUrl) : null));
+const bellLabel = computed(() => (unreadNotifications.value > 0
+    ? `Notificaciones: ${unreadNotifications.value} sin leer`
+    : 'Notificaciones'));
 
-// Icons declared in a module's manifest `navigation` entries are looked up
-// by name here; unknown names fall back to the generic module icon.
-const moduleNavIcons = { Bell, Blocks, GraduationCap, LayoutDashboard, ListChecks, Search, Users };
-const moduleNavItems = computed(() => (page.props.moduleNav ?? []).map((item) => ({
-    key: `module:${item.key}`,
-    label: item.label,
-    icon: moduleNavIcons[item.icon] ?? Blocks,
-    href: item.href,
-})));
-const initials = computed(() => {
-    if (!user.value?.name) return '?';
-    return user.value.name.split(' ').map((part) => part[0]).slice(0, 2).join('').toUpperCase();
-});
+// Flash messages (`flash.success` / `flash.error`, shared by HandleInertiaRequests)
+// become toasts here, once for every page. Each response carries a new flash
+// object, so a repeated message still shows again.
+const toast = useToast();
 
-const navItems = computed(() => {
-    const items = [
-        { key: 'resumen', label: 'Inicio', icon: LayoutDashboard, href: route('dashboard') },
-    ];
+watch(
+    () => page.props.flash,
+    (flash) => {
+        if (flash?.success) {
+            toast.add({ title: flash.success, color: 'success', icon: 'i-lucide-circle-check' });
+        }
 
-    if (isLandlord.value) {
-        items.push(
-            { key: 'instituciones', label: 'Instituciones', icon: GraduationCap, href: route('admin.schools.index') },
-            { key: 'modulos', label: 'Módulos', icon: Blocks, href: route('admin.modules.index') },
-        );
-    } else {
-        items.push(
-            { key: 'matriculas', label: 'Matrículas', icon: ListChecks, href: route('academic.matriculas.create'), moduleKey: 'academic' },
-            { key: 'academico', label: 'Base académica', icon: GraduationCap, href: route('academic.catalogos'), moduleKey: 'academic' },
-        );
-    }
+        if (flash?.error) {
+            toast.add({ title: flash.error, color: 'error', icon: 'i-lucide-circle-alert' });
+        }
+    },
+    { immediate: true },
+);
 
-    items.push({ key: 'usuarios', label: 'Usuarios', icon: Users, href: route('users.index') });
-    items.push(...moduleNavItems.value);
+function logout() {
+    router.post(route('logout'));
+}
 
-    return items.filter((item) => !item.moduleKey || availableModules.value.includes(item.moduleKey));
-});
+const userMenu = computed(() => [
+    [{ type: 'label', label: user.value?.name, description: user.value?.email }],
+    [{
+        label: dark.value ? 'Usar modo claro' : 'Usar modo oscuro',
+        icon: dark.value ? 'i-lucide-sun' : 'i-lucide-moon',
+        onSelect: (event) => {
+            event.preventDefault();
+            toggleTheme();
+        },
+    }],
+    [{ label: 'Cerrar sesión', icon: 'i-lucide-log-out', onSelect: logout }],
+]);
 
-const compactSidebar = ref(false);
-const mobileMenu = ref(false);
-const dark = ref(false);
-const contextDockOpen = ref(true);
-
-watch(dark, (value) => {
-    document.documentElement.classList.toggle('dark', value);
-    localStorage.setItem('educativo-theme', value ? 'dark' : 'light');
-});
-onMounted(() => {
-    dark.value = localStorage.getItem('educativo-theme') === 'dark';
-});
+const navigationUi = {
+    link: 'py-2',
+    linkLabel: 'text-[0.84375rem]',
+    childLink: 'py-2',
+    separator: 'my-3 mx-2.5',
+};
 </script>
 
 <template>
-    <div class="min-h-screen pb-20 lg:pb-0">
-        <header class="fixed inset-x-0 top-0 z-50 h-16 border-b backdrop-blur-xl">
-            <div class="flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5">
-                <button class="grid size-10 shrink-0 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))] lg:hidden" aria-label="Abrir menú" @click="mobileMenu = true">
-                    <Menu class="size-5" />
-                </button>
+    <UDashboardGroup storage="local" storage-key="hexeduca-shell" unit="rem">
+        <a
+            href="#main-content"
+            class="sr-only z-50 rounded-md bg-default px-3 py-2 text-sm font-semibold text-highlighted shadow-card focus:not-sr-only focus:fixed focus:left-3 focus:top-3"
+        >Saltar al contenido</a>
 
-                <Link :href="route('home')" class="flex shrink-0 items-center gap-3 lg:w-60">
-                    <div class="grid size-10 place-items-center rounded-2xl bg-brand-950 text-brand-100 shadow-lg">
-                        <GraduationCap class="size-5" />
-                    </div>
-                    <div class="hidden sm:block">
-                        <p class="font-display text-sm font-extrabold">Educativo</p>
-                        <p class="muted text-[11px] font-bold uppercase tracking-[.14em]">Gestión escolar</p>
-                    </div>
-                </Link>
-
-                <button class="muted mx-auto hidden h-10 min-w-0 max-w-sm flex-1 items-center gap-3 rounded-xl border bg-[rgb(var(--canvas))] px-3 text-left text-sm hover:border-brand-300 xl:flex">
-                    <Search class="size-4 shrink-0" />
-                    <span class="truncate">Buscar en el sistema…</span>
-                    <span class="kbd ml-auto">⌘ K</span>
-                </button>
-
-                <div class="ml-auto flex items-center gap-0.5">
-                    <button class="hidden size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))] sm:grid" :aria-label="dark ? 'Usar modo claro' : 'Usar modo oscuro'" @click="dark = !dark">
-                        <Sun v-if="dark" class="size-[18px]" />
-                        <Moon v-else class="size-[18px]" />
-                    </button>
-                    <Link
-                        v-if="notificationsBell"
-                        :href="notificationsBell.inboxUrl"
-                        class="relative grid size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))]"
-                        :aria-label="unreadNotifications > 0 ? `Notificaciones: ${unreadNotifications} sin leer` : 'Notificaciones'"
-                        :title="unreadNotifications > 0 ? `${unreadNotifications} sin leer` : 'Notificaciones'"
-                    >
-                        <Bell class="size-[18px]" />
-                        <span
-                            v-if="unreadNotifications > 0"
-                            class="absolute right-1 top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-[rgb(var(--surface))]"
-                            aria-hidden="true"
-                        >{{ unreadNotifications > 99 ? '99+' : unreadNotifications }}</span>
-                    </Link>
-                    <!-- Without the Notifications module there is no inbox to open. -->
-                    <button v-else class="relative grid size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))]" aria-label="Notificaciones" disabled>
-                        <Bell class="size-[18px]" />
-                    </button>
-                    <div v-if="user" class="ml-0.5 hidden items-center gap-2 rounded-xl p-1 pr-2 sm:flex">
-                        <span class="grid size-8 place-items-center rounded-xl bg-brand-700 text-xs font-bold text-white">{{ initials }}</span>
-                        <div class="hidden text-left leading-tight md:block">
-                            <p class="text-xs font-bold">{{ user.name }}</p>
-                            <p class="muted text-[11px]">{{ user.role }}</p>
-                        </div>
-                    </div>
-                    <Link
-                        v-if="user"
-                        :href="route('logout')"
-                        method="post"
-                        as="button"
-                        class="hidden size-10 place-items-center rounded-xl hover:bg-[rgb(var(--surface-muted))] sm:grid"
-                        aria-label="Cerrar sesión"
-                        title="Cerrar sesión"
-                    >
-                        <LogOut class="size-[18px]" />
-                    </Link>
-                </div>
-            </div>
-        </header>
-
-        <div
-            v-if="!isLandlord"
-            class="fixed right-0 top-16 z-45 border-b border-brand-100/80 backdrop-blur-xl transition-[height,left] duration-300 dark:border-brand-900"
-            :class="[compactSidebar ? 'lg:left-[82px]' : 'lg:left-64', contextDockOpen ? 'left-0 h-[76px]' : 'left-0 h-7']"
+        <UDashboardSidebar
+            id="main"
+            collapsible
+            :resizable="false"
+            :default-size="16"
+            :min-size="16"
+            :max-size="16"
+            :collapsed-size="4"
+            :ui="{
+                root: 'app-sidebar',
+                content: 'app-sidebar max-w-xs',
+                header: 'border-b border-default',
+                body: 'scrollbar-thin gap-0 py-4',
+                footer: 'border-t border-default py-3',
+            }"
         >
-            <Transition name="bubble">
-                <div v-if="contextDockOpen" class="mx-auto flex h-full max-w-[1500px] items-center px-3 sm:px-5 lg:px-8">
-                    <SchoolContextBar class="w-full border border-brand-200/70 shadow-[0_12px_35px_rgba(4,39,31,.12)] dark:border-brand-700">
-                        <button class="flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3 text-sm font-bold text-brand-700 transition hover:bg-brand-50 dark:text-brand-200 dark:hover:bg-brand-950" aria-label="Ocultar contexto académico" @click="contextDockOpen = false">
-                            <ChevronDown class="size-4 rotate-180" /><span class="hidden sm:inline">Ocultar</span>
-                        </button>
-                    </SchoolContextBar>
-                </div>
-            </Transition>
-            <button v-if="!contextDockOpen" class="absolute left-1/2 top-0 flex h-7 -translate-x-1/2 items-center gap-2 rounded-b-2xl bg-brand-950 px-4 text-[11px] font-bold text-white shadow-lg transition hover:h-8 hover:bg-brand-900" aria-label="Mostrar contexto académico" @click="contextDockOpen = true">
-                <span class="size-1.5 rounded-full bg-brand-300" /><span>Contexto académico</span><ChevronDown class="size-3 text-brand-200" />
-            </button>
-        </div>
-
-        <aside class="fixed bottom-0 left-0 top-16 z-40 hidden border-r bg-[rgb(var(--surface))] transition-all duration-300 lg:block" :class="compactSidebar ? 'w-[82px]' : 'w-64'">
-            <div class="flex h-full flex-col p-3">
-                <nav class="scrollbar-thin flex-1 space-y-0.5 overflow-y-auto" :class="isLandlord ? '' : 'mt-1'">
-                    <Link
-                        v-for="item in navItems"
-                        :key="item.key"
-                        :href="item.href"
-                        class="flex h-10 w-full items-center rounded-[18px] text-sm font-semibold transition"
-                        :class="[compactSidebar ? 'justify-center' : 'gap-3 px-3', active === item.key ? 'bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-100' : 'muted hover:bg-[rgb(var(--surface-muted))] hover:text-[rgb(var(--text))]']"
-                        :title="compactSidebar ? item.label : undefined"
-                    >
-                        <component :is="item.icon" class="size-[18px] shrink-0" />
-                        <span v-if="!compactSidebar">{{ item.label }}</span>
-                    </Link>
-                </nav>
-                <button class="muted mt-2 flex h-10 items-center rounded-[18px] hover:bg-[rgb(var(--surface-muted))]" :class="compactSidebar ? 'justify-center' : 'gap-3 px-3'" @click="compactSidebar = !compactSidebar">
-                    <PanelLeftOpen v-if="compactSidebar" class="size-4" />
-                    <PanelLeftClose v-else class="size-4" />
-                    <span v-if="!compactSidebar" class="text-sm font-semibold">Contraer menú</span>
-                </button>
-            </div>
-        </aside>
-
-        <Transition name="fade">
-            <div v-if="mobileMenu" class="fixed inset-0 z-70 bg-brand-950/55 backdrop-blur-xs lg:hidden" @click="mobileMenu = false" />
-        </Transition>
-        <Transition name="slide">
-            <aside v-if="mobileMenu" class="fixed inset-y-0 left-0 z-80 w-[86%] max-w-sm bg-[rgb(var(--surface))] p-4 shadow-lift lg:hidden">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <span class="grid size-10 place-items-center rounded-2xl bg-brand-950 text-brand-100"><GraduationCap class="size-5" /></span>
-                        <div>
-                            <p class="font-display font-extrabold">Educativo</p>
-                            <p class="muted text-xs">Gestión escolar</p>
-                        </div>
-                    </div>
-                    <button class="rounded-xl p-2 hover:bg-[rgb(var(--surface-muted))]" @click="mobileMenu = false"><X class="size-5" /></button>
-                </div>
-                <nav class="mt-4 space-y-1">
-                    <Link
-                        v-for="item in navItems"
-                        :key="item.key"
-                        :href="item.href"
-                        class="flex h-12 w-full items-center gap-3 rounded-xl px-3 text-sm font-semibold"
-                        :class="active === item.key ? 'bg-brand-50 text-brand-800 dark:bg-brand-950 dark:text-brand-100' : 'muted'"
-                        @click="mobileMenu = false"
-                    >
-                        <component :is="item.icon" class="size-[18px]" />{{ item.label }}
-                    </Link>
-                </nav>
-                <Link
-                    v-if="user"
-                    :href="route('logout')"
-                    method="post"
-                    as="button"
-                    class="muted mt-4 flex h-12 w-full items-center gap-3 rounded-xl border-t px-3 pt-2 text-sm font-semibold"
-                >
-                    <LogOut class="size-[18px]" />Cerrar sesión
-                </Link>
-            </aside>
-        </Transition>
-
-        <nav class="fixed inset-x-0 bottom-0 z-50 border-t bg-[rgb(var(--surface))]/95 px-2 pb-[max(.45rem,env(safe-area-inset-bottom))] pt-1.5 backdrop-blur-xl lg:hidden">
-            <div class="mx-auto grid max-w-lg" :style="{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }">
-                <Link v-for="item in navItems" :key="item.key" :href="item.href" class="flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-1.5 text-[10px] font-bold" :class="active === item.key ? 'text-brand-700 dark:text-brand-300' : 'muted'">
-                    <span class="relative grid size-8 place-items-center rounded-xl" :class="active === item.key && 'bg-brand-50 dark:bg-brand-950'">
-                        <component :is="item.icon" class="size-[18px]" />
-                        <span v-if="active === item.key" class="absolute -top-1 h-0.5 w-5 rounded-full bg-brand-500" />
+            <template #header="{ collapsed }">
+                <!-- Collapse handle on the sidebar edge (desktop only). -->
+                <UDashboardSidebarCollapse
+                    color="neutral"
+                    variant="outline"
+                    size="xs"
+                    class="absolute -end-3.5 top-5 z-10 rounded-full bg-white text-brand-900 shadow-card ring-black/10 hover:bg-brand-50 dark:bg-brand-900 dark:text-brand-100 dark:ring-white/15 dark:hover:bg-brand-800"
+                    :ui="{ leadingIcon: 'size-4' }"
+                />
+                <Link :href="homePath" class="flex min-w-0 items-center gap-3 rounded-md" :aria-label="`${brandName} — Inicio`">
+                    <span class="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-500/25 text-brand-100 ring-1 ring-inset ring-white/10">
+                        <UIcon name="i-lucide-graduation-cap" class="size-[18px]" />
                     </span>
-                    <span class="truncate">{{ item.label.split(' ')[0] }}</span>
+                    <span v-if="!collapsed" class="min-w-0 leading-tight">
+                        <span class="block text-xs font-semibold uppercase tracking-[.12em] text-dimmed">Educativo</span>
+                        <span class="block truncate text-sm font-bold text-highlighted">{{ brandName }}</span>
+                    </span>
                 </Link>
-            </div>
-        </nav>
+            </template>
 
-        <main class="transition-all duration-300" :class="[compactSidebar ? 'lg:pl-[82px]' : 'lg:pl-64', !isLandlord && contextDockOpen ? 'pt-35' : 'pt-23']">
-            <div class="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
-                <slot />
-            </div>
-        </main>
-    </div>
+            <template #default="{ collapsed }">
+                <UNavigationMenu
+                    :items="navigationLists(collapsed)"
+                    orientation="vertical"
+                    color="neutral"
+                    variant="pill"
+                    :collapsed="collapsed"
+                    tooltip
+                    popover
+                    :ui="navigationUi"
+                    aria-label="Navegación principal"
+                />
+            </template>
+
+            <template #footer="{ collapsed }">
+                <UDropdownMenu
+                    v-if="user"
+                    :items="userMenu"
+                    :content="{ side: collapsed ? 'right' : 'top', align: collapsed ? 'end' : 'start' }"
+                    :ui="{ content: collapsed ? 'w-60' : 'w-(--reka-dropdown-menu-trigger-width) min-w-56' }"
+                >
+                    <UButton
+                        color="neutral"
+                        variant="ghost"
+                        block
+                        class="data-[state=open]:bg-elevated"
+                        :class="collapsed ? 'justify-center px-0' : 'justify-start px-2'"
+                        :aria-label="`Menú de usuario: ${user.name}`"
+                    >
+                        <UUser
+                            :name="collapsed ? undefined : user.name"
+                            :description="collapsed ? undefined : roleLabel"
+                            :avatar="{ alt: user.name, ui: { root: 'bg-brand-600', fallback: 'font-semibold text-white' } }"
+                            size="md"
+                            class="min-w-0"
+                            :ui="{ wrapper: 'min-w-0 text-start', name: 'truncate', description: 'truncate text-xs' }"
+                        />
+                        <UIcon v-if="!collapsed" name="i-lucide-chevrons-up-down" class="ms-auto size-4 shrink-0 text-dimmed" />
+                    </UButton>
+                </UDropdownMenu>
+            </template>
+        </UDashboardSidebar>
+
+        <UDashboardPanel id="content">
+            <UDashboardNavbar
+                :ui="{
+                    root: 'gap-2 bg-default/80 px-3 backdrop-blur sm:px-4 lg:px-6',
+                    left: 'flex-1 gap-2',
+                    right: 'gap-1',
+                }"
+            >
+                <template #leading>
+                    <UDashboardSearchButton
+                        label="Buscar en el sistema…"
+                        variant="outline"
+                        class="w-full max-w-md bg-default"
+                        :ui="{ label: 'hidden text-muted sm:inline', trailing: 'hidden lg:flex items-center gap-0.5 ms-auto' }"
+                    />
+                </template>
+
+                <template #right>
+                    <UDropdownMenu v-if="quickActions.length > 0" :items="quickActions" :content="{ align: 'end' }" :ui="{ content: 'min-w-56' }">
+                        <UButton
+                            icon="i-lucide-plus"
+                            trailing-icon="i-lucide-chevron-down"
+                            color="primary"
+                            label="Acción rápida"
+                            aria-label="Acción rápida"
+                            :ui="{ label: 'hidden md:inline', trailingIcon: 'hidden md:inline-flex size-4' }"
+                        />
+                    </UDropdownMenu>
+
+                    <UTooltip :text="bellLabel">
+                        <UButton
+                            v-if="notificationsBell"
+                            :to="inboxPath"
+                            color="neutral"
+                            variant="outline"
+                            square
+                            :aria-label="bellLabel"
+                        >
+                            <UChip
+                                :show="unreadNotifications > 0"
+                                :text="unreadNotifications > 99 ? '99+' : unreadNotifications"
+                                color="error"
+                                size="3xl"
+                                :ui="{ base: 'px-1 text-[10px] font-bold ring-2 ring-(--ui-bg)' }"
+                            >
+                                <UIcon name="i-lucide-bell" class="size-5" />
+                            </UChip>
+                        </UButton>
+                        <!-- Without the Notifications module there is no inbox to open. -->
+                        <UButton v-else color="neutral" variant="outline" icon="i-lucide-bell" aria-label="Notificaciones" disabled />
+                    </UTooltip>
+
+                    <UTooltip :text="dark ? 'Usar modo claro' : 'Usar modo oscuro'">
+                        <UButton
+                            color="neutral"
+                            variant="outline"
+                            :icon="dark ? 'i-lucide-sun' : 'i-lucide-moon'"
+                            class="hidden sm:inline-flex"
+                            :aria-label="dark ? 'Usar modo claro' : 'Usar modo oscuro'"
+                            @click="toggleTheme"
+                        />
+                    </UTooltip>
+
+                    <UDropdownMenu v-if="user" :items="userMenu" :content="{ align: 'end' }" :ui="{ content: 'w-60' }">
+                        <UButton color="neutral" variant="ghost" class="ms-1 gap-2 px-1.5" :aria-label="`Menú de usuario: ${user.name}`">
+                            <UUser
+                                :name="user.name"
+                                :description="roleLabel"
+                                :avatar="{ alt: user.name, ui: { root: 'bg-brand-700', fallback: 'font-semibold text-white' } }"
+                                size="sm"
+                                :ui="{ wrapper: 'hidden max-w-44 text-start md:block', name: 'truncate', description: 'truncate text-xs' }"
+                            />
+                            <UIcon name="i-lucide-chevron-down" class="hidden size-4 text-dimmed md:block" />
+                        </UButton>
+                    </UDropdownMenu>
+                </template>
+            </UDashboardNavbar>
+
+            <UDashboardToolbar v-if="!isLandlord" :ui="{ root: 'min-h-12 bg-default/50 px-2 sm:px-4 lg:px-6' }">
+                <template #left>
+                    <SchoolContextBar />
+                </template>
+            </UDashboardToolbar>
+
+            <main id="main-content" scroll-region class="min-h-0 flex-1 overflow-y-auto" tabindex="-1">
+                <div class="mx-auto w-full max-w-[1500px] p-4 sm:p-6 lg:p-8">
+                    <slot />
+                </div>
+            </main>
+        </UDashboardPanel>
+
+        <UDashboardSearch
+            :groups="searchGroups"
+            :color-mode="false"
+            placeholder="Buscar páginas y acciones…"
+            title="Buscar"
+            description="Busca una página o una acción"
+        />
+    </UDashboardGroup>
 </template>

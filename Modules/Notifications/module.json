@@ -14,7 +14,7 @@
         {"name": "notifications.send", "roles": ["staff/admin"]}
     ],
     "navigation": [
-        {"label": "Notificaciones", "route": "notifications.index", "icon": "Bell", "permission": "notifications.view"}
+        {"label": "Notificaciones", "route": "notifications.index", "icon": "Bell", "group": "comunicacion", "permission": "notifications.view"}
     ],
     "providers": [
         "Modules\\Notifications\\Infrastructure\\Providers\\NotificationsServiceProvider"

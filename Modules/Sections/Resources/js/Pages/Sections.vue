@@ -1,38 +1,132 @@
 <script setup>
-import { router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { computed, ref } from 'vue';
+import { Head, router, useForm } from '@inertiajs/vue3';
+import DashboardLayout from '@/Layouts/DashboardLayout.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import PanelHeader from '@/Components/PanelHeader.vue';
+import DataToolbar from '@/Components/DataToolbar.vue';
+import EmptyState from '@/Components/EmptyState.vue';
+import ConfirmModal from '@/Components/ConfirmModal.vue';
+import { tableUi } from '@/Components/tableUi';
+import { useConfirmAction } from '@/composables/useConfirmAction';
 
 const props = defineProps({
-  sections: { type: Array, default: () => [] },
-})
+    sections: { type: Array, default: () => [] },
+});
 
-const name = ref('')
+// Search runs client-side over the full list.
+const search = ref('');
+const filtered = computed(() => {
+    const term = search.value.trim().toLocaleLowerCase('es');
 
-function create() {
-  router.post(route('sections.store'), { name: name.value }, {
-    onSuccess: () => { name.value = '' },
-  })
+    return term ? props.sections.filter((section) => section.name.toLocaleLowerCase('es').includes(term)) : props.sections;
+});
+
+const columns = [
+    { accessorKey: 'name', header: 'Nombre' },
+    { id: 'actions', header: '', meta: { class: { th: 'w-24', td: 'text-right' } } },
+];
+
+// Create
+
+const createOpen = ref(false);
+const form = useForm({ name: '' });
+
+function openCreate() {
+    form.reset();
+    form.clearErrors();
+    createOpen.value = true;
 }
 
-function destroy(id) {
-  router.delete(route('sections.destroy', id))
+function create() {
+    form.post(route('sections.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+            createOpen.value = false;
+        },
+    });
+}
+
+// Delete
+
+const { target: toDelete, open: deleteOpen, processing: deleting, ask: askDelete, run: runDelete, clear: clearDelete } = useConfirmAction();
+
+function confirmDelete() {
+    runDelete((options) => router.delete(route('sections.destroy', toDelete.value.id), options));
 }
 </script>
 
 <template>
-  <div class="p-6">
-    <h1 class="text-xl font-semibold mb-4">Secciones</h1>
+    <Head title="Secciones" />
 
-    <form class="flex gap-2 mb-6" @submit.prevent="create">
-      <input v-model="name" type="text" placeholder="Nombre de la sección" class="border rounded-sm px-3 py-2" />
-      <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-sm">Crear</button>
-    </form>
+    <DashboardLayout active="academico">
+        <PageHeader
+            eyebrow="Académico"
+            title="Secciones"
+            description="Divisiones de cada grado (por ejemplo A, B o C) que se combinan en las ofertas académicas."
+        >
+            <template #actions>
+                <UButton icon="i-lucide-plus" size="lg" @click="openCreate">Nueva sección</UButton>
+            </template>
+        </PageHeader>
 
-    <ul class="divide-y">
-      <li v-for="section in sections" :key="section.id" class="flex items-center justify-between py-2">
-        <span>{{ section.name }}</span>
-        <button class="text-red-600 text-sm" @click="destroy(section.id)">Eliminar</button>
-      </li>
-    </ul>
-  </div>
+        <UCard class="shadow-card" :ui="{ body: 'p-0 sm:p-0' }">
+            <template #header>
+                <div class="space-y-4">
+                    <PanelHeader kicker="Catálogo" :title="filtered.length === 1 ? '1 sección' : `${filtered.length} secciones`" />
+                    <DataToolbar v-model:search="search" placeholder="Buscar sección" />
+                </div>
+            </template>
+
+            <EmptyState
+                v-if="filtered.length === 0"
+                :icon="search ? 'i-lucide-search-x' : 'i-lucide-users'"
+                :title="search ? 'Sin resultados' : 'Todavía no hay secciones'"
+                :description="search ? 'Prueba con otro término.' : 'Crea la primera para poder abrir ofertas académicas.'"
+                :actions="search ? [] : [{ label: 'Nueva sección', icon: 'i-lucide-plus', onClick: openCreate }]"
+            />
+
+            <UTable v-else :data="filtered" :columns="columns" :ui="tableUi">
+                <template #name-cell="{ row }">
+                    <div class="flex items-center gap-3">
+                        <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <UIcon name="i-lucide-users" class="size-4" />
+                        </span>
+                        <span class="font-semibold text-highlighted">{{ row.original.name }}</span>
+                    </div>
+                </template>
+                <template #actions-cell="{ row }">
+                    <UTooltip text="Eliminar">
+                        <UButton color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Eliminar ${row.original.name}`" @click="askDelete(row.original)" />
+                    </UTooltip>
+                </template>
+            </UTable>
+        </UCard>
+
+        <UModal v-model:open="createOpen" title="Nueva sección" :dismissible="!form.processing">
+            <template #body>
+                <form id="form-section" novalidate @submit.prevent="create">
+                    <UFormField label="Nombre" name="name" required :error="form.errors.name">
+                        <UInput v-model="form.name" placeholder="Ej.: C" size="lg" class="w-full" autofocus />
+                    </UFormField>
+                </form>
+            </template>
+            <template #footer>
+                <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <UButton color="neutral" variant="ghost" class="justify-center" @click="createOpen = false">Cancelar</UButton>
+                    <UButton type="submit" form="form-section" icon="i-lucide-check" class="justify-center" :loading="form.processing">Crear</UButton>
+                </div>
+            </template>
+        </UModal>
+
+        <ConfirmModal
+            v-model:open="deleteOpen"
+            :title="`¿Eliminar «${toDelete?.name ?? ''}»?`"
+            description="Esta acción no se puede deshacer."
+            :loading="deleting"
+            @confirm="confirmDelete"
+            @after:leave="clearDelete"
+        />
+    </DashboardLayout>
 </template>

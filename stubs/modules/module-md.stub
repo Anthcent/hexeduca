@@ -33,9 +33,13 @@ Generated with `php artisan make:project-module $STUDLY_NAME$`.
   ]
   ```
 - `navigation` — optional sidebar entries added to `DashboardLayout.vue`.
-  Each entry is `{"label": "...", "route": "...", "icon": "...", "permission": "..."}`
-  (`icon` is a `lucide-vue-next` icon name; `permission` is optional — omit
-  it to show the entry to every user who can access the module). Starts
+  Each entry is `{"label": "...", "route": "...", "icon": "...", "group": "...", "permission": "..."}`
+  (`icon` is a lucide icon name in PascalCase, resolved offline through the
+  map in `resources/js/Layouts/navigation.js`, where unknown names fall back
+  to `Blocks`; `group` is optional and one of `inicio`, `academico`,
+  `comunicacion`, `documentos`, `administracion`, defaulting to a "Más"
+  group; `permission` is optional — omit it to show the entry to every user
+  who can access the module). Starts
   empty (`[]`); JSON has no comments, so this file is the reference. Example:
   ```json
   "navigation": [
