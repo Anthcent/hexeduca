@@ -30,6 +30,8 @@ Multi-tenant school management system: one school per subdomain. Laravel 12, nwi
 
 ## Local run (browser)
 
+Windows dev loop: `composer run dev:windows` (add `-- -Fresh` to reset and seed). It runs `scripts/dev.ps1`: PostgreSQL from docker-compose on 127.0.0.1, PHP 8.3 with `scripts/dev/php-dev.ini` (10 MB uploads, OPcache), the queue worker, and Vite with hot reload. `.env` targets Sail, so the script overrides the DB host, cache, session, and queue through process env vars. The local PHP has no Redis extension.
+
 Tenant is resolved from the Host subdomain: landlord `admin.localhost:8000`, demo school `demo.localhost:8000`. Seeded demo users: `staff@demo.test`, `teacher@demo.test`, `student1@demo.test` (password `password`). Super-admin credentials come from the `SUPER_ADMIN_EMAIL` / `SUPER_ADMIN_PASSWORD` env vars. Delete `public/hot` before `php artisan serve`, otherwise every page is blank.
 
 ## Known gaps (2026-09-24)

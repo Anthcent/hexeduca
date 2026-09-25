@@ -8,4 +8,4 @@ Skills live in `.agents/skills/` (read natively by Codex and Antigravity). Claud
 |---|---|---|
 | create-module | Creating, building, or adding a new module | `.agents/skills/create-module/SKILL.md` |
 
-When asked to create a module, read that `SKILL.md` in full before doing anything else, and follow it exactly.
+When asked to create a module or finish a skeleton, read `NEW-MODULE.md` first. It sets the context, the reading order, and the brief → build → close workflow. Then read that `SKILL.md` in full before doing anything else, and follow it exactly.
