@@ -6,7 +6,9 @@ use App\AcademicPeriod\Contracts\ActivePeriodResolver;
 use Illuminate\Support\ServiceProvider;
 use Modules\AcademicPeriods\Domain\Repositories\AcademicPeriodRepositoryInterface;
 use Modules\AcademicPeriods\Infrastructure\Http\Resolvers\EloquentActivePeriodResolver;
+use Modules\AcademicPeriods\Infrastructure\Persistence\EloquentAcademicPeriodReader;
 use Modules\AcademicPeriods\Infrastructure\Persistence\EloquentAcademicPeriodRepository;
+use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -43,6 +45,7 @@ class AcademicPeriodsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AcademicPeriodRepositoryInterface::class, EloquentAcademicPeriodRepository::class);
+        $this->app->bind(AcademicPeriodReader::class, EloquentAcademicPeriodReader::class);
 
         // Definitive binding: this module now owns the active-period
         // resolution logic. Replaces the Fase 1 provisional bind that lived

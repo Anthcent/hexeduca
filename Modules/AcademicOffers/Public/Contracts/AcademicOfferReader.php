@@ -16,4 +16,12 @@ interface AcademicOfferReader
      * @return array<int, AcademicOfferSummary>
      */
     public function allActiveForSchool(int $schoolId): array;
+
+    /**
+     * Offers of one school in an explicit academic period (active or not),
+     * independent of the request's active period.
+     *
+     * @return array<int, AcademicOfferSummary>
+     */
+    public function allForPeriod(int $schoolId, int $periodId): array;
 }

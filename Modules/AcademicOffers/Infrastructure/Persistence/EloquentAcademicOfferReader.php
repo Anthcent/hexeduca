@@ -26,17 +26,39 @@ final class EloquentAcademicOfferReader implements AcademicOfferReader
         // manual filter.
         return AcademicOfferModel::where('school_id', $schoolId)
             ->get()
-            ->map(function (AcademicOfferModel $offer): AcademicOfferSummary {
-                $gradeLevel = $this->gradeLevelReader->find($offer->grado_id);
-                $section = $this->sectionReader->find($offer->seccion_id);
-
-                return new AcademicOfferSummary(
-                    id: $offer->id,
-                    gradeLevelName: $gradeLevel?->name ?? '—',
-                    sectionName: $section?->name ?? '—',
-                    capacity: $offer->capacity,
-                );
-            })
+            ->map(fn (AcademicOfferModel $offer): AcademicOfferSummary => $this->toSummary($offer))
             ->all();
+    }
+
+    /**
+     * Crosses the active-period scope on purpose (the caller names the
+     * period); the school filter stays explicit.
+     *
+     * @return array<int, AcademicOfferSummary>
+     */
+    public function allForPeriod(int $schoolId, int $periodId): array
+    {
+        return AcademicOfferModel::withoutActivePeriodScope()
+            ->where('school_id', $schoolId)
+            ->where('periodo_academico_id', $periodId)
+            ->orderBy('id')
+            ->get()
+            ->map(fn (AcademicOfferModel $offer): AcademicOfferSummary => $this->toSummary($offer))
+            ->all();
+    }
+
+    private function toSummary(AcademicOfferModel $offer): AcademicOfferSummary
+    {
+        $gradeLevel = $this->gradeLevelReader->find($offer->grado_id);
+        $section = $this->sectionReader->find($offer->seccion_id);
+
+        return new AcademicOfferSummary(
+            id: $offer->id,
+            gradeLevelName: $gradeLevel?->name ?? '—',
+            sectionName: $section?->name ?? '—',
+            capacity: $offer->capacity,
+            gradeLevelId: (int) $offer->grado_id,
+            sectionId: (int) $offer->seccion_id,
+        );
     }
 }

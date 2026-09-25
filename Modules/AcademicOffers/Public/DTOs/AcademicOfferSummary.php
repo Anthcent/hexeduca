@@ -8,6 +8,9 @@ namespace Modules\AcademicOffers\Public\DTOs;
  * picker (e.g. Enrollments' create-enrollment screen). Distinct from
  * AcademicOfferProjectionRow, which is the raw shape used for
  * projection/rebuild pipelines (plan §5/§10).
+ *
+ * `gradeLevelId` and `sectionId` were added later (additively) for modules
+ * that group or resolve offers by grade level (e.g. Subjects).
  */
 final readonly class AcademicOfferSummary
 {
@@ -16,5 +19,7 @@ final readonly class AcademicOfferSummary
         public string $gradeLevelName,
         public string $sectionName,
         public int $capacity,
+        public ?int $gradeLevelId = null,
+        public ?int $sectionId = null,
     ) {}
 }
