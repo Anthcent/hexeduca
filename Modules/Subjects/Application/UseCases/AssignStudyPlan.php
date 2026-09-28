@@ -9,8 +9,10 @@ use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Modules\GradeLevels\Public\Contracts\GradeLevelReader;
 use Modules\Subjects\Application\DTOs\AssignStudyPlanData;
 use Modules\Subjects\Application\Services\AssignmentSlots;
+use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Domain\Entities\PlanAssignment;
 use Modules\Subjects\Domain\Exceptions\InvalidAssignment;
+use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Exceptions\RecordArchived;
 use Modules\Subjects\Domain\Exceptions\StudyPlanNotFound;
 use Modules\Subjects\Domain\Repositories\PlanAssignmentRepositoryInterface;
@@ -31,20 +33,24 @@ final class AssignStudyPlan
         private readonly AcademicPeriodReader $periods,
         private readonly GradeLevelReader $gradeLevels,
         private readonly AcademicOfferReader $offers,
+        private readonly OpenPeriods $openPeriods,
     ) {}
 
     /**
      * @throws StudyPlanNotFound
      * @throws RecordArchived when the plan is archived
      * @throws InvalidAssignment when the period or the target is not the school's
+     * @throws PeriodClosed
      */
     public function handle(AssignStudyPlanData $data): PlanAssignment
     {
         $plan = $this->plans->findInSchool($data->planId, $data->schoolId) ?? throw StudyPlanNotFound::withId($data->planId);
         $plan->assertEditable();
 
-        if ($this->periods->findForSchool($data->periodId, $data->schoolId) === null) {
-            throw InvalidAssignment::unknownPeriod($data->periodId);
+        $period = $this->periods->findForSchool($data->periodId, $data->schoolId) ?? throw InvalidAssignment::unknownPeriod($data->periodId);
+
+        if (! $this->openPeriods->isOpen($period)) {
+            throw PeriodClosed::withId($period->id);
         }
 
         $assignment = $this->newAssignment($data);

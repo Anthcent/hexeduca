@@ -76,12 +76,14 @@ final class Subject
     }
 
     /**
-     * Only a subject that no assignment of its plan activates, and with no
-     * exclusions, may be deleted; otherwise it is archived.
+     * Only open periods count (see OpenPeriodPolicy): a subject that no
+     * current assignment of its plan activates in an open period, and with
+     * no exclusions there, may be deleted; otherwise it is archived. Closed
+     * periods are history and never block.
      */
-    public static function canBeDeleted(bool $activatedByAnAssignment, bool $hasExclusions): bool
+    public static function canBeDeleted(bool $activatedInAnOpenPeriod, bool $excludedInAnOpenPeriod): bool
     {
-        return ! $activatedByAnAssignment && ! $hasExclusions;
+        return ! $activatedInAnOpenPeriod && ! $excludedInAnOpenPeriod;
     }
 
     public function isArchived(): bool

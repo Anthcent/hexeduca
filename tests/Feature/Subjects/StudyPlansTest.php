@@ -74,6 +74,34 @@ test('search runs server-side across every page and page links keep the filters'
             ->where('plans.path', fn (string $path) => str_contains($path, 'search=A0') && ! str_contains($path, 'page=')));
 });
 
+test('search ignores accents and case in both directions', function (string $search) {
+    F::plan($this->school, '1', ['name' => 'Matemática aplicada']);
+    F::plan($this->school, '2', ['name' => 'Matematica basica']);
+    F::plan($this->school, '3', ['name' => 'Historia', 'observation' => 'Énfasis en MATEMÁTICA']);
+    F::plan($this->school, '4', ['name' => 'Arte']);
+
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search='.urlencode($search)))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('plans.data', fn ($plans) => collect($plans)->pluck('code')->all() === ['1', '2', '3']));
+})->with(['matematica', 'MATEMÁTICA', 'Matemática', 'mAtEmAtIcA']);
+
+test('a plan saved through the app stays searchable after an edit', function () {
+    $this->actingAs($this->staff)->post(F::url($this->school), ['code' => 'Ñ-01', 'name' => 'Educación básica']);
+    $plan = DB::table('study_plans')->sole();
+
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search=educacion'))
+        ->assertInertia(fn (Assert $page) => $page->has('plans.data', 1));
+
+    $this->actingAs($this->staff)->put(F::url($this->school, "/{$plan->id}"), ['code' => 'Ñ-01', 'name' => 'Ciencias', 'observation' => 'Técnica']);
+
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search=educacion'))
+        ->assertInertia(fn (Assert $page) => $page->has('plans.data', 0));
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search=tecnica'))
+        ->assertInertia(fn (Assert $page) => $page->where('plans.data.0.code', 'Ñ-01'));
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search=ñ-01'))
+        ->assertInertia(fn (Assert $page) => $page->where('plans.data.0.code', 'Ñ-01'));
+});
+
 test('teachers and students get 403 on every route', function (string $who) {
     $user = $this->{$who};
     $plan = F::plan($this->school, '31060');
@@ -268,7 +296,7 @@ test('a plan without related data is deleted; one with subjects or assignments c
     }
 });
 
-test('a subject is deleted only when no assignment activates it and it has no exclusions', function () {
+test('a subject is deleted only when no assignment activates or excludes it in an open period', function () {
     $plan = F::plan($this->school, '31060');
     $period = F::period($this->school, '2026', true);
     $free = F::subject($this->school, $plan, $this->grade2, 'Química');
@@ -288,6 +316,56 @@ test('a subject is deleted only when no assignment activates it and it has no ex
 
     $this->actingAs($this->staff)->post(F::url($this->school, "/{$plan}/subjects/{$activated}/archive"))->assertSessionHas('success', 'Asignatura archivada.');
     expect(DB::table('study_plan_subjects')->where('id', $activated)->value('status'))->toBe('archived');
+});
+
+test('assignments and exclusions in closed periods never block deleting a subject', function () {
+    $this->travelTo('2026-09-28 10:00:00');
+    $plan = F::plan($this->school, '31060');
+    $closed = F::period($this->school, '2025', false, '2025-01-01', '2025-11-30');
+    $open = F::period($this->school, '2026', true, '2026-01-01', '2026-11-30');
+    $math = F::subject($this->school, $plan, $this->grade1, 'Matemática');
+    $art = F::subject($this->school, $plan, $this->grade1, 'Arte');
+    $chem = F::subject($this->school, $plan, $this->grade2, 'Química');
+    $history = F::assignment($this->school, $closed, $plan, 'school');
+    F::exclude($this->school, $history, $art);
+    // A replaced row of an open period is history too: only current assignments activate.
+    F::assignment($this->school, $open, $plan, 'grade_level', $this->grade1, replaced: true);
+    F::assignment($this->school, $open, $plan, 'grade_level', $this->grade2);
+
+    $this->actingAs($this->staff)->get(F::url($this->school, "/{$plan}"))
+        ->assertInertia(fn (Assert $page) => $page->where('subjects', fn ($subjects) => collect($subjects)->pluck('canDelete', 'id')->all() === [
+            $art => true, $math => true, $chem => false,
+        ]));
+
+    foreach ([$math, $art] as $subject) {
+        $this->actingAs($this->staff)->delete(F::url($this->school, "/{$plan}/subjects/{$subject}"))->assertSessionHas('success', 'Asignatura eliminada.');
+    }
+
+    expect(DB::table('study_plan_subjects')->pluck('id')->all())->toBe([$chem])
+        // The closed period's exclusion went with the subject; its assignment stays.
+        ->and(DB::table('study_plan_subject_exclusions')->count())->toBe(0)
+        ->and(DB::table('study_plan_assignments')->where('id', $history)->exists())->toBeTrue();
+
+    $this->actingAs($this->staff)->delete(F::url($this->school, "/{$plan}/subjects/{$chem}"))
+        ->assertSessionHas('error', 'Tiene datos relacionados y no se puede eliminar. Puedes archivarlo.');
+});
+
+test('an exclusion on a replaced assignment of an open period does not block deleting a subject', function () {
+    $this->travelTo('2026-09-28 10:00:00');
+    $plan = F::plan($this->school, '31060');
+    $open = F::period($this->school, '2026', true, '2026-01-01', '2026-11-30');
+    $art = F::subject($this->school, $plan, $this->grade1, 'Arte');
+    // The archived holder was replaced: its exclusion is history, like the row itself.
+    $replaced = F::assignment($this->school, $open, $plan, 'school', replaced: true);
+    F::exclude($this->school, $replaced, $art);
+
+    $this->actingAs($this->staff)->delete(F::url($this->school, "/{$plan}/subjects/{$art}"))
+        ->assertSessionHasNoErrors()
+        ->assertSessionMissing('error');
+
+    expect(DB::table('study_plan_subjects')->where('id', $art)->exists())->toBeFalse()
+        ->and(DB::table('study_plan_subject_exclusions')->count())->toBe(0)
+        ->and(DB::table('study_plan_assignments')->where('id', $replaced)->exists())->toBeTrue();
 });
 
 test('an archived plan is read-only: no edits, no new subjects, no subject changes', function () {

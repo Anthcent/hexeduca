@@ -41,10 +41,12 @@ interface PlanAssignmentRepositoryInterface
     public function countForPlan(int $planId, int $schoolId): int;
 
     /**
-     * Whether any assignment of the plan (current or replaced) covers the
-     * grade level, i.e. has activated or would activate its subjects.
+     * Whether a current assignment of the plan in one of the periods covers
+     * the grade level, i.e. activates its subjects there.
+     *
+     * @param  list<int>  $periodIds
      */
-    public function planCoversGradeLevel(int $planId, int $gradeLevelId, int $schoolId): bool;
+    public function planCoversGradeLevelInPeriods(int $planId, int $gradeLevelId, int $schoolId, array $periodIds): bool;
 
     /**
      * Deletes the assignment and, by cascade, its exclusions.

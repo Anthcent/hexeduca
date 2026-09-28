@@ -49,7 +49,7 @@ final class AssignmentBoard
         );
 
         return [
-            'assignments' => $this->assignmentsByScope($periodId, $current, $plans, $effectiveByOffer, $labels),
+            'assignments' => $this->assignmentsByScope($periodId, $current, $plans, $effectiveByOffer, $excludedByAssignment, $labels),
             'offers' => array_values(array_map(
                 fn (AcademicOfferSummary $offer): array => $this->offerRow(
                     $offer,
@@ -67,9 +67,10 @@ final class AssignmentBoard
      * @param  list<PlanAssignment>  $current
      * @param  array<int, StudyPlan>  $plans
      * @param  array<int, PlanAssignment|null>  $effectiveByOffer
+     * @param  array<int, list<int>>  $excludedByAssignment
      * @return array{school: array<string, mixed>|null, gradeLevels: list<array<string, mixed>>, offers: list<array<string, mixed>>}
      */
-    private function assignmentsByScope(int $periodId, array $current, array $plans, array $effectiveByOffer, AssignmentLabeler $labels): array
+    private function assignmentsByScope(int $periodId, array $current, array $plans, array $effectiveByOffer, array $excludedByAssignment, AssignmentLabeler $labels): array
     {
         $grouped = ['school' => null, 'gradeLevels' => [], 'offers' => []];
         $gradeOrder = array_flip(array_keys($labels->gradeLevels()));
@@ -79,6 +80,8 @@ final class AssignmentBoard
                 'gradeLevelId' => $assignment->gradeLevelId(),
                 'offerId' => $assignment->offerId(),
                 'offerCount' => count(array_filter($effectiveByOffer, fn (?PlanAssignment $e): bool => $e?->id() === $assignment->id())),
+                // Lost when another plan takes the slot: the page warns first.
+                'excludedCount' => count($excludedByAssignment[(int) $assignment->id()] ?? []),
             ];
 
             match ($assignment->scope()) {

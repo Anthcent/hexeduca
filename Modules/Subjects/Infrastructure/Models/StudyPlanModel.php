@@ -5,6 +5,7 @@ namespace Modules\Subjects\Infrastructure\Models;
 use App\Tenancy\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Modules\Subjects\Domain\Entities\StudyPlan;
 use Modules\Subjects\Domain\ValueObjects\RecordStatus;
 
@@ -30,6 +31,23 @@ class StudyPlanModel extends Model
         return [
             'school_id' => 'integer',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $plan): void {
+            $plan->search_text = self::searchText($plan->code.' '.$plan->name.' '.$plan->observation);
+        });
+    }
+
+    /**
+     * Accent- and case-folded text for the plan search. SQLite's LOWER only
+     * folds ASCII and PostgreSQL has no unaccent by default, so the folding
+     * happens in PHP, for the stored column and for the search term alike.
+     */
+    public static function searchText(string $text): string
+    {
+        return strtolower(Str::ascii($text));
     }
 
     /**

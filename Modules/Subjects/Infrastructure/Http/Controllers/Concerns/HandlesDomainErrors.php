@@ -10,6 +10,7 @@ use Modules\Subjects\Domain\Exceptions\InvalidAssignment;
 use Modules\Subjects\Domain\Exceptions\InvalidStatusChange;
 use Modules\Subjects\Domain\Exceptions\InvalidSubject;
 use Modules\Subjects\Domain\Exceptions\ObservationRequired;
+use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Exceptions\PlanAssignmentNotFound;
 use Modules\Subjects\Domain\Exceptions\ReactivationNotApproved;
 use Modules\Subjects\Domain\Exceptions\RecordArchived;
@@ -62,6 +63,7 @@ trait HandlesDomainErrors
                 ? 'El plan está archivado y es de solo lectura.'
                 : 'La asignatura está archivada y es de solo lectura.',
             $e instanceof RecordInUse => 'Tiene datos relacionados y no se puede eliminar. Puedes archivarlo.',
+            $e instanceof PeriodClosed => 'El periodo está cerrado; sus asignaciones son de solo lectura.',
             $e instanceof InvalidStatusChange => 'El estado ya había cambiado. Se actualizó la página.',
             $e instanceof ReactivationNotApproved => 'Hay asignaciones que se reemplazarían y no fueron aprobadas. No se hizo ningún cambio.',
             default => throw $e,

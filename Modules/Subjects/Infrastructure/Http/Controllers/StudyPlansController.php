@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Modules\Subjects\Application\DTOs\StudyPlanData;
 use Modules\Subjects\Application\Queries\AssignmentLabeler;
+use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Application\UseCases\ArchiveStudyPlan;
 use Modules\Subjects\Application\UseCases\CreateStudyPlan;
 use Modules\Subjects\Application\UseCases\DeleteStudyPlan;
@@ -29,7 +30,6 @@ use Modules\Subjects\Infrastructure\Http\Controllers\Concerns\HandlesDomainError
 use Modules\Subjects\Infrastructure\Http\Requests\ReactivateStudyPlanRequest;
 use Modules\Subjects\Infrastructure\Http\Requests\StudyPlanRequest;
 use Modules\Subjects\Infrastructure\Models\StudyPlanModel;
-use Modules\Subjects\Infrastructure\Models\SubjectExclusionModel;
 
 class StudyPlansController extends Controller
 {
@@ -46,13 +46,9 @@ class StudyPlansController extends Controller
         $plans = StudyPlanModel::query()
             ->where('school_id', $schoolId)
             ->where('status', $status->value)
-            ->when($search !== '', function ($query) use ($search): void {
-                $term = '%'.mb_strtolower($search).'%';
-                $query->where(fn ($inner) => $inner
-                    ->whereRaw('LOWER(code) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(name) LIKE ?', [$term])
-                    ->orWhereRaw('LOWER(observation) LIKE ?', [$term]));
-            })
+            // Accent- and case-insensitive on every database: both sides are
+            // normalized in PHP (see StudyPlanModel::searchText).
+            ->when($search !== '', fn ($query) => $query->where('search_text', 'like', '%'.StudyPlanModel::searchText($search).'%'))
             ->withCount('subjects')
             ->orderBy('code')
             ->orderBy('id')
@@ -98,24 +94,25 @@ class StudyPlansController extends Controller
         StudyPlanRepositoryInterface $plans,
         SubjectRepositoryInterface $subjects,
         PlanAssignmentRepositoryInterface $assignments,
+        OpenPeriods $openPeriods,
     ): Response {
         $schoolId = $tenantContext->current()->id;
         $studyPlan = $plans->findInSchool($plan, $schoolId) ?? abort(404);
         $labels = $this->labeler($schoolId);
 
         $planSubjects = $subjects->forPlan($plan, $schoolId);
-        $excludedSubjectIds = SubjectExclusionModel::query()
-            ->where('school_id', $schoolId)
-            ->whereIn('study_plan_subject_id', array_map(fn (Subject $s): int => (int) $s->id(), $planSubjects))
-            ->distinct()
-            ->pluck('study_plan_subject_id')
-            ->flip();
+        $openPeriodIds = $openPeriods->idsForSchool($schoolId);
+        $excludedSubjectIds = array_flip($subjects->excludedInPeriods(
+            array_map(fn (Subject $s): int => (int) $s->id(), $planSubjects),
+            $schoolId,
+            $openPeriodIds,
+        ));
 
         $coveredGrades = [];
         $gradeLevels = $labels->gradeLevels();
 
         foreach ($gradeLevels as $gradeLevel) {
-            $coveredGrades[$gradeLevel->id] = $assignments->planCoversGradeLevel($plan, $gradeLevel->id, $schoolId);
+            $coveredGrades[$gradeLevel->id] = $assignments->planCoversGradeLevelInPeriods($plan, $gradeLevel->id, $schoolId, $openPeriodIds);
         }
 
         $currentAssignments = $assignments->currentForPlan($plan, $schoolId);
@@ -132,8 +129,8 @@ class StudyPlansController extends Controller
                 'weeklyHours' => $subject->weeklyHours(),
                 'status' => $subject->status()->value,
                 'canDelete' => Subject::canBeDeleted(
-                    $coveredGrades[$subject->gradeLevelId()] ?? $assignments->planCoversGradeLevel($plan, $subject->gradeLevelId(), $schoolId),
-                    $excludedSubjectIds->has($subject->id()),
+                    $coveredGrades[$subject->gradeLevelId()] ?? $assignments->planCoversGradeLevelInPeriods($plan, $subject->gradeLevelId(), $schoolId, $openPeriodIds),
+                    isset($excludedSubjectIds[$subject->id()]),
                 ),
             ], $planSubjects),
             'assignments' => array_map(fn (PlanAssignment $a): array => $labels->assignment($a), $currentAssignments),

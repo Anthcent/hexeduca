@@ -12,6 +12,7 @@ use Modules\AcademicPeriods\Public\DTOs\AcademicPeriodDTO;
 use Modules\Subjects\Application\DTOs\AssignStudyPlanData;
 use Modules\Subjects\Application\Queries\AssignmentBoard;
 use Modules\Subjects\Application\Queries\AssignmentLabeler;
+use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Application\UseCases\AssignStudyPlan;
 use Modules\Subjects\Application\UseCases\OverrideOfferSubject;
 use Modules\Subjects\Application\UseCases\RemovePlanAssignment;
@@ -31,7 +32,7 @@ class PlanAssignmentsController extends Controller
      * One period at a time: `?period=` or, by default, the active period
      * (else the newest one).
      */
-    public function index(Request $request, TenantContext $tenantContext, AssignmentBoard $board, StudyPlanRepositoryInterface $plans): Response
+    public function index(Request $request, TenantContext $tenantContext, AssignmentBoard $board, StudyPlanRepositoryInterface $plans, OpenPeriods $openPeriods): Response
     {
         $schoolId = $tenantContext->current()->id;
         $labels = app()->make(AssignmentLabeler::class, ['schoolId' => $schoolId]);
@@ -50,7 +51,8 @@ class PlanAssignmentsController extends Controller
                 'name' => $p->name,
                 'isActive' => $p->isActive,
             ], $periods)),
-            'period' => $period ? ['id' => $period->id, 'name' => $period->name, 'isActive' => $period->isActive] : null,
+            // A closed period is shown read-only.
+            'period' => $period ? ['id' => $period->id, 'name' => $period->name, 'isActive' => $period->isActive, 'isOpen' => $openPeriods->isOpen($period)] : null,
             'plans' => array_map(fn (StudyPlan $plan): array => AssignmentLabeler::plan($plan), $activePlans),
             'gradeLevels' => array_values(array_map(fn ($g): array => ['id' => $g->id, 'name' => $g->name], $labels->gradeLevels())),
             'board' => $period ? $board->build($schoolId, $period->id, $labels) : ['assignments' => ['school' => null, 'gradeLevels' => [], 'offers' => []], 'offers' => []],

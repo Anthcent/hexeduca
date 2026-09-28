@@ -4,6 +4,7 @@ namespace Tests\Feature\Subjects;
 
 use App\Tenancy\Models\School;
 use Illuminate\Support\Facades\DB;
+use Modules\Subjects\Infrastructure\Models\StudyPlanModel;
 use Modules\Users\Infrastructure\Models\User;
 
 /**
@@ -75,7 +76,7 @@ final class SubjectsFixtures
 
     public static function plan(School $school, string $code, array $overrides = []): int
     {
-        return DB::table('study_plans')->insertGetId(array_merge([
+        $row = array_merge([
             'school_id' => $school->id,
             'code' => $code,
             'name' => 'Plan '.$code,
@@ -83,7 +84,11 @@ final class SubjectsFixtures
             'status' => 'active',
             'created_at' => now(),
             'updated_at' => now(),
-        ], $overrides));
+        ], $overrides);
+
+        return DB::table('study_plans')->insertGetId($row + [
+            'search_text' => StudyPlanModel::searchText($row['code'].' '.$row['name'].' '.$row['observation']),
+        ]);
     }
 
     public static function subject(School $school, int $planId, int $gradeLevelId, string $name, array $overrides = []): int

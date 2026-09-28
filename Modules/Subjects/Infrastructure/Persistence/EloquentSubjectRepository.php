@@ -4,6 +4,7 @@ namespace Modules\Subjects\Infrastructure\Persistence;
 
 use Modules\Subjects\Domain\Entities\Subject;
 use Modules\Subjects\Domain\Repositories\SubjectRepositoryInterface;
+use Modules\Subjects\Infrastructure\Models\PlanAssignmentModel;
 use Modules\Subjects\Infrastructure\Models\SubjectExclusionModel;
 use Modules\Subjects\Infrastructure\Models\SubjectModel;
 
@@ -73,11 +74,28 @@ final class EloquentSubjectRepository implements SubjectRepositoryInterface
         return $byPlan;
     }
 
-    public function hasExclusions(int $subjectId, int $schoolId): bool
+    public function excludedInPeriods(array $subjectIds, int $schoolId, array $periodIds): array
     {
+        if ($subjectIds === [] || $periodIds === []) {
+            return [];
+        }
+
         return SubjectExclusionModel::query()
             ->where('school_id', $schoolId)
-            ->where('study_plan_subject_id', $subjectId)
-            ->exists();
+            ->whereIn('study_plan_subject_id', $subjectIds)
+            ->whereIn('study_plan_assignment_id', PlanAssignmentModel::query()
+                ->select('id')
+                ->where('school_id', $schoolId)
+                ->whereNull('replaced_at')
+                ->whereIn('academic_period_id', $periodIds))
+            ->distinct()
+            ->pluck('study_plan_subject_id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
+    }
+
+    public function deleteExclusions(int $subjectId, int $schoolId): void
+    {
+        SubjectExclusionModel::query()->where('school_id', $schoolId)->where('study_plan_subject_id', $subjectId)->delete();
     }
 }

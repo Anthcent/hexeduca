@@ -2,7 +2,9 @@
 
 namespace Modules\Subjects\Application\UseCases;
 
+use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Domain\Exceptions\InvalidAssignment;
+use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Exceptions\PlanAssignmentNotFound;
 use Modules\Subjects\Domain\Exceptions\RecordArchived;
 use Modules\Subjects\Domain\Exceptions\StudyPlanNotFound;
@@ -20,10 +22,12 @@ final class SetSubjectExclusion
         private readonly PlanAssignmentRepositoryInterface $assignments,
         private readonly StudyPlanRepositoryInterface $plans,
         private readonly SubjectRepositoryInterface $subjects,
+        private readonly OpenPeriods $openPeriods,
     ) {}
 
     /**
      * @throws PlanAssignmentNotFound
+     * @throws PeriodClosed
      * @throws StudyPlanNotFound
      * @throws RecordArchived when the assigned plan is archived (frozen)
      * @throws InvalidAssignment when the subject is not an active subject of the plan for a covered grade level
@@ -31,6 +35,7 @@ final class SetSubjectExclusion
     public function handle(int $assignmentId, int $subjectId, bool $excluded, int $schoolId): void
     {
         $assignment = $this->assignments->findCurrentInSchool($assignmentId, $schoolId) ?? throw PlanAssignmentNotFound::withId($assignmentId);
+        $this->openPeriods->assertOpen($assignment->periodId(), $schoolId);
         $plan = $this->plans->findInSchool($assignment->planId(), $schoolId) ?? throw StudyPlanNotFound::withId($assignment->planId());
         $plan->assertEditable();
 

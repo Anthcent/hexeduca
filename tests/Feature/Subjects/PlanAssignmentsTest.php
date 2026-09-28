@@ -312,3 +312,74 @@ test('removing an archived plan\'s assignment keeps it as history', function () 
     // A replaced assignment is no longer current: removing it again is 404.
     $this->actingAs($this->staff)->delete(F::url($this->school, "/assignments/{$frozen}"))->assertNotFound();
 });
+
+test('a closed period is read-only: every assignment and exclusion change is refused', function () {
+    $this->travelTo('2026-09-28 10:00:00');
+    $closed = F::period($this->school, '2025', false, '2025-01-01', '2025-11-30');
+    $closedOffer = F::offer($this->school, $closed, $this->grade1, F::section($this->school, 'C'));
+    $holder = F::assignment($this->school, $closed, $this->general, 'school');
+    F::exclude($this->school, $holder, $this->art1);
+    $before = [DB::table('study_plan_assignments')->get(), DB::table('study_plan_subject_exclusions')->get()];
+    $message = 'El periodo está cerrado; sus asignaciones son de solo lectura.';
+
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments'), [
+        'period_id' => $closed, 'plan_id' => $this->technical, 'scope' => 'school',
+    ])->assertSessionHas('error', $message);
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments'), [
+        'period_id' => $closed, 'plan_id' => $this->technical, 'scope' => 'offer', 'offer_id' => $closedOffer,
+    ])->assertSessionHas('error', $message);
+    $this->actingAs($this->staff)->delete(F::url($this->school, "/assignments/{$holder}"))->assertSessionHas('error', $message);
+    $this->actingAs($this->staff)->put(F::url($this->school, "/assignments/{$holder}/exclusions"), ['subject_id' => $this->math1, 'excluded' => true])
+        ->assertSessionHas('error', $message);
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments/offer-override'), [
+        'period_id' => $closed, 'offer_id' => $closedOffer, 'subject_id' => $this->math1, 'excluded' => true,
+    ])->assertSessionHas('error', $message);
+
+    expect([DB::table('study_plan_assignments')->get(), DB::table('study_plan_subject_exclusions')->get()])->toEqual($before);
+
+    // Viewing it stays allowed.
+    $this->actingAs($this->staff)->get(F::url($this->school, "/assignments?period={$closed}"))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('period.isOpen', false)
+            ->where('board.assignments.school.excludedCount', 1));
+});
+
+test('an open period still accepts every assignment change', function () {
+    $this->travelTo('2026-09-28 10:00:00');
+    // Not the active one, but it has not ended yet.
+    $open = F::period($this->school, '2026-B', false, '2026-06-01', '2026-09-28');
+    $offer = F::offer($this->school, $open, $this->grade1, F::section($this->school, 'C'));
+
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments'), [
+        'period_id' => $open, 'plan_id' => $this->general, 'scope' => 'school',
+    ])->assertSessionHas('success', 'Plan asignado.');
+    $school = DB::table('study_plan_assignments')->where('academic_period_id', $open)->sole()->id;
+
+    $this->actingAs($this->staff)->put(F::url($this->school, "/assignments/{$school}/exclusions"), ['subject_id' => $this->art1, 'excluded' => true])
+        ->assertSessionHas('success', 'Asignatura excluida.');
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments/offer-override'), [
+        'period_id' => $open, 'offer_id' => $offer, 'subject_id' => $this->math1, 'excluded' => true,
+    ])->assertSessionHas('success', 'Se aplicó el cambio solo a esta sección.');
+    $this->actingAs($this->staff)->delete(F::url($this->school, "/assignments/{$school}"))->assertSessionHas('success', 'Asignación quitada.');
+
+    expect(DB::table('study_plan_assignments')->where('academic_period_id', $open)->pluck('scope')->all())->toBe(['offer']);
+});
+
+test('the board flags an open period and counts the exclusions of each slot', function () {
+    $this->travelTo('2026-09-28 10:00:00');
+    $school = F::assignment($this->school, $this->period, $this->general, 'school');
+    F::exclude($this->school, $school, $this->art1);
+    F::exclude($this->school, $school, $this->math1);
+    $grade = F::assignment($this->school, $this->period, $this->technical, 'grade_level', $this->grade1);
+    $offer = F::assignment($this->school, $this->period, $this->general, 'offer', $this->grade1, $this->offer1A);
+    F::exclude($this->school, $offer, $this->math1);
+
+    $this->actingAs($this->staff)->get(F::url($this->school, '/assignments'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('period.isOpen', true)
+            ->where('board.assignments.school.excludedCount', 2)
+            ->where('board.assignments.gradeLevels.0.id', $grade)
+            ->where('board.assignments.gradeLevels.0.excludedCount', 0)
+            ->where('board.assignments.offers.0.excludedCount', 1));
+});

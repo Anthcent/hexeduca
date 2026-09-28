@@ -17,6 +17,6 @@ final class RecordInUse extends DomainException
 
     public static function subject(int $id): self
     {
-        return new self("Subject [{$id}] is active through an assignment or has exclusions and cannot be deleted.");
+        return new self("Subject [{$id}] is active or excluded in an open period and cannot be deleted.");
     }
 }

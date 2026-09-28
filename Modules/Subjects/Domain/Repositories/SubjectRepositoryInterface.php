@@ -25,5 +25,18 @@ interface SubjectRepositoryInterface
      */
     public function forPlans(array $planIds, int $schoolId): array;
 
-    public function hasExclusions(int $subjectId, int $schoolId): bool;
+    /**
+     * The given subjects that are excluded on a current assignment of one of
+     * the periods. Exclusions on replaced assignments are history.
+     *
+     * @param  list<int>  $subjectIds
+     * @param  list<int>  $periodIds
+     * @return list<int>
+     */
+    public function excludedInPeriods(array $subjectIds, int $schoolId, array $periodIds): array;
+
+    /**
+     * Deletes every exclusion of the subject, in any period.
+     */
+    public function deleteExclusions(int $subjectId, int $schoolId): void;
 }

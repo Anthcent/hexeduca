@@ -5,8 +5,10 @@ namespace Modules\Subjects\Application\UseCases;
 use Illuminate\Support\Facades\DB;
 use Modules\AcademicOffers\Public\Contracts\AcademicOfferReader;
 use Modules\Subjects\Application\DTOs\AssignStudyPlanData;
+use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Domain\Entities\PlanAssignment;
 use Modules\Subjects\Domain\Exceptions\InvalidAssignment;
+use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Exceptions\PlanAssignmentNotFound;
 use Modules\Subjects\Domain\Exceptions\RecordArchived;
 use Modules\Subjects\Domain\Exceptions\StudyPlanNotFound;
@@ -28,6 +30,7 @@ final class OverrideOfferSubject
         private readonly AcademicOfferReader $offers,
         private readonly AssignStudyPlan $assign,
         private readonly SetSubjectExclusion $setExclusion,
+        private readonly OpenPeriods $openPeriods,
     ) {}
 
     /**
@@ -35,9 +38,11 @@ final class OverrideOfferSubject
      * @throws StudyPlanNotFound
      * @throws PlanAssignmentNotFound
      * @throws RecordArchived when the effective plan is archived
+     * @throws PeriodClosed
      */
     public function handle(int $schoolId, int $periodId, int $offerId, int $subjectId, bool $excluded): PlanAssignment
     {
+        $this->openPeriods->assertOpen($periodId, $schoolId);
         $offerGradeLevelId = $this->offerGradeLevelId($schoolId, $periodId, $offerId);
 
         return DB::transaction(function () use ($schoolId, $periodId, $offerId, $offerGradeLevelId, $subjectId, $excluded): PlanAssignment {

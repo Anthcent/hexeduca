@@ -31,11 +31,11 @@ test('an archived subject cannot be edited and state changes are one-way each', 
         ->and($archived->reactivate()->isArchived())->toBeFalse();
 });
 
-test('a subject can be deleted only when nothing activates it and it has no exclusions', function (bool $activated, bool $excluded, bool $expected) {
-    expect(Subject::canBeDeleted($activated, $excluded))->toBe($expected);
+test('a subject can be deleted only when no open period activates or excludes it', function (bool $activatedInOpenPeriod, bool $excludedInOpenPeriod, bool $expected) {
+    expect(Subject::canBeDeleted($activatedInOpenPeriod, $excludedInOpenPeriod))->toBe($expected);
 })->with([
-    [false, false, true],
-    [true, false, false],
-    [false, true, false],
-    [true, true, false],
+    'unused, or used only in closed periods' => [false, false, true],
+    'active in an open period' => [true, false, false],
+    'excluded in an open period' => [false, true, false],
+    'both' => [true, true, false],
 ]);

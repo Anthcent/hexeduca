@@ -109,11 +109,18 @@ final class EloquentPlanAssignmentRepository implements PlanAssignmentRepository
         return PlanAssignmentModel::query()->where('school_id', $schoolId)->where('study_plan_id', $planId)->count();
     }
 
-    public function planCoversGradeLevel(int $planId, int $gradeLevelId, int $schoolId): bool
+    public function planCoversGradeLevelInPeriods(int $planId, int $gradeLevelId, int $schoolId, array $periodIds): bool
     {
+        if ($periodIds === []) {
+            return false;
+        }
+
         return PlanAssignmentModel::query()
             ->where('school_id', $schoolId)
             ->where('study_plan_id', $planId)
+            ->whereIn('academic_period_id', $periodIds)
+            ->current()
+            // The offer scope stores its offer's grade level too.
             ->where(fn ($query) => $query
                 ->where('scope', AssignmentScope::School->value)
                 ->orWhere('grade_level_id', $gradeLevelId))

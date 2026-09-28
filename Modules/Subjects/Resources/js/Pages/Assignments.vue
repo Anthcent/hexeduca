@@ -21,6 +21,9 @@ const gradeAssignments = computed(() => props.board.assignments.gradeLevels);
 const offerAssignments = computed(() => props.board.assignments.offers);
 const offers = computed(() => props.board.offers);
 
+// A closed period is history: it can be viewed but not changed.
+const readOnly = computed(() => props.period !== null && !props.period.isOpen);
+
 // Period selector
 
 const periodItems = computed(() => props.periods.map((p) => ({ label: p.isActive ? `${p.name} (activo)` : p.name, value: p.id })));
@@ -56,10 +59,46 @@ function openAssign(scope, current = null) {
     assignOpen.value = true;
 }
 
+// The assignment that holds the slot the form targets, if any.
+function slotHolder() {
+    if (assignForm.scope === 'school') return schoolAssignment.value;
+    if (assignForm.scope === 'grade_level') return gradeAssignments.value.find((a) => a.gradeLevelId === assignForm.grade_level_id) ?? null;
+
+    return offerAssignments.value.find((a) => a.offerId === assignForm.offer_id) ?? null;
+}
+
+// Replacing a plan drops the slot's exclusions (an archived plan keeps them as history).
+const lossWarning = ref({ open: false, description: '' });
+
+function exclusionLossDescription(holder) {
+    const count = holder.excludedCount;
+    const subjects = count === 1 ? '1 asignatura excluida' : `${count} asignaturas excluidas`;
+    const owner = assignForm.scope === 'school'
+        ? 'El plan del colegio tiene'
+        : assignForm.scope === 'grade_level'
+            ? `El año «${holder.targetLabel}» tiene`
+            : `La sección «${holder.targetLabel}» tiene`;
+
+    return `${owner} ${subjects}. Se perderán al cambiar el plan.`;
+}
+
 function submitAssign() {
+    const holder = slotHolder();
+
+    if (holder && holder.plan?.id !== assignForm.plan_id && !holder.plan?.archived && holder.excludedCount > 0) {
+        lossWarning.value = { open: true, description: exclusionLossDescription(holder) };
+
+        return;
+    }
+
+    postAssign();
+}
+
+function postAssign() {
     assignForm.post(route('subjects.assignments.store'), {
         preserveScroll: true,
         onSuccess: () => (assignOpen.value = false),
+        onFinish: () => (lossWarning.value.open = false),
     });
 }
 
@@ -188,7 +227,7 @@ const scopeChangeDescription = computed(() => {
                     Volver a planes de estudio
                 </UButton>
             </template>
-            <template v-if="period" #notch>
+            <template v-if="period && !readOnly" #notch>
                 <UButton icon="i-lucide-plus" size="lg" :disabled="plans.length === 0" @click="openAssign('school', schoolAssignment)">
                     {{ schoolAssignment ? 'Cambiar plan del colegio' : 'Asignar plan del colegio' }}
                 </UButton>
@@ -215,6 +254,16 @@ const scopeChangeDescription = computed(() => {
                 </div>
             </UCard>
 
+            <UAlert
+                v-if="readOnly"
+                class="mb-6"
+                color="neutral"
+                variant="subtle"
+                icon="i-lucide-lock"
+                title="Periodo cerrado: solo lectura"
+                description="Puedes consultar sus asignaciones, pero ya no se pueden cambiar."
+            />
+
             <div class="mb-6 grid items-start gap-6 lg:grid-cols-3">
                 <!-- School default -->
                 <UCard class="shadow-card">
@@ -230,7 +279,7 @@ const scopeChangeDescription = computed(() => {
                             <UBadge v-if="schoolAssignment.plan?.archived" color="neutral" variant="subtle" icon="i-lucide-archive">Plan archivado</UBadge>
                             <span class="text-xs text-muted">{{ schoolAssignment.offerCount }} {{ schoolAssignment.offerCount === 1 ? 'sección lo usa' : 'secciones lo usan' }}</span>
                         </div>
-                        <div class="flex gap-2">
+                        <div v-if="!readOnly" class="flex gap-2">
                             <UButton size="sm" color="neutral" variant="outline" icon="i-lucide-replace" :disabled="plans.length === 0" @click="openAssign('school', schoolAssignment)">Cambiar</UButton>
                             <UButton size="sm" color="error" variant="ghost" icon="i-lucide-x" @click="askRemove(schoolAssignment)">Quitar</UButton>
                         </div>
@@ -242,7 +291,7 @@ const scopeChangeDescription = computed(() => {
                 <UCard class="shadow-card">
                     <template #header>
                         <PanelHeader kicker="Excepciones" title="Por año">
-                            <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" :disabled="plans.length === 0" @click="openAssign('grade_level')">Agregar</UButton>
+                            <UButton v-if="!readOnly" size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" :disabled="plans.length === 0" @click="openAssign('grade_level')">Agregar</UButton>
                         </PanelHeader>
                     </template>
                     <p v-if="gradeAssignments.length === 0" class="text-sm text-muted">Ningún año tiene un plan distinto al del colegio.</p>
@@ -254,8 +303,8 @@ const scopeChangeDescription = computed(() => {
                                     {{ planLabel(assignment.plan) }}<template v-if="assignment.plan?.archived"> · archivado</template>
                                 </p>
                             </div>
-                            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-replace" :aria-label="`Cambiar el plan de ${assignment.targetLabel}`" :disabled="plans.length === 0" @click="openAssign('grade_level', assignment)" />
-                            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-x" :aria-label="`Quitar la asignación de ${assignment.targetLabel}`" @click="askRemove(assignment)" />
+                            <UButton v-if="!readOnly" size="xs" color="neutral" variant="ghost" icon="i-lucide-replace" :aria-label="`Cambiar el plan de ${assignment.targetLabel}`" :disabled="plans.length === 0" @click="openAssign('grade_level', assignment)" />
+                            <UButton v-if="!readOnly" size="xs" color="error" variant="ghost" icon="i-lucide-x" :aria-label="`Quitar la asignación de ${assignment.targetLabel}`" @click="askRemove(assignment)" />
                         </li>
                     </ul>
                 </UCard>
@@ -264,7 +313,7 @@ const scopeChangeDescription = computed(() => {
                 <UCard class="shadow-card">
                     <template #header>
                         <PanelHeader kicker="Excepciones" title="Por sección">
-                            <UButton size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" :disabled="plans.length === 0 || offers.length === 0" @click="openAssign('offer')">Agregar</UButton>
+                            <UButton v-if="!readOnly" size="sm" color="neutral" variant="ghost" icon="i-lucide-plus" :disabled="plans.length === 0 || offers.length === 0" @click="openAssign('offer')">Agregar</UButton>
                         </PanelHeader>
                     </template>
                     <p v-if="offerAssignments.length === 0" class="text-sm text-muted">Ninguna sección tiene un plan propio.</p>
@@ -276,8 +325,8 @@ const scopeChangeDescription = computed(() => {
                                     {{ planLabel(assignment.plan) }}<template v-if="assignment.plan?.archived"> · archivado</template>
                                 </p>
                             </div>
-                            <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-replace" :aria-label="`Cambiar el plan de ${assignment.targetLabel}`" :disabled="plans.length === 0" @click="openAssign('offer', assignment)" />
-                            <UButton size="xs" color="error" variant="ghost" icon="i-lucide-x" :aria-label="`Quitar la asignación de ${assignment.targetLabel}`" @click="askRemove(assignment)" />
+                            <UButton v-if="!readOnly" size="xs" color="neutral" variant="ghost" icon="i-lucide-replace" :aria-label="`Cambiar el plan de ${assignment.targetLabel}`" :disabled="plans.length === 0" @click="openAssign('offer', assignment)" />
+                            <UButton v-if="!readOnly" size="xs" color="error" variant="ghost" icon="i-lucide-x" :aria-label="`Quitar la asignación de ${assignment.targetLabel}`" @click="askRemove(assignment)" />
                         </li>
                     </ul>
                 </UCard>
@@ -326,7 +375,7 @@ const scopeChangeDescription = computed(() => {
                             <p v-if="offer.effective.plan?.archived" class="mb-3 text-xs text-muted">
                                 El plan está archivado: sus asignaturas son de solo lectura. Asigna otro plan para cambiarlas.
                             </p>
-                            <p v-else-if="offer.effective.scope !== 'offer'" class="mb-3 text-xs text-muted">
+                            <p v-else-if="!readOnly && offer.effective.scope !== 'offer'" class="mb-3 text-xs text-muted">
                                 Esta sección hereda el plan {{ offer.effective.scope === 'school' ? 'del colegio' : 'de su año' }}. Al desmarcar una asignatura podrás elegir si el cambio es para todas las secciones que lo heredan o solo para esta.
                             </p>
                             <p v-if="offer.subjects.length === 0" class="text-sm text-muted">El plan no tiene asignaturas activas para {{ offer.gradeLevelName }}.</p>
@@ -337,7 +386,7 @@ const scopeChangeDescription = computed(() => {
                                     :model-value="subject.active"
                                     :label="subject.name"
                                     :description="[subject.code, subject.weeklyHours ? `${subject.weeklyHours} h/semana` : null].filter(Boolean).join(' · ') || undefined"
-                                    :disabled="offer.effective.plan?.archived || pending !== null"
+                                    :disabled="readOnly || offer.effective.plan?.archived || pending !== null"
                                     @update:model-value="(checked) => toggleSubject(offer, subject, checked)"
                                 />
                             </div>
@@ -367,6 +416,15 @@ const scopeChangeDescription = computed(() => {
                 <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                     <UButton color="neutral" variant="ghost" class="justify-center" :disabled="assignForm.processing" @click="assignOpen = false">Cancelar</UButton>
                     <UButton type="submit" form="form-assign" icon="i-lucide-check" class="justify-center" :loading="assignForm.processing">Asignar</UButton>
+                </div>
+            </template>
+        </UModal>
+
+        <UModal v-model:open="lossWarning.open" title="¿Cambiar el plan?" :description="lossWarning.description" :dismissible="!assignForm.processing">
+            <template #footer>
+                <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <UButton color="neutral" variant="ghost" class="justify-center" :disabled="assignForm.processing" @click="lossWarning.open = false">Cancelar</UButton>
+                    <UButton color="error" icon="i-lucide-replace" class="justify-center" :loading="assignForm.processing" @click="postAssign">Cambiar plan</UButton>
                 </div>
             </template>
         </UModal>

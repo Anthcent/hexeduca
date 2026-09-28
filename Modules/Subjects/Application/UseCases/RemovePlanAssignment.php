@@ -4,6 +4,8 @@ namespace Modules\Subjects\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Subjects\Application\Services\AssignmentSlots;
+use Modules\Subjects\Application\Services\OpenPeriods;
+use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Exceptions\PlanAssignmentNotFound;
 use Modules\Subjects\Domain\Repositories\PlanAssignmentRepositoryInterface;
 
@@ -17,15 +19,18 @@ final class RemovePlanAssignment
     public function __construct(
         private readonly PlanAssignmentRepositoryInterface $assignments,
         private readonly AssignmentSlots $slots,
+        private readonly OpenPeriods $openPeriods,
     ) {}
 
     /**
      * @throws PlanAssignmentNotFound
+     * @throws PeriodClosed
      */
     public function handle(int $assignmentId, int $schoolId): void
     {
         DB::transaction(function () use ($assignmentId, $schoolId): void {
             $assignment = $this->assignments->findCurrentInSchool($assignmentId, $schoolId) ?? throw PlanAssignmentNotFound::withId($assignmentId);
+            $this->openPeriods->assertOpen($assignment->periodId(), $schoolId);
 
             $this->slots->vacate($assignment);
         });
