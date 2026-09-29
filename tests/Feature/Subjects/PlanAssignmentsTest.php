@@ -140,7 +140,9 @@ test('the database allows only one current assignment per slot', function () {
     // A replaced (history) row may share the slot.
     F::assignment($this->school, $this->period, $this->technical, 'school', replaced: true);
 
-    expect(fn () => F::assignment($this->school, $this->period, $this->technical, 'school'))->toThrow(QueryException::class);
+    // The savepoint keeps the outer test transaction usable on PostgreSQL,
+    // where a failed statement aborts the whole transaction.
+    expect(fn () => DB::transaction(fn () => F::assignment($this->school, $this->period, $this->technical, 'school')))->toThrow(QueryException::class);
     expect(fn () => F::assignment($this->school, $this->period, $this->technical, 'grade_level', $this->grade1))->not->toThrow(QueryException::class);
 });
 
@@ -190,6 +192,23 @@ test('another school\'s plan and assignment are 404', function () {
     $this->actingAs($this->staff)->put(F::url($this->school, "/assignments/{$foreignAssignment}/exclusions"), ['subject_id' => $this->math1, 'excluded' => true])->assertNotFound();
 
     expect(DB::table('study_plan_assignments')->where('id', $foreignAssignment)->exists())->toBeTrue();
+});
+
+test('"only this section" with another school\'s period and offer is refused and changes nothing', function () {
+    $foreignPlan = F::plan($this->otherSchool, '1');
+    $foreignGrade = F::gradeLevel($this->otherSchool, 'Primero', 1);
+    $foreignSubject = F::subject($this->otherSchool, $foreignPlan, $foreignGrade, 'Física');
+    $foreignPeriod = F::period($this->otherSchool, '2026', true);
+    $foreignOffer = F::offer($this->otherSchool, $foreignPeriod, $foreignGrade, F::section($this->otherSchool, 'A'));
+    F::assignment($this->otherSchool, $foreignPeriod, $foreignPlan, 'school');
+    $before = [DB::table('study_plan_assignments')->get(), DB::table('study_plan_subject_exclusions')->get()];
+
+    // Like any other period that is not the school's: a period_id field error.
+    $this->actingAs($this->staff)->post(F::url($this->school, '/assignments/offer-override'), [
+        'period_id' => $foreignPeriod, 'offer_id' => $foreignOffer, 'subject_id' => $foreignSubject, 'excluded' => true,
+    ])->assertSessionHasErrors(['period_id' => 'Selecciona un periodo válido.']);
+
+    expect([DB::table('study_plan_assignments')->get(), DB::table('study_plan_subject_exclusions')->get()])->toEqual($before);
 });
 
 test('excluding a subject on a broad assignment affects every offer inheriting it, and it can be included again', function () {

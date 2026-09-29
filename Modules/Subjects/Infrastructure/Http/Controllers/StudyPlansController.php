@@ -48,7 +48,11 @@ class StudyPlansController extends Controller
             ->where('status', $status->value)
             // Accent- and case-insensitive on every database: both sides are
             // normalized in PHP (see StudyPlanModel::searchText).
-            ->when($search !== '', fn ($query) => $query->where('search_text', 'like', '%'.StudyPlanModel::searchText($search).'%'))
+            // `%`, `_` and `\` in the term match literally; SQLite has no default
+            // LIKE escape character, so it is declared explicitly.
+            ->when($search !== '', fn ($query) => $query->whereRaw("search_text LIKE ? ESCAPE '\\'", [
+                '%'.addcslashes(StudyPlanModel::searchText($search), '\\%_').'%',
+            ]))
             ->withCount('subjects')
             ->orderBy('code')
             ->orderBy('id')

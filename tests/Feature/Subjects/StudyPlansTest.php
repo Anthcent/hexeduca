@@ -6,6 +6,7 @@ use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\Feature\Subjects\SubjectsFixtures as F;
 
@@ -85,6 +86,23 @@ test('search ignores accents and case in both directions', function (string $sea
             ->where('plans.data', fn ($plans) => collect($plans)->pluck('code')->all() === ['1', '2', '3']));
 })->with(['matematica', 'MATEMÁTICA', 'Matemática', 'mAtEmAtIcA']);
 
+test('search matches LIKE wildcards and backslashes literally', function (string $search, array $codes) {
+    F::plan($this->school, '1', ['name' => 'Avance 100% completo']);
+    F::plan($this->school, '2', ['name' => 'Plan_nocturno']);
+    F::plan($this->school, '3', ['name' => 'Ruta C:\\planes']);
+    F::plan($this->school, '4', ['name' => 'Arte']);
+
+    $this->actingAs($this->staff)->get(F::url($this->school, '?search='.urlencode($search)))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('plans.data', fn ($plans) => collect($plans)->pluck('code')->all() === $codes));
+})->with([
+    'percent' => ['%', ['1']],
+    'underscore' => ['_', ['2']],
+    'backslash' => ['\\', ['3']],
+    'percent inside a term' => ['100%', ['1']],
+    'underscore inside a term' => ['plan_n', ['2']],
+]);
+
 test('a plan saved through the app stays searchable after an edit', function () {
     $this->actingAs($this->staff)->post(F::url($this->school), ['code' => 'Ñ-01', 'name' => 'Educación básica']);
     $plan = DB::table('study_plans')->sole();
@@ -105,14 +123,35 @@ test('a plan saved through the app stays searchable after an edit', function () 
 test('teachers and students get 403 on every route', function (string $who) {
     $user = $this->{$who};
     $plan = F::plan($this->school, '31060');
+    $subject = F::subject($this->school, $plan, $this->grade1, 'Matemática');
+    $period = F::period($this->school, '2026', true);
+    $offer = F::offer($this->school, $period, $this->grade1, F::section($this->school, 'A'));
+    $assignment = F::assignment($this->school, $period, $plan, 'school');
+    $ids = ['plan' => $plan, 'subject' => $subject, 'assignment' => $assignment];
+    // A valid-looking body, so only the permission check can refuse it.
+    $body = [
+        'code' => '1', 'name' => 'X', 'grade_level_id' => $this->grade1, 'period_id' => $period, 'plan_id' => $plan,
+        'scope' => 'school', 'offer_id' => $offer, 'subject_id' => $subject, 'excluded' => true,
+    ];
+    $tables = ['study_plans', 'study_plan_subjects', 'study_plan_assignments', 'study_plan_subject_exclusions'];
+    $snapshot = fn () => collect($tables)->mapWithKeys(fn ($table) => [$table => DB::table($table)->orderBy('id')->get()])->all();
+    $before = $snapshot();
 
-    $this->actingAs($user)->get(F::url($this->school))->assertForbidden();
-    $this->actingAs($user)->post(F::url($this->school), ['code' => '1', 'name' => 'X'])->assertForbidden();
-    $this->actingAs($user)->get(F::url($this->school, "/{$plan}"))->assertForbidden();
-    $this->actingAs($user)->get(F::url($this->school, '/assignments'))->assertForbidden();
-    $this->actingAs($user)->post(F::url($this->school, "/{$plan}/archive"))->assertForbidden();
+    // Every registered route of the module, so a new one is covered too.
+    $routes = collect(Route::getRoutes()->getRoutes())->filter(fn ($route) => str_starts_with((string) $route->getName(), 'subjects.'));
+    expect($routes->count())->toBeGreaterThanOrEqual(19);
 
-    expect(DB::table('study_plans')->count())->toBe(1);
+    foreach ($routes as $route) {
+        $method = collect($route->methods())->reject(fn ($m) => $m === 'HEAD')->first();
+        $path = preg_replace_callback('/\{(\w+)\}/', fn ($m) => $ids[$m[1]], $route->uri());
+        $url = F::url($this->school, substr($path, strlen('study-plans')));
+
+        $status = $this->actingAs($user)->call($method, $url, $method === 'GET' ? [] : $body)->status();
+
+        expect($status)->toBe(403, "{$method} {$route->uri()} ({$route->getName()})");
+    }
+
+    expect($snapshot())->toEqual($before);
 })->with(['teacher', 'student']);
 
 test('the sidebar shows the module to staff only', function () {

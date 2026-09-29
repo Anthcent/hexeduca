@@ -4,6 +4,7 @@ namespace Modules\Subjects\Application\Services;
 
 use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Modules\AcademicPeriods\Public\DTOs\AcademicPeriodDTO;
+use Modules\Subjects\Domain\Exceptions\InvalidAssignment;
 use Modules\Subjects\Domain\Exceptions\PeriodClosed;
 use Modules\Subjects\Domain\Services\OpenPeriodPolicy;
 
@@ -28,16 +29,17 @@ final class OpenPeriods
     }
 
     /**
-     * A closed period's assignments and exclusions are read-only. An
-     * unknown period is left to the caller's own check.
+     * A closed period's assignments and exclusions are read-only. Fails
+     * closed: an unknown (or another school's) period is refused too.
      *
+     * @throws InvalidAssignment when the period is not the school's
      * @throws PeriodClosed
      */
     public function assertOpen(int $periodId, int $schoolId): void
     {
-        $period = $this->periods->findForSchool($periodId, $schoolId);
+        $period = $this->periods->findForSchool($periodId, $schoolId) ?? throw InvalidAssignment::unknownPeriod($periodId);
 
-        if ($period !== null && ! $this->isOpen($period)) {
+        if (! $this->isOpen($period)) {
             throw PeriodClosed::withId($periodId);
         }
     }
