@@ -222,6 +222,7 @@ test('teachers and students get 403 on every user management route', function (s
     $actor = userWithRole($school, $role);
     $target = userWithRole($school, 'student');
 
+    $this->actingAs($actor)->get(tenantUrl($school, '/users'))->assertForbidden();
     $this->actingAs($actor)->get(tenantUrl($school, '/users/create'))->assertForbidden();
     $this->actingAs($actor)->post(tenantUrl($school, '/users'), newUserPayload())->assertForbidden();
     $this->actingAs($actor)->get(tenantUrl($school, "/users/{$target->id}"))->assertForbidden();
@@ -230,3 +231,12 @@ test('teachers and students get 403 on every user management route', function (s
     expect(User::withoutTenantScope()->whereKey($target->id)->exists())->toBeTrue()
         ->and(User::withoutTenantScope()->where('email', 'ada@example.test')->exists())->toBeFalse();
 })->with(['teacher', 'student']);
+
+test('the user directory is not reachable through an api route', function (string $role) {
+    $school = School::factory()->create();
+    $actor = userWithRole($school, $role);
+    $target = userWithRole($school, 'student');
+
+    $this->actingAs($actor)->get(tenantUrl($school, '/api/v1/users'))->assertNotFound();
+    $this->actingAs($actor)->get(tenantUrl($school, "/api/v1/users/{$target->id}"))->assertNotFound();
+})->with(['student', 'staff/admin']);

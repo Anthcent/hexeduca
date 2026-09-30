@@ -36,7 +36,7 @@ Tenant is resolved from the Host subdomain: landlord `admin.localhost:8000`, dem
 
 ## Known gaps (2026-09-24)
 
-- `/api/v1/users` has no role check; FormRequests mostly `authorize() = true`.
+- FormRequests mostly `authorize() = true` (not yet audited against their route middleware).
 - Sidebar is not filtered by role (teacher/student see links that return 403).
 - 8 extracted module pages have no layout; Schedule, Files, and Notifications are skeletons; the legacy `Academic` module still coexists with the extracted modules.
 - Validation messages are in English (no `es` locale); the dashboard shows mock data.
