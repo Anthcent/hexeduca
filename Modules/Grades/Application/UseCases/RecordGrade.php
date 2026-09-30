@@ -2,78 +2,100 @@
 
 namespace Modules\Grades\Application\UseCases;
 
-use DomainException;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
-use Modules\AcademicOffers\Public\Contracts\AcademicOfferProjectionSource;
-use Modules\Grades\Application\DTOs\RecordGradeData;
-use Modules\Grades\Domain\Entities\Grade;
-use Modules\Grades\Domain\Repositories\GradeRepositoryInterface;
-use Modules\Users\Public\Contracts\TeacherReader;
+use Modules\AcademicMoments\Public\Contracts\AcademicMomentReader;
+use Modules\Grades\Application\DTOs\Actor;
+use Modules\Grades\Application\Services\GradeAccess;
+use Modules\Grades\Domain\Entities\EvaluationPlan;
+use Modules\Grades\Domain\Exceptions\GradingRefused;
+use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
+use Modules\Grades\Domain\Services\MomentGrade;
 
 /**
- * Validates the student is actually enrolled in the target AcademicOffer
- * by reading `grades_enrollment_projection` — Grades' own local copy,
- * never a live query against Modules\Enrollments (plan §6/§8). school_id
- * membership is constrained by the trusted offer plus the actor's school
- * and active period. The assigned teacher comes from the offer, never from
- * an unchecked request value.
+ * Records one cell of the grade sheet: an indicator score or the extra
+ * (indicatorId null). null points clear the cell. Every change is logged
+ * and the student's moment grade is recomputed in the same transaction.
  */
 final class RecordGrade
 {
     public function __construct(
-        private readonly GradeRepositoryInterface $grades,
-        private readonly AcademicOfferProjectionSource $academicOffers,
-        private readonly TeacherReader $teachers,
+        private readonly GradeBookRepositoryInterface $book,
+        private readonly GradeAccess $access,
+        private readonly AcademicMomentReader $moments,
     ) {}
 
-    public function handle(RecordGradeData $data): Grade
+    /**
+     * @return array{referentTotals: list<int>, average: float, extra: int, maxExtra: int, final: int, passes: bool, complete: bool}
+     *
+     * @throws GradingRefused
+     */
+    public function handle(Actor $actor, int $planId, int $studentId, ?int $indicatorId, ?int $points): array
     {
-        $academicOffer = $this->academicOffers->find($data->academicOfferId);
+        $plan = $this->book->findPlan($planId, $actor->schoolId) ?? throw GradingRefused::planNotFound();
+        $this->assertCanRecord($actor, $plan, $studentId);
 
-        if ($academicOffer === null
-            || $academicOffer->schoolId !== $data->actorSchoolId
-            || $academicOffer->academicPeriodId !== $data->activeAcademicPeriodId) {
-            throw new AuthorizationException('The AcademicOffer is not available in the actor school and active period.');
+        return DB::transaction(function () use ($actor, $plan, $studentId, $indicatorId, $points): array {
+            if ($indicatorId !== null) {
+                $indicator = $plan->indicator($indicatorId) ?? throw GradingRefused::unknownIndicator();
+
+                if ($points !== null && ($points < 0 || $points > $indicator['maxPoints'])) {
+                    throw GradingRefused::outOfRange($indicator['maxPoints']);
+                }
+
+                $this->book->setScore($plan, $indicatorId, $studentId, $points, $actor->id);
+            } else {
+                $standing = $plan->standing($this->book->studentScores($plan->id, $studentId, $actor->schoolId));
+                $max = MomentGrade::maxExtra($standing['average']);
+
+                if ($points !== null && ($points < 0 || $points > $max)) {
+                    throw GradingRefused::extraOverCap($max);
+                }
+
+                $this->book->setExtra($plan, $studentId, $points, $actor->id);
+            }
+
+            return $this->recompute($plan, $studentId, $actor->schoolId);
+        });
+    }
+
+    /**
+     * @return array{referentTotals: list<int>, average: float, extra: int, maxExtra: int, final: int, passes: bool, complete: bool}
+     */
+    private function recompute(EvaluationPlan $plan, int $studentId, int $schoolId): array
+    {
+        $standing = $plan->standing($this->book->studentScores($plan->id, $studentId, $schoolId));
+        $extra = $this->book->studentExtra($plan->id, $studentId, $schoolId) ?? 0;
+        $final = MomentGrade::final($standing['average'], $extra);
+
+        $this->book->saveResult($plan, $studentId, $standing['average'], $extra, $final, $standing['complete']);
+
+        return [
+            'referentTotals' => $standing['referentTotals'],
+            'average' => $standing['average'],
+            'extra' => $extra,
+            'maxExtra' => MomentGrade::maxExtra($standing['average']),
+            'final' => $final,
+            'passes' => MomentGrade::passes($final),
+            'complete' => $standing['complete'],
+        ];
+    }
+
+    /**
+     * @throws GradingRefused
+     */
+    private function assertCanRecord(Actor $actor, EvaluationPlan $plan, int $studentId): void
+    {
+        $this->access->assertCanManage($actor, $plan->offerId, $plan->subjectId);
+        $this->access->assertPeriodOpen($plan->periodId, $actor->schoolId);
+
+        $moment = $this->moments->findForSchool($plan->momentId, $actor->schoolId) ?? throw GradingRefused::unknownSlot();
+
+        if (! $this->access->windowOpen($moment)) {
+            throw GradingRefused::windowClosed();
         }
 
-        if ($academicOffer->teacherId === null || $academicOffer->teacherId !== $data->teacherId) {
-            throw new AuthorizationException('Grades may only be recorded for the teacher assigned to the AcademicOffer.');
+        if (! $this->book->isEnrolled($actor->schoolId, $plan->offerId, $studentId)) {
+            throw GradingRefused::notEnrolled();
         }
-
-        if (! $data->actorCanDelegate && $data->actorId !== $data->teacherId) {
-            throw new AuthorizationException('A teacher may not record a grade for another teacher.');
-        }
-
-        if ($this->teachers->findForSchool($data->teacherId, $data->actorSchoolId) === null) {
-            throw new AuthorizationException('The assigned teacher must be a teacher in the actor school.');
-        }
-
-        $enrollment = DB::table('grades_enrollment_projection')
-            ->where('academic_offer_id', $data->academicOfferId)
-            ->where('student_id', $data->studentId)
-            ->where('school_id', $data->actorSchoolId)
-            ->where('academic_period_id', $data->activeAcademicPeriodId)
-            ->first();
-
-        if ($enrollment === null) {
-            throw new DomainException('The student is not enrolled in this AcademicOffer.');
-        }
-
-        if ($enrollment->status !== 'active') {
-            throw new DomainException('The student\'s enrollment in this AcademicOffer is not active.');
-        }
-
-        $grade = new Grade(
-            id: null,
-            schoolId: $data->actorSchoolId,
-            academicPeriodId: $data->activeAcademicPeriodId,
-            academicOfferId: $data->academicOfferId,
-            studentId: $data->studentId,
-            teacherId: $data->teacherId,
-            value: $data->value,
-        );
-
-        return $this->grades->save($grade);
     }
 }

@@ -39,7 +39,7 @@ const TENANT_ITEMS = [
     { key: 'academico', label: 'Base académica', icon: 'i-lucide-library', route: 'academic.catalogos', group: 'academico', roles: [STAFF], module: 'academic' },
     { key: 'ofertas', label: 'Ofertas académicas', icon: 'i-lucide-book-open', route: 'academic.ofertas.create', group: 'academico', roles: [STAFF], module: 'academic' },
     { key: 'momentos', label: 'Momentos académicos', icon: 'i-lucide-calendar-range', route: 'academic-moments.index', group: 'academico', roles: [STAFF], module: 'academicmoments' },
-    { key: 'notas', label: 'Notas', icon: 'i-lucide-clipboard-check', route: 'grades.create', group: 'academico', roles: [TEACHER, STAFF], module: 'grades' },
+    { key: 'notas', label: 'Notas', icon: 'i-lucide-clipboard-check', route: 'grades.index', group: 'academico', roles: [TEACHER, STAFF], module: 'grades' },
     { key: 'usuarios', label: 'Usuarios', icon: 'i-lucide-users', route: 'users.index', group: 'administracion', roles: [STAFF, SUPER_ADMIN] },
 ];
 
@@ -56,7 +56,7 @@ const QUICK_ACTIONS = [
     { label: 'Subir archivo', description: 'Agregar al repositorio', icon: 'i-lucide-upload', route: 'files.index', module: 'files', permission: 'files.upload' },
     { label: 'Nueva matrícula', description: 'Inscribir a un estudiante', icon: 'i-lucide-list-plus', route: 'academic.matriculas.create', module: 'academic', roles: [STAFF] },
     { label: 'Nueva oferta académica', description: 'Abrir una oferta', icon: 'i-lucide-book-plus', route: 'academic.ofertas.create', module: 'academic', roles: [STAFF] },
-    { label: 'Cargar nota', description: 'Registrar una calificación', icon: 'i-lucide-clipboard-pen', route: 'grades.create', module: 'grades', roles: [TEACHER, STAFF] },
+    { label: 'Cargar notas', description: 'Planes de evaluación y carga por momento', icon: 'i-lucide-clipboard-pen', route: 'grades.index', module: 'grades', roles: [TEACHER, STAFF] },
     { label: 'Nuevo usuario', description: 'Crear una cuenta', icon: 'i-lucide-user-plus', route: 'users.create', roles: [STAFF, SUPER_ADMIN] },
 ];
 

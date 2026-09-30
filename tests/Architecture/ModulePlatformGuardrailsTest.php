@@ -33,7 +33,6 @@ test('module references do not add sibling-internal debt and Public APIs are dec
         'Modules/Academic/Infrastructure/Models/OfertaAcademica.php -> Modules\\Users\\Infrastructure\\Models\\User',
         'Modules/AcademicMoments/Infrastructure/Models/AcademicMoment.php -> Modules\\AcademicPeriods\\Infrastructure\\Models\\AcademicPeriod',
         'Modules/AcademicOffers/Infrastructure/Models/AcademicOffer.php -> Modules\\AcademicPeriods\\Infrastructure\\Models\\AcademicPeriod',
-        'Modules/Grades/Infrastructure/Policies/GradePolicy.php -> Modules\\Users\\Infrastructure\\Models\\User',
     ])
         ->and($validator->manifestDependencyViolations())->toBe([]);
 });

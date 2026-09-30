@@ -174,6 +174,9 @@ test('the module returns 404 when the school is not entitled or the module is di
     $this->actingAs($this->teacher)->get(F::url($this->school))->assertNotFound();
 
     app(ModuleRegistry::class)->entitle('subjects', $this->school);
+    // Grades and TeachingAssignments depend on Subjects, so they go first.
+    app(ModuleRegistry::class)->disable('grades');
+    app(ModuleRegistry::class)->disable('teachingassignments');
     app(ModuleRegistry::class)->disable('subjects');
 
     $this->actingAs($this->staff)->get(F::url($this->school))->assertNotFound();

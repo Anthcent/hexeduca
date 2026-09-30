@@ -1,23 +1,23 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Modules\Grades\Infrastructure\Http\Controllers\GradeController;
+use Modules\Grades\Infrastructure\Http\Controllers\GradesController;
 
 /*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| First real domain routes for Grades (Fase 8) — replaces the generic
-| Route::resource scaffold. Teachers record/update their own grades;
- | staff/admin may act on behalf of the same-school teacher assigned to the
- | offer — see GradeController and RecordGrade (plan §16/§11).
-|
+| `module:grades` runs before the permission check, so a school that cannot
+| use the module always gets 404, never a 403 that leaks it exists. Staff
+| and teachers hold `grades.manage`; which subjects a teacher may touch is
+| decided per request by GradeAccess (their teaching assignments).
 */
 
-Route::middleware(['auth', 'role:teacher|staff/admin', 'module:grades'])->prefix('grades')->name('grades.')->group(function () {
-    Route::get('/create', [GradeController::class, 'create'])->name('create');
-    Route::post('/', [GradeController::class, 'store'])->name('store');
-    Route::put('/{grade}', [GradeController::class, 'update'])->name('update');
-    Route::delete('/{grade}', [GradeController::class, 'destroy'])->name('destroy');
-});
+Route::middleware(['auth', 'module:grades', 'permission:grades.manage'])
+    ->prefix('grades')
+    ->name('grades.')
+    ->controller(GradesController::class)
+    ->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/plan', 'plan')->name('plan');
+        Route::put('/plan', 'savePlan')->name('plan.save');
+        Route::get('/sheets/{plan}', 'sheet')->whereNumber('plan')->name('sheet');
+        Route::put('/sheets/{plan}/cells', 'record')->whereNumber('plan')->name('record');
+    });

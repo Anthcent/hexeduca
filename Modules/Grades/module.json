@@ -1,20 +1,24 @@
 {
     "name": "Grades",
     "alias": "grades",
-    "description": "",
+    "description": "Grades (Notas): per offer × subject × moment evaluation plans (referentes of 20 points split into indicators), the grade sheet, and the moment grade 01–20 computed on the server. Teachers work only on their assigned subjects; every change is logged.",
     "keywords": [],
     "priority": 0,
     "core": false,
     "maturity": "mature",
     "dependencies": [
+        "AcademicPeriods",
         "AcademicOffers",
+        "AcademicMoments",
         "Enrollments",
+        "Subjects",
+        "TeachingAssignments",
         "Users"
     ],
     "permissions": [
-        "grades.view",
-        "grades.manage"
+        {"name": "grades.manage", "roles": ["staff/admin", "teacher"]}
     ],
+    "navigation": [],
     "providers": [
         "Modules\\Grades\\Infrastructure\\Providers\\GradesServiceProvider"
     ],
