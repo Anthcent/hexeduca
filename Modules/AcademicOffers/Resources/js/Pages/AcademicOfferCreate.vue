@@ -22,7 +22,7 @@ const teacherName = computed(() => props.teachers.find((item) => item.id === for
 const summary = computed(() => [
     { label: 'Período', value: props.periodoName ?? 'Sin período activo', icon: 'i-lucide-calendar-range' },
     { label: 'Grado y sección', value: [gradeLevelName.value, sectionName.value].filter(Boolean).join(' · ') || 'Sin seleccionar', icon: 'i-lucide-graduation-cap' },
-    { label: 'Docente', value: teacherName.value ?? 'Sin asignar', icon: 'i-lucide-user-round' },
+    { label: 'Docente orientador', value: teacherName.value ?? 'Sin asignar', icon: 'i-lucide-user-round' },
     { label: 'Capacidad', value: form.capacity ? `${form.capacity} estudiantes` : 'Sin definir', icon: 'i-lucide-users' },
 ]);
 
@@ -91,7 +91,7 @@ function create() {
                     </div>
 
                     <div class="grid gap-6 sm:grid-cols-[minmax(0,1fr)_12rem]">
-                        <UFormField label="Docente" name="teacher_id" hint="Opcional" :error="form.errors.teacher_id">
+                        <UFormField label="Docente orientador (guía)" name="teacher_id" hint="Opcional" :error="form.errors.teacher_id">
                             <USelectMenu
                                 v-model="form.teacher_id"
                                 :items="teachers"

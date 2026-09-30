@@ -21,5 +21,7 @@ final readonly class AcademicOfferSummary
         public int $capacity,
         public ?int $gradeLevelId = null,
         public ?int $sectionId = null,
+        // The offer's homeroom teacher (docente orientador), when assigned.
+        public ?int $teacherId = null,
     ) {}
 }

@@ -1,0 +1,28 @@
+{
+    "name": "nwidart/teachingassignments",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\TeachingAssignments\\": "./"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\TeachingAssignments\\Tests\\": "Tests/"
+        }
+    }
+}

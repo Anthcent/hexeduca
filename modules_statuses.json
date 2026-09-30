@@ -13,5 +13,6 @@
     "Files": true,
     "Admin": true,
     "Notifications": true,
-    "Subjects": true
+    "Subjects": true,
+    "TeachingAssignments": true
 }

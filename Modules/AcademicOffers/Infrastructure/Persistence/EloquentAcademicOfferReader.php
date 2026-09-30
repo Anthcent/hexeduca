@@ -59,6 +59,7 @@ final class EloquentAcademicOfferReader implements AcademicOfferReader
             capacity: $offer->capacity,
             gradeLevelId: (int) $offer->grado_id,
             sectionId: (int) $offer->seccion_id,
+            teacherId: $offer->teacher_id !== null ? (int) $offer->teacher_id : null,
         );
     }
 }

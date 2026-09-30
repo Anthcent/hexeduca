@@ -1,0 +1,26 @@
+{
+    "name": "TeachingAssignments",
+    "alias": "teachingassignments",
+    "description": "Teaching assignments (Asignación docente): staff decide which teacher teaches each subject of each academic offer per period, as titular or substitute, and set each offer's coordinator. Assignments are ended, never deleted.",
+    "keywords": [],
+    "priority": 0,
+    "core": false,
+    "maturity": "mature",
+    "dependencies": [
+        "AcademicPeriods",
+        "AcademicOffers",
+        "GradeLevels",
+        "Subjects",
+        "Users"
+    ],
+    "permissions": [
+        {"name": "teachingassignments.manage", "roles": ["staff/admin"]}
+    ],
+    "navigation": [
+        {"label": "Asignación docente", "route": "teachingassignments.index", "icon": "Users", "group": "academico", "permission": "teachingassignments.manage"}
+    ],
+    "providers": [
+        "Modules\\TeachingAssignments\\Infrastructure\\Providers\\TeachingAssignmentsServiceProvider"
+    ],
+    "files": []
+}
