@@ -1,6 +1,6 @@
 <script setup>
 import { computed, nextTick, reactive, ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import axios from 'axios';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -14,6 +14,58 @@ const props = defineProps({
 
 const PASS = 10;
 const canEdit = computed(() => props.sheet.canEdit);
+
+// Cells changed after their first entry get an orange outline, like the
+// old system; the history panel tells who changed what.
+const edited = reactive(new Set(props.sheet.edited ?? []));
+
+// Correction mode (staff): reopen this plan outside its grading window.
+
+function isoDate(date) {
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+const correctionOpen = ref(false);
+const correctionForm = useForm({ reason: '', expires_on: isoDate(new Date(Date.now() + 3 * 86400000)) });
+
+function openCorrection() {
+    correctionForm.post(route('grades.correction.open', props.plan.id, false), {
+        preserveScroll: true,
+        onSuccess: () => {
+            correctionOpen.value = false;
+            correctionForm.reset('reason');
+        },
+    });
+}
+
+function closeCorrection() {
+    router.delete(route('grades.correction.close', props.plan.id, false), { preserveScroll: true });
+}
+
+function formatDateTime(value) {
+    if (!value) return '';
+
+    return new Date(value).toLocaleString('es', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// History panel, loaded on demand.
+
+const historyOpen = ref(false);
+const history = ref({ loading: false, changes: [], truncated: false, error: null });
+
+async function showHistory() {
+    historyOpen.value = true;
+    history.value = { loading: true, changes: [], truncated: false, error: null };
+
+    try {
+        const { data } = await axios.get(route('grades.history', props.plan.id, false));
+        history.value = { loading: false, changes: data.changes, truncated: data.truncated, error: null };
+    } catch {
+        history.value = { loading: false, changes: [], truncated: false, error: 'No se pudo cargar el historial.' };
+    }
+}
+
+const ROLE_LABELS = { 'staff/admin': 'Personal', teacher: 'Docente' };
 
 // Rows are local state: each save answers with the student's recomputed
 // standing, which replaces the row's totals and final grade.
@@ -98,6 +150,11 @@ async function save(row, column, raw) {
         });
 
         if (latestForCell[id] !== ticket) return;
+
+        // Same rule as the server: edited = the value changed after its first entry.
+        const previous = column.indicatorId === null ? row.extra : (row.scores[column.indicatorId] ?? null);
+        const next = raw === '' ? null : Number(raw);
+        if (previous !== null && previous !== next) edited.add(`${row.id}:${column.key}`);
 
         if (column.indicatorId === null) {
             row.extra = raw === '' ? null : Number(raw);
@@ -191,6 +248,15 @@ function formatDate(value) {
             </template>
             <template #actions>
                 <UButton
+                    color="neutral"
+                    variant="outline"
+                    icon="i-lucide-history"
+                    class="bg-white/10 text-white ring-white/25 hover:bg-white/20"
+                    @click="showHistory"
+                >
+                    Historial
+                </UButton>
+                <UButton
                     :to="route('grades.plan', { offer: context.offerId, subject: context.subjectId, moment: context.momentId }, false)"
                     color="neutral"
                     variant="outline"
@@ -203,7 +269,17 @@ function formatDate(value) {
         </PageHeader>
 
         <UAlert
-            v-if="!sheet.periodOpen"
+            v-if="sheet.correction"
+            class="mb-5"
+            color="warning"
+            variant="subtle"
+            icon="i-lucide-pencil-ruler"
+            :title="`Corrección abierta hasta el ${formatDateTime(sheet.correction.expiresAt)}`"
+            :description="`Motivo: ${sheet.correction.reason}${sheet.correction.openedBy ? ` · Abierta por ${sheet.correction.openedBy}` : ''}. Cada cambio queda registrado con este motivo.`"
+            :actions="sheet.isStaff ? [{ label: 'Cerrar corrección', color: 'neutral', variant: 'outline', icon: 'i-lucide-lock', onClick: closeCorrection }] : []"
+        />
+        <UAlert
+            v-else-if="!sheet.periodOpen"
             class="mb-5"
             color="neutral"
             variant="subtle"
@@ -221,6 +297,11 @@ function formatDate(value) {
                 ? `La ventana de carga es del ${formatDate(sheet.moment.gradingOpensOn)} al ${formatDate(sheet.moment.gradingClosesOn)}.`
                 : 'El momento todavía no tiene fechas de carga. Se definen en Momentos académicos.'"
         />
+        <div v-if="sheet.isStaff && !sheet.correction && (!sheet.periodOpen || !sheet.windowOpen)" class="-mt-3 mb-5">
+            <UButton color="warning" variant="soft" icon="i-lucide-pencil-ruler" @click="correctionOpen = true">
+                Abrir corrección para este plan
+            </UButton>
+        </div>
 
         <div class="mb-4 flex flex-wrap items-center gap-2">
             <div class="flex flex-wrap gap-1.5" role="group" aria-label="Mostrar referentes">
@@ -324,6 +405,7 @@ function formatDate(value) {
                                         'border-error bg-error/10 text-error': state[`${row.id}:i${indicator.id}`] === 'error',
                                         'border-default': state[`${row.id}:i${indicator.id}`] !== 'error',
                                         'bg-success/10': state[`${row.id}:i${indicator.id}`] === 'saved',
+                                        'ring-2 ring-warning/70': edited.has(`${row.id}:i${indicator.id}`) && state[`${row.id}:i${indicator.id}`] !== 'error',
                                     }"
                                     @input="onInput(row, { key: `i${indicator.id}`, indicatorId: indicator.id, max: indicator.maxPoints }, $event)"
                                     @keydown="onKeydown($event, rowIndex, columns.findIndex((c) => c.key === `i${indicator.id}`))"
@@ -350,6 +432,7 @@ function formatDate(value) {
                                     'border-error bg-error/10 text-error': state[`${row.id}:extra`] === 'error',
                                     'border-default': state[`${row.id}:extra`] !== 'error',
                                     'bg-success/10': state[`${row.id}:extra`] === 'saved',
+                                    'ring-2 ring-warning/70': edited.has(`${row.id}:extra`) && state[`${row.id}:extra`] !== 'error',
                                 }"
                                 @input="onInput(row, { key: 'extra', indicatorId: null, max: null }, $event)"
                                 @keydown="onKeydown($event, rowIndex, columns.length - 1)"
@@ -376,5 +459,53 @@ function formatDate(value) {
             Enter o ↓ baja al siguiente estudiante · ↑ sube · ← → cambian de columna. Cada celda se guarda sola.
             La nota es el promedio de los referentes más la extra, redondeada, entre 01 y 20; de 01 a 09 es reprobado. * = faltan notas.
         </p>
+        <UModal v-model:open="correctionOpen" title="Abrir corrección" description="Permite cargar y corregir notas de este plan fuera de la ventana de carga. Cada cambio queda registrado con el motivo." :dismissible="!correctionForm.processing">
+            <template #body>
+                <form id="form-correction" class="space-y-5" novalidate @submit.prevent="openCorrection">
+                    <UFormField label="Motivo" name="reason" required :error="correctionForm.errors.reason ?? correctionForm.errors.correction">
+                        <UTextarea v-model="correctionForm.reason" :maxlength="500" :rows="3" placeholder="Ej.: corrección de notas del R2 solicitada por coordinación" class="w-full" autofocus />
+                    </UFormField>
+                    <UFormField label="Abierta hasta (inclusive)" name="expires_on" required :error="correctionForm.errors.expires_on">
+                        <UInput v-model="correctionForm.expires_on" type="date" class="w-full" />
+                    </UFormField>
+                </form>
+            </template>
+            <template #footer>
+                <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <UButton color="neutral" variant="ghost" class="justify-center" :disabled="correctionForm.processing" @click="correctionOpen = false">Cancelar</UButton>
+                    <UButton type="submit" form="form-correction" color="warning" icon="i-lucide-pencil-ruler" class="justify-center" :loading="correctionForm.processing">
+                        Abrir corrección
+                    </UButton>
+                </div>
+            </template>
+        </UModal>
+
+        <USlideover v-model:open="historyOpen" title="Historial de cambios" :description="`${context.subjectName} · ${context.offerLabel} · ${context.momentName}`">
+            <template #body>
+                <p v-if="history.loading" class="text-sm text-muted">Cargando…</p>
+                <p v-else-if="history.error" class="text-sm text-error">{{ history.error }}</p>
+                <p v-else-if="history.changes.length === 0" class="text-sm text-muted">Todavía no hay cambios registrados.</p>
+                <ol v-else class="space-y-3">
+                    <li v-for="change in history.changes" :key="change.id" class="rounded-lg border border-default p-3 text-sm">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="min-w-0 truncate font-semibold text-highlighted">{{ change.student }}</p>
+                            <UBadge size="sm" color="neutral" variant="subtle">{{ change.cell }}</UBadge>
+                        </div>
+                        <p class="mt-1 font-mono tabular-nums">
+                            <span class="text-muted">{{ change.old ?? '—' }}</span>
+                            <UIcon name="i-lucide-arrow-right" class="mx-1.5 inline size-3.5 text-muted" />
+                            <span class="font-semibold text-highlighted">{{ change.new ?? 'borrada' }}</span>
+                        </p>
+                        <p class="mt-1 text-xs text-muted">
+                            {{ formatDateTime(change.at) }} · {{ change.by }}<template v-if="change.role"> ({{ ROLE_LABELS[change.role] ?? change.role }})</template>
+                        </p>
+                        <p v-if="change.correction !== null" class="mt-1.5 rounded-md bg-warning/10 px-2 py-1 text-xs text-warning">
+                            En corrección: {{ change.correction }}
+                        </p>
+                    </li>
+                </ol>
+                <p v-if="history.truncated" class="mt-3 text-xs text-muted">Se muestran los 500 cambios más recientes.</p>
+            </template>
+        </USlideover>
     </DashboardLayout>
 </template>

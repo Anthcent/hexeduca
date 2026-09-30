@@ -20,4 +20,8 @@ Route::middleware(['auth', 'module:grades', 'permission:grades.manage'])
         Route::put('/plan', 'savePlan')->name('plan.save');
         Route::get('/sheets/{plan}', 'sheet')->whereNumber('plan')->name('sheet');
         Route::put('/sheets/{plan}/cells', 'record')->whereNumber('plan')->name('record');
+        Route::get('/sheets/{plan}/history', 'history')->whereNumber('plan')->name('history');
+        Route::post('/sheets/{plan}/correction', 'openCorrection')->whereNumber('plan')->name('correction.open');
+        Route::delete('/sheets/{plan}/correction', 'closeCorrection')->whereNumber('plan')->name('correction.close');
+        Route::get('/monitor', 'monitor')->name('monitor');
     });

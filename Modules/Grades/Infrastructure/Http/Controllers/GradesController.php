@@ -10,10 +10,12 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\AcademicMoments\Public\Contracts\AcademicMomentReader;
 use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Modules\AcademicPeriods\Public\DTOs\AcademicPeriodDTO;
 use Modules\Grades\Application\DTOs\Actor;
 use Modules\Grades\Application\Services\GradeAccess;
+use Modules\Grades\Application\UseCases\ManageCorrection;
 use Modules\Grades\Application\UseCases\RecordGrade;
 use Modules\Grades\Application\UseCases\SaveEvaluationPlan;
 use Modules\Grades\Domain\Exceptions\GradingRefused;
@@ -22,6 +24,8 @@ use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
 use Modules\Grades\Domain\ValueObjects\PlanStructure;
 use Modules\Grades\Infrastructure\Http\Requests\RecordGradeRequest;
 use Modules\Grades\Infrastructure\Http\Requests\SavePlanRequest;
+use Modules\Grades\Infrastructure\Queries\GradeHistoryQuery;
+use Modules\Grades\Infrastructure\Queries\GradeMonitorQuery;
 use Modules\Grades\Infrastructure\Queries\GradeSheetQuery;
 use Modules\Grades\Infrastructure\Queries\MySubjectsQuery;
 
@@ -118,6 +122,71 @@ class GradesController extends Controller
         }
 
         return response()->json(['row' => $row]);
+    }
+
+    public function history(int $plan, Request $request, TenantContext $tenantContext, GradeAccess $access, GradeBookRepositoryInterface $book, GradeHistoryQuery $query): JsonResponse
+    {
+        $actor = $this->actor($request, $tenantContext);
+        $evaluationPlan = $book->findPlan($plan, $actor->schoolId) ?? abort(404);
+        abort_unless($access->canManage($actor, $evaluationPlan->offerId, $evaluationPlan->subjectId), 403);
+
+        return response()->json($query->forPlan($evaluationPlan));
+    }
+
+    public function openCorrection(int $plan, Request $request, TenantContext $tenantContext, ManageCorrection $useCase): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+            'expires_on' => ['required', 'date_format:Y-m-d'],
+        ], [
+            'reason.required' => 'Indica el motivo de la corrección.',
+            'reason.max' => 'El motivo puede tener hasta 500 caracteres.',
+            'expires_on.*' => 'Indica hasta qué día estará abierta la corrección.',
+        ]);
+
+        return $this->correction(fn () => $useCase->open($this->actor($request, $tenantContext), $plan, $validated['reason'], $validated['expires_on']), 'Corrección abierta.');
+    }
+
+    public function closeCorrection(int $plan, Request $request, TenantContext $tenantContext, ManageCorrection $useCase): RedirectResponse
+    {
+        return $this->correction(fn () => $useCase->close($this->actor($request, $tenantContext), $plan), 'Corrección cerrada.');
+    }
+
+    public function monitor(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicMomentReader $moments, GradeAccess $access, GradeMonitorQuery $query): Response
+    {
+        $actor = $this->actor($request, $tenantContext);
+        abort_unless($actor->isStaff, 403);
+
+        $period = $periods->activeForSchool($actor->schoolId);
+        $all = $period ? $moments->forPeriod($actor->schoolId, $period->id) : [];
+        $requested = (int) $request->query('moment', 0);
+        $moment = array_values(array_filter($all, fn ($m): bool => $m->id === $requested))[0] ?? null;
+
+        // Default: the moment whose grading window is open, else the last one.
+        $moment ??= array_values(array_filter($all, fn ($m): bool => $access->windowOpen($m)))[0] ?? (end($all) ?: null);
+
+        return Inertia::render('Grades::Monitor', [
+            'period' => $period ? ['id' => $period->id, 'name' => $period->name] : null,
+            'moments' => array_map(fn ($m): array => ['id' => $m->id, 'name' => $m->name, 'gradingOpensOn' => $m->gradingOpensOn, 'gradingClosesOn' => $m->gradingClosesOn], $all),
+            'moment' => $moment ? ['id' => $moment->id, 'name' => $moment->name, 'windowOpen' => $access->windowOpen($moment)] : null,
+            'rows' => $moment ? $query->forMoment($actor->schoolId, $moment) : [],
+        ]);
+    }
+
+    /**
+     * @param  \Closure(): mixed  $action
+     */
+    private function correction(\Closure $action, string $success): RedirectResponse
+    {
+        try {
+            $action();
+        } catch (GradingRefused $e) {
+            abort_if($e->status === 403 || $e->status === 404, $e->status, $e->getMessage());
+
+            throw ValidationException::withMessages(['correction' => $e->getMessage()]);
+        }
+
+        return back()->with('success', $success);
     }
 
     private function actor(Request $request, TenantContext $tenantContext): Actor

@@ -7,6 +7,7 @@ use Modules\Grades\Domain\Entities\EvaluationPlan;
 use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
 use Modules\Grades\Domain\ValueObjects\PlanStructure;
 use Modules\Grades\Infrastructure\Models\GradeChangeModel;
+use Modules\Grades\Infrastructure\Models\GradeCorrectionModel;
 use Modules\Grades\Infrastructure\Models\GradeExtraModel;
 use Modules\Grades\Infrastructure\Models\GradeIndicatorModel;
 use Modules\Grades\Infrastructure\Models\GradePlanModel;
@@ -114,7 +115,7 @@ final class EloquentGradeBookRepository implements GradeBookRepositoryInterface
         return $points === null ? null : (int) $points;
     }
 
-    public function setScore(EvaluationPlan $plan, int $indicatorId, int $studentId, ?int $points, int $actorId): ?int
+    public function setScore(EvaluationPlan $plan, int $indicatorId, int $studentId, ?int $points, int $actorId, ?int $correctionId = null): ?int
     {
         $row = GradeScoreModel::query()
             ->where('school_id', $plan->schoolId)
@@ -144,12 +145,12 @@ final class EloquentGradeBookRepository implements GradeBookRepositoryInterface
             ]);
         }
 
-        $this->logChange($plan, $studentId, $indicatorId, $old, $points, $actorId);
+        $this->logChange($plan, $studentId, $indicatorId, $old, $points, $actorId, $correctionId);
 
         return $old;
     }
 
-    public function setExtra(EvaluationPlan $plan, int $studentId, ?int $points, int $actorId): ?int
+    public function setExtra(EvaluationPlan $plan, int $studentId, ?int $points, int $actorId, ?int $correctionId = null): ?int
     {
         $row = GradeExtraModel::query()
             ->where('school_id', $plan->schoolId)
@@ -178,7 +179,7 @@ final class EloquentGradeBookRepository implements GradeBookRepositoryInterface
             ]);
         }
 
-        $this->logChange($plan, $studentId, null, $old, $points, $actorId);
+        $this->logChange($plan, $studentId, null, $old, $points, $actorId, $correctionId);
 
         return $old;
     }
@@ -191,7 +192,47 @@ final class EloquentGradeBookRepository implements GradeBookRepositoryInterface
         );
     }
 
-    private function logChange(EvaluationPlan $plan, int $studentId, ?int $indicatorId, ?int $old, ?int $new, int $actorId): void
+    public function activeCorrection(int $planId, int $schoolId): ?array
+    {
+        $row = GradeCorrectionModel::query()
+            ->where('school_id', $schoolId)
+            ->where('grade_plan_id', $planId)
+            ->whereNull('closed_at')
+            ->where('expires_at', '>', now())
+            ->latest('id')
+            ->first();
+
+        return $row ? [
+            'id' => $row->id,
+            'reason' => $row->reason,
+            'expiresAt' => $row->expires_at->toIso8601String(),
+            'openedBy' => $row->opened_by,
+        ] : null;
+    }
+
+    public function openCorrection(EvaluationPlan $plan, int $openedBy, string $reason, string $expiresAt): int
+    {
+        $this->closeCorrection($plan->id, $plan->schoolId, $openedBy);
+
+        return GradeCorrectionModel::query()->create([
+            'school_id' => $plan->schoolId,
+            'grade_plan_id' => $plan->id,
+            'opened_by' => $openedBy,
+            'reason' => $reason,
+            'expires_at' => $expiresAt,
+        ])->id;
+    }
+
+    public function closeCorrection(int $planId, int $schoolId, int $closedBy): bool
+    {
+        return GradeCorrectionModel::query()
+            ->where('school_id', $schoolId)
+            ->where('grade_plan_id', $planId)
+            ->whereNull('closed_at')
+            ->update(['closed_at' => now(), 'closed_by' => $closedBy]) > 0;
+    }
+
+    private function logChange(EvaluationPlan $plan, int $studentId, ?int $indicatorId, ?int $old, ?int $new, int $actorId, ?int $correctionId): void
     {
         GradeChangeModel::query()->create([
             'school_id' => $plan->schoolId,
@@ -201,6 +242,7 @@ final class EloquentGradeBookRepository implements GradeBookRepositoryInterface
             'old_points' => $old,
             'new_points' => $new,
             'changed_by' => $actorId,
+            'grade_correction_id' => $correctionId,
         ]);
     }
 

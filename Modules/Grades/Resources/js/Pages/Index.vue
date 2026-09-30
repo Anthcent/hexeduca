@@ -54,7 +54,11 @@ function planUrl(card, moment) {
             :title="isStaff ? 'Notas' : 'Mis materias'"
             :description="isStaff ? 'Planes de evaluación y carga de notas de todas las asignaturas del periodo.' : 'Tus asignaturas del periodo: arma el plan de cada momento y carga las notas.'"
             icon="i-lucide-clipboard-check"
-        />
+        >
+            <template v-if="isStaff" #notch>
+                <UButton :to="route('grades.monitor', undefined, false)" icon="i-lucide-gauge" size="lg">Monitor de carga</UButton>
+            </template>
+        </PageHeader>
 
         <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
             <USelect v-if="periods.length > 1" v-model="periodId" :items="periodItems" icon="i-lucide-calendar-range" class="w-full sm:w-56" aria-label="Periodo" />
@@ -94,7 +98,10 @@ function planUrl(card, moment) {
                     <li v-for="moment in card.moments" :key="moment.id" class="px-5 py-3">
                         <div class="flex items-center gap-2">
                             <p class="min-w-0 flex-1 truncate text-sm font-semibold text-highlighted">{{ moment.name }}</p>
-                            <UBadge size="sm" :color="WINDOW[moment.window].color" :variant="WINDOW[moment.window].variant" :icon="WINDOW[moment.window].icon">
+                            <UBadge v-if="moment.correction" size="sm" color="warning" variant="solid" icon="i-lucide-pencil-ruler">
+                                En corrección
+                            </UBadge>
+                            <UBadge v-else size="sm" :color="WINDOW[moment.window].color" :variant="WINDOW[moment.window].variant" :icon="WINDOW[moment.window].icon">
                                 {{ WINDOW[moment.window].label }}
                             </UBadge>
                         </div>
@@ -109,10 +116,10 @@ function planUrl(card, moment) {
                                 <UButton
                                     :to="route('grades.sheet', moment.planId, false)"
                                     size="sm"
-                                    :icon="moment.window === 'open' ? 'i-lucide-pencil-line' : 'i-lucide-eye'"
-                                    :variant="moment.window === 'open' ? 'solid' : 'soft'"
+                                    :icon="moment.window === 'open' || moment.correction ? 'i-lucide-pencil-line' : 'i-lucide-eye'"
+                                    :variant="moment.window === 'open' || moment.correction ? 'solid' : 'soft'"
                                 >
-                                    {{ moment.window === 'open' ? 'Cargar notas' : 'Ver notas' }}
+                                    {{ moment.window === 'open' || moment.correction ? 'Cargar notas' : 'Ver notas' }}
                                 </UButton>
                                 <UButton :to="planUrl(card, moment)" size="sm" color="neutral" variant="ghost" icon="i-lucide-list-tree">Plan</UButton>
                             </template>

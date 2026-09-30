@@ -32,9 +32,9 @@ final class RecordGrade
     public function handle(Actor $actor, int $planId, int $studentId, ?int $indicatorId, ?int $points): array
     {
         $plan = $this->book->findPlan($planId, $actor->schoolId) ?? throw GradingRefused::planNotFound();
-        $this->assertCanRecord($actor, $plan, $studentId);
+        $correctionId = $this->assertCanRecord($actor, $plan, $studentId);
 
-        return DB::transaction(function () use ($actor, $plan, $studentId, $indicatorId, $points): array {
+        return DB::transaction(function () use ($actor, $plan, $studentId, $indicatorId, $points, $correctionId): array {
             if ($indicatorId !== null) {
                 $indicator = $plan->indicator($indicatorId) ?? throw GradingRefused::unknownIndicator();
 
@@ -42,7 +42,7 @@ final class RecordGrade
                     throw GradingRefused::outOfRange($indicator['maxPoints']);
                 }
 
-                $this->book->setScore($plan, $indicatorId, $studentId, $points, $actor->id);
+                $this->book->setScore($plan, $indicatorId, $studentId, $points, $actor->id, $correctionId);
             } else {
                 $standing = $plan->standing($this->book->studentScores($plan->id, $studentId, $actor->schoolId));
                 $max = MomentGrade::maxExtra($standing['average']);
@@ -51,7 +51,7 @@ final class RecordGrade
                     throw GradingRefused::extraOverCap($max);
                 }
 
-                $this->book->setExtra($plan, $studentId, $points, $actor->id);
+                $this->book->setExtra($plan, $studentId, $points, $actor->id, $correctionId);
             }
 
             return $this->recompute($plan, $studentId, $actor->schoolId);
@@ -81,21 +81,33 @@ final class RecordGrade
     }
 
     /**
+     * An open correction lets grades change outside the grading window and
+     * in a closed period; every such change is tied to it in the history.
+     *
+     * @return int|null the open correction's id, when there is one
+     *
      * @throws GradingRefused
      */
-    private function assertCanRecord(Actor $actor, EvaluationPlan $plan, int $studentId): void
+    private function assertCanRecord(Actor $actor, EvaluationPlan $plan, int $studentId): ?int
     {
         $this->access->assertCanManage($actor, $plan->offerId, $plan->subjectId);
-        $this->access->assertPeriodOpen($plan->periodId, $actor->schoolId);
 
-        $moment = $this->moments->findForSchool($plan->momentId, $actor->schoolId) ?? throw GradingRefused::unknownSlot();
+        $correction = $this->book->activeCorrection($plan->id, $actor->schoolId);
 
-        if (! $this->access->windowOpen($moment)) {
-            throw GradingRefused::windowClosed();
+        if ($correction === null) {
+            $this->access->assertPeriodOpen($plan->periodId, $actor->schoolId);
+
+            $moment = $this->moments->findForSchool($plan->momentId, $actor->schoolId) ?? throw GradingRefused::unknownSlot();
+
+            if (! $this->access->windowOpen($moment)) {
+                throw GradingRefused::windowClosed();
+            }
         }
 
         if (! $this->book->isEnrolled($actor->schoolId, $plan->offerId, $studentId)) {
             throw GradingRefused::notEnrolled();
         }
+
+        return $correction['id'] ?? null;
     }
 }

@@ -63,6 +63,27 @@ test('staff sees every subject of every offer, with the plan and loading progres
             }));
 });
 
+test('a moment flags its plan\'s open correction', function () {
+    $plan = G::plan($this, $this->math, $this->closedMoment);
+    $flags = function () {
+        $moments = null;
+        $this->actingAs($this->teacher)->get(G::url($this->school))
+            ->assertInertia(function (Assert $page) use (&$moments) {
+                $moments = $page->toArray()['props']['cards'][0]['moments'];
+            });
+
+        return $moments;
+    };
+
+    expect(collect($flags())->pluck('correction')->all())->toBe([false, false, false]);
+
+    G::openCorrection($this, $plan, '2026-10-05');
+    expect(collect($flags())->pluck('correction')->all())->toBe([false, true, false]);
+
+    $this->actingAs($this->staff)->delete(G::url($this->school, "/sheets/{$plan}/correction"))->assertSessionHasNoErrors();
+    expect(collect($flags())->pluck('correction')->all())->toBe([false, false, false]);
+});
+
 test('the moment windows report upcoming dates', function () {
     DB::table('momentos_academicos')->where('id', $this->undatedMoment)->update(['grading_opens_on' => '2026-11-01', 'grading_closes_on' => '2026-11-15']);
 

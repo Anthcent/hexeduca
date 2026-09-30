@@ -27,6 +27,7 @@ class GradeChangeModel extends Model
         'old_points',
         'new_points',
         'changed_by',
+        'grade_correction_id',
     ];
 
     protected function casts(): array
@@ -39,6 +40,7 @@ class GradeChangeModel extends Model
             'old_points' => 'integer',
             'new_points' => 'integer',
             'changed_by' => 'integer',
+            'grade_correction_id' => 'integer',
         ];
     }
 }

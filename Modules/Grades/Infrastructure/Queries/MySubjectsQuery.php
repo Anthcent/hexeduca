@@ -8,6 +8,7 @@ use Modules\AcademicMoments\Public\DTOs\AcademicMomentDTO;
 use Modules\AcademicOffers\Public\Contracts\AcademicOfferReader;
 use Modules\Grades\Application\DTOs\Actor;
 use Modules\Grades\Application\Services\GradeAccess;
+use Modules\Grades\Infrastructure\Models\GradeCorrectionModel;
 use Modules\Grades\Infrastructure\Models\GradeIndicatorModel;
 use Modules\Grades\Infrastructure\Models\GradePlanModel;
 use Modules\Grades\Infrastructure\Models\GradeScoreModel;
@@ -73,6 +74,8 @@ final class MySubjectsQuery
             ->selectRaw('grade_plan_id, COUNT(*) as total')->groupBy('grade_plan_id')->pluck('total', 'grade_plan_id');
         $scoreCounts = GradeScoreModel::query()->where('school_id', $schoolId)->whereIn('grade_plan_id', $planIds)
             ->selectRaw('grade_plan_id, COUNT(*) as total')->groupBy('grade_plan_id')->pluck('total', 'grade_plan_id');
+        $corrections = GradeCorrectionModel::query()->where('school_id', $schoolId)->whereIn('grade_plan_id', $planIds)
+            ->whereNull('closed_at')->where('expires_at', '>', now())->pluck('grade_plan_id')->flip();
         $studentCounts = DB::table('grades_enrollment_projection')->where('school_id', $schoolId)->where('academic_period_id', $periodId)
             ->where('status', 'active')->selectRaw('academic_offer_id, COUNT(*) as total')->groupBy('academic_offer_id')->pluck('total', 'academic_offer_id');
 
@@ -95,7 +98,7 @@ final class MySubjectsQuery
                 'subjectName' => $subject->name,
                 'role' => $role,
                 'students' => $students,
-                'moments' => array_map(function (AcademicMomentDTO $moment) use ($planBySlot, $offerId, $subject, $indicatorCounts, $scoreCounts, $students): array {
+                'moments' => array_map(function (AcademicMomentDTO $moment) use ($planBySlot, $offerId, $subject, $indicatorCounts, $scoreCounts, $students, $corrections): array {
                     $planId = $planBySlot["{$offerId}-{$subject->id}-{$moment->id}"] ?? null;
                     $expected = $planId ? $students * (int) ($indicatorCounts[$planId] ?? 0) : 0;
 
@@ -104,6 +107,7 @@ final class MySubjectsQuery
                         'name' => $moment->name,
                         'window' => $this->windowState($moment),
                         'planId' => $planId,
+                        'correction' => $planId !== null && isset($corrections[$planId]),
                         'progress' => $expected > 0 ? (int) floor(100 * min($expected, (int) ($scoreCounts[$planId] ?? 0)) / $expected) : 0,
                     ];
                 }, $moments),

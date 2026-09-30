@@ -60,6 +60,21 @@ final class GradingRefused extends DomainException
         return new self('El plan de evaluación no existe.', 404);
     }
 
+    public static function staffOnly(): self
+    {
+        return new self('Solo el personal administrativo puede abrir o cerrar una corrección.', 403);
+    }
+
+    public static function correctionReasonRequired(): self
+    {
+        return new self('Indica el motivo de la corrección.');
+    }
+
+    public static function correctionExpiry(int $maxDays): self
+    {
+        return new self("La corrección debe vencer entre hoy y dentro de {$maxDays} días.");
+    }
+
     public static function unknownSlot(): self
     {
         return new self('La sección, la asignatura o el momento no son válidos para este periodo.');

@@ -37,12 +37,29 @@ interface GradeBookRepositoryInterface
     /**
      * Sets (or clears, with null) a score and logs the change. Returns the previous points.
      */
-    public function setScore(EvaluationPlan $plan, int $indicatorId, int $studentId, ?int $points, int $actorId): ?int;
+    public function setScore(EvaluationPlan $plan, int $indicatorId, int $studentId, ?int $points, int $actorId, ?int $correctionId = null): ?int;
 
     /**
      * Sets (or clears, with null) the extra and logs the change. Returns the previous points.
      */
-    public function setExtra(EvaluationPlan $plan, int $studentId, ?int $points, int $actorId): ?int;
+    public function setExtra(EvaluationPlan $plan, int $studentId, ?int $points, int $actorId, ?int $correctionId = null): ?int;
 
     public function saveResult(EvaluationPlan $plan, int $studentId, float $average, int $extra, int $final, bool $complete): void;
+
+    /**
+     * The plan's open, unexpired correction.
+     *
+     * @return array{id: int, reason: string, expiresAt: string, openedBy: int}|null
+     */
+    public function activeCorrection(int $planId, int $schoolId): ?array;
+
+    /**
+     * Opens a correction, closing any open one first. Returns its id.
+     */
+    public function openCorrection(EvaluationPlan $plan, int $openedBy, string $reason, string $expiresAt): int;
+
+    /**
+     * Closes the open correction, if any. Returns whether one was open.
+     */
+    public function closeCorrection(int $planId, int $schoolId, int $closedBy): bool;
 }

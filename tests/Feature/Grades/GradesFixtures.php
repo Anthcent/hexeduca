@@ -121,6 +121,56 @@ final class GradesFixtures
     }
 
     /**
+     * Staff saves the default plan for a slot of the scenario's offer (or
+     * `$offerId`) and returns its id.
+     */
+    public static function plan(TestCase $test, int $subjectId, int $momentId, ?int $offerId = null): int
+    {
+        $offerId ??= $test->offer;
+
+        $test->actingAs($test->staff)
+            ->put(self::url($test->school, '/plan'), self::planPayload($offerId, $subjectId, $momentId))
+            ->assertSessionHasNoErrors();
+
+        return (int) DB::table('grade_plans')
+            ->where('academic_offer_id', $offerId)
+            ->where('study_plan_subject_id', $subjectId)
+            ->where('academic_moment_id', $momentId)
+            ->value('id');
+    }
+
+    /**
+     * A plan of `otherSchool`, saved by that school's staff.
+     */
+    public static function foreignPlan(TestCase $test): int
+    {
+        $period = S::period($test->otherSchool, '2026', true);
+        $grade = S::gradeLevel($test->otherSchool, 'Primero', 1);
+        $offer = S::offer($test->otherSchool, $period, $grade, S::section($test->otherSchool, 'A'));
+        $studyPlan = S::plan($test->otherSchool, '1');
+        $subject = S::subject($test->otherSchool, $studyPlan, $grade, 'Física');
+        S::assignment($test->otherSchool, $period, $studyPlan, 'school');
+        $moment = M::moment($period, 'Primer momento', 1, '2026-09-01', '2026-10-15');
+
+        $test->actingAs(S::user($test->otherSchool, 'staff/admin'))
+            ->put(self::url($test->otherSchool, '/plan'), self::planPayload($offer, $subject, $moment))
+            ->assertSessionHasNoErrors();
+
+        return (int) DB::table('grade_plans')->where('school_id', $test->otherSchool->id)->value('id');
+    }
+
+    /**
+     * Staff opens a correction on a plan.
+     */
+    public static function openCorrection(TestCase $test, int $planId, string $expiresOn, string $reason = 'Error de transcripción'): void
+    {
+        $test->actingAs($test->staff)
+            ->post(self::url($test->school, "/sheets/{$planId}/correction"), ['reason' => $reason, 'expires_on' => $expiresOn])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success', 'Corrección abierta.');
+    }
+
+    /**
      * The plan's indicator ids in referente and letter order.
      *
      * @return list<int>

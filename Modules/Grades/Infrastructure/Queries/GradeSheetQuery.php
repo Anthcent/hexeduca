@@ -7,10 +7,13 @@ use Modules\AcademicMoments\Public\Contracts\AcademicMomentReader;
 use Modules\Grades\Application\DTOs\Actor;
 use Modules\Grades\Application\Services\GradeAccess;
 use Modules\Grades\Domain\Entities\EvaluationPlan;
+use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
 use Modules\Grades\Domain\Services\MomentGrade;
+use Modules\Grades\Infrastructure\Models\GradeChangeModel;
 use Modules\Grades\Infrastructure\Models\GradeExtraModel;
 use Modules\Grades\Infrastructure\Models\GradeScoreModel;
 use Modules\Users\Public\Contracts\StudentReader;
+use Modules\Users\Public\Contracts\UserDirectory;
 use Modules\Users\Public\DTOs\StudentDTO;
 
 /**
@@ -24,6 +27,8 @@ final class GradeSheetQuery
         private readonly StudentReader $students,
         private readonly AcademicMomentReader $moments,
         private readonly GradeAccess $access,
+        private readonly GradeBookRepositoryInterface $book,
+        private readonly UserDirectory $users,
     ) {}
 
     /**
@@ -81,9 +86,30 @@ final class GradeSheetQuery
         $moment = $this->moments->findForSchool($plan->momentId, $schoolId);
         $windowOpen = $moment !== null && $this->access->windowOpen($moment);
         $periodOpen = $this->access->periodOpen($plan->periodId, $schoolId);
+        $correction = $this->book->activeCorrection($plan->id, $schoolId);
+        $canManage = $this->access->canManage($actor, $plan->offerId, $plan->subjectId);
+
+        // Cells changed after their first entry: more than one log row.
+        $edited = GradeChangeModel::query()
+            ->where('school_id', $schoolId)
+            ->where('grade_plan_id', $plan->id)
+            ->selectRaw('student_id, grade_plan_indicator_id, COUNT(*) as total')
+            ->groupBy('student_id', 'grade_plan_indicator_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->get()
+            ->map(fn ($row): string => $row->student_id.':'.($row->grade_plan_indicator_id === null ? 'extra' : 'i'.$row->grade_plan_indicator_id))
+            ->values()
+            ->all();
 
         return [
             'rows' => $rows,
+            'edited' => $edited,
+            'correction' => $correction ? [
+                'reason' => $correction['reason'],
+                'expiresAt' => $correction['expiresAt'],
+                'openedBy' => $this->users->namesFor($schoolId, [$correction['openedBy']])[$correction['openedBy']]['name'] ?? null,
+            ] : null,
+            'isStaff' => $actor->isStaff,
             'moment' => $moment ? [
                 'id' => $moment->id,
                 'name' => $moment->name,
@@ -92,7 +118,7 @@ final class GradeSheetQuery
             ] : null,
             'windowOpen' => $windowOpen,
             'periodOpen' => $periodOpen,
-            'canEdit' => $windowOpen && $periodOpen && $this->access->canManage($actor, $plan->offerId, $plan->subjectId),
+            'canEdit' => $canManage && ($correction !== null || ($windowOpen && $periodOpen)),
         ];
     }
 }
