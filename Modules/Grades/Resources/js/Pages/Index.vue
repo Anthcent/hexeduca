@@ -10,6 +10,7 @@ const props = defineProps({
     period: { type: Object, default: null },
     isStaff: { type: Boolean, default: false },
     cards: { type: Array, default: () => [] },
+    homerooms: { type: Array, default: () => [] },
 });
 
 const periodId = ref(props.period?.id ?? null);
@@ -56,7 +57,15 @@ function planUrl(card, moment) {
             icon="i-lucide-clipboard-check"
         >
             <template v-if="isStaff" #notch>
-                <UButton :to="route('grades.monitor', undefined, false)" icon="i-lucide-gauge" size="lg">Monitor de carga</UButton>
+                <div class="flex flex-wrap gap-2">
+                    <UButton v-if="period" :to="route('grades.conduct', { period: period.id }, false)" icon="i-lucide-handshake" size="lg" color="neutral" variant="outline">
+                        Convivir
+                    </UButton>
+                    <UButton v-if="period" :to="route('grades.results', { period: period.id }, false)" icon="i-lucide-graduation-cap" size="lg" color="neutral" variant="outline">
+                        Resultado del año
+                    </UButton>
+                    <UButton :to="route('grades.monitor', undefined, false)" icon="i-lucide-gauge" size="lg">Monitor de carga</UButton>
+                </div>
             </template>
         </PageHeader>
 
@@ -65,6 +74,26 @@ function planUrl(card, moment) {
             <UInput v-model="search" icon="i-lucide-search" placeholder="Buscar asignatura o sección" class="w-full sm:max-w-sm" aria-label="Buscar" />
             <p class="text-sm text-muted sm:ms-auto">{{ visible.length }} {{ visible.length === 1 ? 'asignatura' : 'asignaturas' }}</p>
         </div>
+
+        <section v-if="homerooms.length > 0" class="mb-5 flex flex-col gap-3 rounded-xl border border-default bg-default px-5 py-4 shadow-card sm:flex-row sm:items-center">
+            <div class="min-w-0 flex-1">
+                <h2 class="text-sm font-bold text-highlighted">Mis secciones (orientador)</h2>
+                <p class="text-xs text-muted">Como docente orientador, calificas Convivir en cada momento.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <UButton
+                    v-for="homeroom in homerooms"
+                    :key="homeroom.id"
+                    :to="route('grades.conduct', { period: period.id, offer: homeroom.id }, false)"
+                    size="sm"
+                    color="neutral"
+                    variant="outline"
+                    icon="i-lucide-handshake"
+                >
+                    Convivir · {{ homeroom.label }}
+                </UButton>
+            </div>
+        </section>
 
         <EmptyState
             v-if="!period"
@@ -129,6 +158,19 @@ function planUrl(card, moment) {
                         </div>
                     </li>
                 </ul>
+
+                <footer v-if="card.moments.length > 0" class="mt-auto border-t border-default px-5 py-3">
+                    <UButton
+                        :to="route('grades.year', { period: period.id, offer: card.offerId, subject: card.subjectId }, false)"
+                        size="sm"
+                        color="neutral"
+                        variant="ghost"
+                        icon="i-lucide-sigma"
+                        class="px-0"
+                    >
+                        Resumen anual
+                    </UButton>
+                </footer>
             </article>
         </div>
     </DashboardLayout>

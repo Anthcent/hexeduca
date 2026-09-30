@@ -37,27 +37,52 @@ final class GradeAccess
     {
         $moment = $this->moments->findForSchool($momentId, $schoolId) ?? throw GradingRefused::unknownSlot();
 
-        $offer = null;
+        return ['moment' => $moment] + $this->offerSubject($schoolId, $moment->periodId, $offerId, $subjectId);
+    }
 
-        foreach ($this->offers->allForPeriod($schoolId, $moment->periodId) as $candidate) {
-            if ($candidate->id === $offerId) {
-                $offer = $candidate;
-            }
-        }
+    /**
+     * A subject taught in an offer of the school's period.
+     *
+     * @return array{offer: AcademicOfferSummary, subject: OfferSubjectDTO}
+     *
+     * @throws GradingRefused
+     */
+    public function offerSubject(int $schoolId, int $periodId, int $offerId, int $subjectId): array
+    {
+        $offer = $this->offer($schoolId, $periodId, $offerId);
 
-        $subject = null;
-
-        foreach ($offer ? $this->offerSubjects->forOffer($schoolId, $moment->periodId, $offerId) : [] as $candidate) {
+        foreach ($this->offerSubjects->forOffer($schoolId, $periodId, $offerId) as $candidate) {
             if ($candidate->id === $subjectId) {
-                $subject = $candidate;
+                return ['offer' => $offer, 'subject' => $candidate];
             }
         }
 
-        if ($offer === null || $subject === null) {
-            throw GradingRefused::unknownSlot();
+        throw GradingRefused::unknownSlot();
+    }
+
+    /**
+     * An offer of the school's period.
+     *
+     * @throws GradingRefused
+     */
+    public function offer(int $schoolId, int $periodId, int $offerId): AcademicOfferSummary
+    {
+        foreach ($this->offers->allForPeriod($schoolId, $periodId) as $candidate) {
+            if ($candidate->id === $offerId) {
+                return $candidate;
+            }
         }
 
-        return ['moment' => $moment, 'offer' => $offer, 'subject' => $subject];
+        throw GradingRefused::unknownSlot();
+    }
+
+    /**
+     * Convivir belongs to the offer's homeroom teacher (orientador); staff
+     * may always record it.
+     */
+    public function canManageConduct(Actor $actor, AcademicOfferSummary $offer): bool
+    {
+        return $actor->isStaff || ($offer->teacherId !== null && $offer->teacherId === $actor->id);
     }
 
     public function canManage(Actor $actor, int $offerId, int $subjectId): bool

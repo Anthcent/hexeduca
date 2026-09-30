@@ -11,16 +11,22 @@ use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Modules\AcademicMoments\Public\Contracts\AcademicMomentReader;
+use Modules\AcademicOffers\Public\Contracts\AcademicOfferReader;
+use Modules\AcademicOffers\Public\DTOs\AcademicOfferSummary;
 use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Modules\AcademicPeriods\Public\DTOs\AcademicPeriodDTO;
 use Modules\Grades\Application\DTOs\Actor;
 use Modules\Grades\Application\Services\GradeAccess;
 use Modules\Grades\Application\UseCases\ManageCorrection;
+use Modules\Grades\Application\UseCases\RecordConduct;
 use Modules\Grades\Application\UseCases\RecordGrade;
 use Modules\Grades\Application\UseCases\SaveEvaluationPlan;
 use Modules\Grades\Domain\Exceptions\GradingRefused;
 use Modules\Grades\Domain\Exceptions\InvalidPlan;
+use Modules\Grades\Domain\Repositories\ConductBookRepositoryInterface;
 use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
+use Modules\Grades\Domain\Services\MomentGrade;
+use Modules\Grades\Domain\Services\YearOutcome;
 use Modules\Grades\Domain\ValueObjects\PlanStructure;
 use Modules\Grades\Infrastructure\Http\Requests\RecordGradeRequest;
 use Modules\Grades\Infrastructure\Http\Requests\SavePlanRequest;
@@ -28,10 +34,13 @@ use Modules\Grades\Infrastructure\Queries\GradeHistoryQuery;
 use Modules\Grades\Infrastructure\Queries\GradeMonitorQuery;
 use Modules\Grades\Infrastructure\Queries\GradeSheetQuery;
 use Modules\Grades\Infrastructure\Queries\MySubjectsQuery;
+use Modules\Grades\Infrastructure\Queries\OfferRoster;
+use Modules\Grades\Infrastructure\Queries\YearSummaryQuery;
+use Modules\Subjects\Public\Contracts\OfferSubjectsReader;
 
 class GradesController extends Controller
 {
-    public function index(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, MySubjectsQuery $query): Response
+    public function index(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicOfferReader $offers, MySubjectsQuery $query): Response
     {
         $actor = $this->actor($request, $tenantContext);
         $all = $periods->allForSchool($actor->schoolId);
@@ -47,6 +56,11 @@ class GradesController extends Controller
             'period' => $selected ? ['id' => $selected->id, 'name' => $selected->name] : null,
             'isStaff' => $actor->isStaff,
             'cards' => $selected ? $query->forPeriod($actor, $selected->id) : [],
+            // Sections whose Convivir the teacher gives, as their orientador.
+            'homerooms' => $selected && ! $actor->isStaff ? array_values(array_map(
+                fn (AcademicOfferSummary $o): array => ['id' => $o->id, 'label' => "{$o->gradeLevelName} · Sección {$o->sectionName}"],
+                array_filter($offers->allForPeriod($actor->schoolId, $selected->id), fn (AcademicOfferSummary $o): bool => $o->teacherId === $actor->id),
+            )) : [],
         ]);
     }
 
@@ -171,6 +185,139 @@ class GradesController extends Controller
             'moment' => $moment ? ['id' => $moment->id, 'name' => $moment->name, 'windowOpen' => $access->windowOpen($moment)] : null,
             'rows' => $moment ? $query->forMoment($actor->schoolId, $moment) : [],
         ]);
+    }
+
+    public function year(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, GradeAccess $access, YearSummaryQuery $query): Response
+    {
+        $actor = $this->actor($request, $tenantContext);
+        $period = $periods->findForSchool((int) $request->query('period'), $actor->schoolId) ?? abort(404);
+        $offerId = (int) $request->query('offer');
+        $subjectId = (int) $request->query('subject');
+
+        try {
+            ['offer' => $offer, 'subject' => $subject] = $access->offerSubject($actor->schoolId, $period->id, $offerId, $subjectId);
+        } catch (GradingRefused) {
+            abort(404);
+        }
+
+        abort_unless($access->canManage($actor, $offerId, $subjectId), 403);
+
+        return Inertia::render('Grades::Year', [
+            'context' => [
+                'periodId' => $period->id,
+                'periodName' => $period->name,
+                'offerLabel' => "{$offer->gradeLevelName} · Sección {$offer->sectionName}",
+                'subjectName' => $subject->name,
+            ],
+            'summary' => $query->forSubject($actor->schoolId, $period->id, $offerId, $subjectId),
+            'pass' => MomentGrade::PASS,
+        ]);
+    }
+
+    public function results(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicOfferReader $offers, OfferSubjectsReader $offerSubjects, YearSummaryQuery $query): Response
+    {
+        $actor = $this->actor($request, $tenantContext);
+        abort_unless($actor->isStaff, 403);
+
+        $period = $periods->findForSchool((int) $request->query('period'), $actor->schoolId) ?? abort(404);
+        $all = $offers->allForPeriod($actor->schoolId, $period->id);
+        usort($all, fn (AcademicOfferSummary $a, AcademicOfferSummary $b): int => [$a->gradeLevelName, $a->sectionName] <=> [$b->gradeLevelName, $b->sectionName]);
+
+        $requested = (int) $request->query('offer', 0);
+        $offer = array_values(array_filter($all, fn (AcademicOfferSummary $o): bool => $o->id === $requested))[0] ?? null;
+        abort_if($requested !== 0 && $offer === null, 404);
+        $offer ??= $all[0] ?? null;
+
+        $subjects = $offer ? $offerSubjects->forOffer($actor->schoolId, $period->id, $offer->id) : [];
+        usort($subjects, fn ($a, $b): int => strcasecmp($a->name, $b->name));
+
+        return Inertia::render('Grades::Results', [
+            'period' => ['id' => $period->id, 'name' => $period->name],
+            'offers' => array_map(fn (AcademicOfferSummary $o): array => ['id' => $o->id, 'label' => "{$o->gradeLevelName} · Sección {$o->sectionName}"], $all),
+            'offerId' => $offer?->id,
+            'subjects' => array_map(fn ($s): array => ['id' => $s->id, 'name' => $s->name, 'code' => $s->code], $subjects),
+            'rows' => $offer ? $query->forOffer($actor->schoolId, $period->id, $offer->id, $subjects) : [],
+            'pass' => MomentGrade::PASS,
+            'maxPending' => YearOutcome::MAX_PENDING,
+        ]);
+    }
+
+    public function conduct(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicOfferReader $offers, AcademicMomentReader $moments, GradeAccess $access, ConductBookRepositoryInterface $conduct, OfferRoster $roster): Response
+    {
+        $actor = $this->actor($request, $tenantContext);
+        $period = $request->filled('period')
+            ? ($periods->findForSchool($request->integer('period'), $actor->schoolId) ?? abort(404))
+            : ($periods->activeForSchool($actor->schoolId) ?? abort(404));
+
+        $all = $offers->allForPeriod($actor->schoolId, $period->id);
+        $mine = array_values(array_filter($all, fn (AcademicOfferSummary $o): bool => $access->canManageConduct($actor, $o)));
+        usort($mine, fn (AcademicOfferSummary $a, AcademicOfferSummary $b): int => [$a->gradeLevelName, $a->sectionName] <=> [$b->gradeLevelName, $b->sectionName]);
+
+        $offer = $mine[0] ?? null;
+
+        if ($request->filled('offer')) {
+            $requested = array_values(array_filter($all, fn (AcademicOfferSummary $o): bool => $o->id === $request->integer('offer')))[0] ?? abort(404);
+            abort_unless($access->canManageConduct($actor, $requested), 403);
+            $offer = $requested;
+        }
+
+        abort_if($offer === null, 403, 'No eres docente orientador de ninguna sección del periodo.');
+
+        $allMoments = $moments->forPeriod($actor->schoolId, $period->id);
+        $moment = array_values(array_filter($allMoments, fn ($m): bool => $m->id === $request->integer('moment')))[0]
+            ?? array_values(array_filter($allMoments, fn ($m): bool => $access->windowOpen($m)))[0]
+            ?? (end($allMoments) ?: null);
+
+        $letters = $moment ? $conduct->letters($actor->schoolId, $offer->id, $moment->id) : [];
+        $windowOpen = $moment !== null && $access->windowOpen($moment);
+        $periodOpen = $access->periodOpen($period->id, $actor->schoolId);
+
+        return Inertia::render('Grades::Conduct', [
+            'period' => ['id' => $period->id, 'name' => $period->name],
+            'offers' => array_map(fn (AcademicOfferSummary $o): array => ['id' => $o->id, 'label' => "{$o->gradeLevelName} · Sección {$o->sectionName}"], $mine),
+            'offerId' => $offer->id,
+            'moments' => array_map(fn ($m): array => ['id' => $m->id, 'name' => $m->name], $allMoments),
+            'moment' => $moment ? ['id' => $moment->id, 'name' => $moment->name, 'windowOpen' => $windowOpen] : null,
+            'periodOpen' => $periodOpen,
+            'canEdit' => $moment !== null && ($actor->isStaff || ($windowOpen && $periodOpen)),
+            'isStaff' => $actor->isStaff,
+            'scale' => array_map(fn (string $letter, string $label): array => ['letter' => $letter, 'label' => $label], array_keys($this->conductScale()), $this->conductScale()),
+            'rows' => array_map(fn (array $student): array => $student + ['letter' => $letters[$student['id']] ?? null], $roster->forOffer($actor->schoolId, $offer->id)),
+            'edited' => $moment ? $conduct->editedStudents($actor->schoolId, $offer->id, $moment->id) : [],
+        ]);
+    }
+
+    public function recordConduct(Request $request, TenantContext $tenantContext, RecordConduct $useCase): JsonResponse
+    {
+        $validated = $request->validate([
+            'offer_id' => ['required', 'integer'],
+            'moment_id' => ['required', 'integer'],
+            'student_id' => ['required', 'integer'],
+            'letter' => ['nullable', 'string', 'max:2'],
+        ]);
+
+        try {
+            $edited = $useCase->handle(
+                $this->actor($request, $tenantContext),
+                (int) $validated['offer_id'],
+                (int) $validated['moment_id'],
+                (int) $validated['student_id'],
+                $validated['letter'] ?? null,
+                $this->conductScale(),
+            );
+        } catch (GradingRefused $e) {
+            return response()->json(['message' => $e->getMessage()], $e->status);
+        }
+
+        return response()->json(['letter' => $validated['letter'] ?? null, 'edited' => $edited]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function conductScale(): array
+    {
+        return config('grades.conduct_scale', []);
     }
 
     /**

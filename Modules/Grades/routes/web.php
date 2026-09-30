@@ -24,4 +24,8 @@ Route::middleware(['auth', 'module:grades', 'permission:grades.manage'])
         Route::post('/sheets/{plan}/correction', 'openCorrection')->whereNumber('plan')->name('correction.open');
         Route::delete('/sheets/{plan}/correction', 'closeCorrection')->whereNumber('plan')->name('correction.close');
         Route::get('/monitor', 'monitor')->name('monitor');
+        Route::get('/year', 'year')->name('year');
+        Route::get('/results', 'results')->name('results');
+        Route::get('/conduct', 'conduct')->name('conduct');
+        Route::put('/conduct/cells', 'recordConduct')->name('conduct.record');
     });

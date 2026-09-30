@@ -3,8 +3,10 @@
 namespace Modules\Grades\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Grades\Domain\Repositories\ConductBookRepositoryInterface;
 use Modules\Grades\Domain\Repositories\GradeBookRepositoryInterface;
 use Modules\Grades\Infrastructure\Console\Commands\RebuildEnrollmentProjection;
+use Modules\Grades\Infrastructure\Persistence\EloquentConductBookRepository;
 use Modules\Grades\Infrastructure\Persistence\EloquentGradeBookRepository;
 
 class GradesServiceProvider extends ServiceProvider
@@ -22,7 +24,9 @@ class GradesServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->mergeConfigFrom(module_path($this->name, 'config/config.php'), $this->nameLower);
         $this->app->bind(GradeBookRepositoryInterface::class, EloquentGradeBookRepository::class);
+        $this->app->bind(ConductBookRepositoryInterface::class, EloquentConductBookRepository::class);
 
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);

@@ -75,6 +75,19 @@ final class GradingRefused extends DomainException
         return new self("La corrección debe vencer entre hoy y dentro de {$maxDays} días.");
     }
 
+    public static function notYourSection(): self
+    {
+        return new self('Solo el docente orientador de la sección puede calificar Convivir.', 403);
+    }
+
+    /**
+     * @param  list<string>  $letters
+     */
+    public static function unknownLetter(array $letters): self
+    {
+        return new self('La calificación de Convivir debe ser una de: '.implode(', ', $letters).'.');
+    }
+
     public static function unknownSlot(): self
     {
         return new self('La sección, la asignatura o el momento no son válidos para este periodo.');
