@@ -8,10 +8,12 @@ use Modules\Users\Domain\Repositories\UserRepositoryInterface;
 use Modules\Users\Infrastructure\Models\User;
 use Modules\Users\Infrastructure\Persistence\EloquentStudentReader;
 use Modules\Users\Infrastructure\Persistence\EloquentTeacherReader;
+use Modules\Users\Infrastructure\Persistence\EloquentUserDirectory;
 use Modules\Users\Infrastructure\Persistence\EloquentUserRepository;
 use Modules\Users\Infrastructure\Policies\UserPolicy;
 use Modules\Users\Public\Contracts\StudentReader;
 use Modules\Users\Public\Contracts\TeacherReader;
+use Modules\Users\Public\Contracts\UserDirectory;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -51,6 +53,7 @@ class UsersServiceProvider extends ServiceProvider
         // AcademicOffers, Enrollments) are allowed to depend on. See plan §5.
         $this->app->bind(TeacherReader::class, EloquentTeacherReader::class);
         $this->app->bind(StudentReader::class, EloquentStudentReader::class);
+        $this->app->bind(UserDirectory::class, EloquentUserDirectory::class);
 
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
