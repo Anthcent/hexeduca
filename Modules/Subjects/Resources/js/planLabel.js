@@ -12,6 +12,22 @@ export function planLabel(plan) {
     return `${planCode(plan)} — ${plan.name}`;
 }
 
+// One line for where a plan is used in a period: the whole school wins,
+// otherwise the first targets plus how many more.
+export function usageSummary(usage) {
+    if (!usage || usage.length === 0) return '';
+    if (usage.some((u) => u.scope === 'school')) return 'Todo el colegio';
+
+    const labels = usage.map((u) => u.targetLabel);
+    const shown = labels.slice(0, 2).join(', ');
+
+    return labels.length > 2 ? `${shown} y ${labels.length - 2} más` : shown;
+}
+
+export function pluralize(count, one, many) {
+    return `${count} ${count === 1 ? one : many}`;
+}
+
 export const SCOPE_LABELS = {
     school: 'Colegio',
     grade_level: 'Año',

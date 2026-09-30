@@ -6,9 +6,11 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Subjects\Domain\Repositories\PlanAssignmentRepositoryInterface;
 use Modules\Subjects\Domain\Repositories\StudyPlanRepositoryInterface;
 use Modules\Subjects\Domain\Repositories\SubjectRepositoryInterface;
+use Modules\Subjects\Infrastructure\Persistence\EloquentOfferSubjectsReader;
 use Modules\Subjects\Infrastructure\Persistence\EloquentPlanAssignmentRepository;
 use Modules\Subjects\Infrastructure\Persistence\EloquentStudyPlanRepository;
 use Modules\Subjects\Infrastructure\Persistence\EloquentSubjectRepository;
+use Modules\Subjects\Public\Contracts\OfferSubjectsReader;
 
 class SubjectsServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class SubjectsServiceProvider extends ServiceProvider
         $this->app->bind(StudyPlanRepositoryInterface::class, EloquentStudyPlanRepository::class);
         $this->app->bind(SubjectRepositoryInterface::class, EloquentSubjectRepository::class);
         $this->app->bind(PlanAssignmentRepositoryInterface::class, EloquentPlanAssignmentRepository::class);
+        $this->app->bind(OfferSubjectsReader::class, EloquentOfferSubjectsReader::class);
 
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);

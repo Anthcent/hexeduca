@@ -9,12 +9,16 @@ import EmptyState from '@/Components/EmptyState.vue';
 import PaginationBar from '@/Components/PaginationBar.vue';
 import { tableUi } from '@/Components/tableUi';
 import PlanFormModal from '../Components/PlanFormModal.vue';
+import PlanCard from '../Components/PlanCard.vue';
+import ViewToggle from '../Components/ViewToggle.vue';
+import { pluralize, usageSummary } from '../planLabel';
 
 const props = defineProps({
     plans: { type: Object, required: true },
     filters: { type: Object, required: true },
     counts: { type: Object, required: true },
     planCodes: { type: Array, default: () => [] },
+    activePeriod: { type: Object, default: null },
 });
 
 const items = computed(() => props.plans.data ?? []);
@@ -55,11 +59,41 @@ function resetSearch() {
     search.value = '';
 }
 
+// Cards show each plan at a glance; the table packs many plans. The choice
+// is a per-browser preference.
+
+const VIEW_KEY = 'subjects.plans.view';
+const viewOptions = [
+    { value: 'cards', label: 'Tarjetas', icon: 'i-lucide-layout-grid' },
+    { value: 'table', label: 'Tabla', icon: 'i-lucide-rows-3' },
+];
+
+function storedView() {
+    try {
+        return localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'cards';
+    } catch {
+        return 'cards';
+    }
+}
+
+const view = ref(storedView());
+
+watch(view, (value) => {
+    try {
+        localStorage.setItem(VIEW_KEY, value);
+    } catch {
+        // Storage can be unavailable (private mode); the view still switches.
+    }
+});
+
+const inUseCount = computed(() => items.value.filter((plan) => plan.usage.length > 0).length);
+
 const columns = [
     { accessorKey: 'code', header: 'Código' },
     { accessorKey: 'name', header: 'Nombre' },
-    { accessorKey: 'subjectCount', header: 'Asignaturas', meta: { class: { th: 'w-32', td: 'tabular-nums' } } },
-    { accessorKey: 'status', header: 'Estado', meta: { class: { th: 'w-32' } } },
+    { id: 'grades', header: 'Años' },
+    { accessorKey: 'subjectCount', header: 'Asignaturas', meta: { class: { th: 'w-28', td: 'tabular-nums' } } },
+    { id: 'usage', header: props.activePeriod ? `Uso en ${props.activePeriod.name}` : 'Uso', meta: { class: { th: 'w-56' } } },
     { id: 'actions', header: '', meta: { class: { th: 'w-16', td: 'text-right' } } },
 ];
 
@@ -99,16 +133,23 @@ const createOpen = ref(false);
         <UCard class="shadow-card" :ui="{ body: 'p-0 sm:p-0', footer: 'p-0 sm:px-0' }">
             <template #header>
                 <div class="space-y-4">
-                    <PanelHeader
-                        :kicker="archivedView ? 'Archivados' : 'Catálogo'"
-                        :title="total === 1 ? '1 plan' : `${total} planes`"
-                    />
+                    <PanelHeader :kicker="archivedView ? 'Archivados' : 'Catálogo'" :title="pluralize(total, 'plan', 'planes')">
+                        <p v-if="!archivedView && activePeriod" class="text-sm text-muted">
+                            Periodo activo <span class="font-semibold text-highlighted">{{ activePeriod.name }}</span>
+                            <template v-if="items.length > 0">
+                                · <span class="font-semibold text-primary">{{ inUseCount }}</span> en uso en esta página
+                            </template>
+                        </p>
+                        <p v-else-if="!archivedView" class="text-sm text-muted">No hay un periodo activo.</p>
+                    </PanelHeader>
                     <DataToolbar
                         v-model:search="search"
                         v-model:status="status"
                         placeholder="Buscar por código, nombre u observación"
                         :statuses="statuses"
-                    />
+                    >
+                        <ViewToggle v-model="view" :options="viewOptions" label="Vista de los planes" />
+                    </DataToolbar>
                 </div>
             </template>
 
@@ -133,6 +174,10 @@ const createOpen = ref(false);
                 :actions="[{ label: 'Nuevo plan', icon: 'i-lucide-plus', onClick: () => (createOpen = true) }]"
             />
 
+            <div v-else-if="view === 'cards'" class="grid gap-4 p-4 [grid-template-columns:repeat(auto-fill,minmax(17rem,1fr))] sm:p-5">
+                <PlanCard v-for="plan in items" :key="plan.id" :plan="plan" :active-period="activePeriod" />
+            </div>
+
             <template v-else>
                 <UTable :data="items" :columns="columns" :ui="tableUi" class="hidden md:block">
                     <template #code-cell="{ row }">
@@ -146,9 +191,23 @@ const createOpen = ref(false);
                     <template #name-cell="{ row }">
                         <span class="block max-w-md truncate" :title="row.original.name">{{ row.original.name }}</span>
                     </template>
-                    <template #status-cell="{ row }">
+                    <template #grades-cell="{ row }">
+                        <span v-if="row.original.grades.length === 0" class="text-xs text-muted">Sin asignaturas</span>
+                        <span
+                            v-else
+                            class="block max-w-56 truncate text-xs text-muted"
+                            :title="row.original.grades.map((g) => `${g.name} (${g.subjectCount})`).join(', ')"
+                        >
+                            {{ row.original.grades.map((g) => g.name).join(', ') }}
+                        </span>
+                    </template>
+                    <template #usage-cell="{ row }">
                         <UBadge v-if="row.original.status === 'archived'" color="neutral" variant="subtle" icon="i-lucide-archive">Archivado</UBadge>
-                        <UBadge v-else color="success" variant="subtle">Activo</UBadge>
+                        <div v-else-if="row.original.usage.length > 0" class="min-w-0">
+                            <UBadge color="primary" variant="solid" icon="i-lucide-circle-check">En uso</UBadge>
+                            <p class="mt-1 truncate text-xs text-muted" :title="usageSummary(row.original.usage)">{{ usageSummary(row.original.usage) }}</p>
+                        </div>
+                        <UBadge v-else color="neutral" variant="outline">Sin asignar</UBadge>
                     </template>
                     <template #actions-cell="{ row }">
                         <UTooltip text="Ver plan">
@@ -166,14 +225,19 @@ const createOpen = ref(false);
                 <ul class="divide-y divide-default md:hidden">
                     <li v-for="plan in items" :key="plan.id">
                         <button type="button" class="flex w-full items-center gap-3 px-4 py-3.5 text-left" @click="showPlan(plan)">
-                            <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                            <span
+                                class="grid size-9 shrink-0 place-items-center rounded-lg"
+                                :class="plan.usage.length > 0 ? 'bg-primary text-inverted' : 'bg-primary/10 text-primary'"
+                            >
                                 <UIcon name="i-lucide-book-open" class="size-4" />
                             </span>
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-sm font-semibold text-highlighted">
                                     {{ plan.code }}<template v-if="plan.observation"> · {{ plan.observation }}</template>
                                 </span>
-                                <span class="block truncate text-xs text-muted">{{ plan.name }} · {{ plan.subjectCount }} asignaturas</span>
+                                <span class="block truncate text-xs text-muted">
+                                    {{ plan.name }} · {{ pluralize(plan.subjectCount, 'asignatura', 'asignaturas') }}<template v-if="plan.usage.length > 0"> · En uso</template>
+                                </span>
                             </span>
                             <UIcon name="i-lucide-chevron-right" class="size-4 shrink-0 text-muted" />
                         </button>

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
@@ -7,7 +7,9 @@ import PanelHeader from '@/Components/PanelHeader.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmModal from '@/Components/ConfirmModal.vue';
 import PlanFormModal from '../Components/PlanFormModal.vue';
-import { planCode, SCOPE_LABELS } from '../planLabel';
+import QuickAddSubjects from '../Components/QuickAddSubjects.vue';
+import ViewToggle from '../Components/ViewToggle.vue';
+import { planCode, pluralize, usageSummary, SCOPE_LABELS } from '../planLabel';
 
 const props = defineProps({
     plan: { type: Object, required: true },
@@ -16,6 +18,7 @@ const props = defineProps({
     subjects: { type: Array, default: () => [] },
     assignments: { type: Array, default: () => [] },
     planCodes: { type: Array, default: () => [] },
+    activePeriod: { type: Object, default: null },
 });
 
 const archived = computed(() => props.plan.archived);
@@ -23,8 +26,13 @@ const archived = computed(() => props.plan.archived);
 // Subjects: active by default, with a chip for the archived ones.
 
 const subjectStatus = ref('active');
-const activeCount = computed(() => props.subjects.filter((s) => s.status === 'active').length);
+const activeSubjects = computed(() => props.subjects.filter((s) => s.status === 'active'));
+const activeCount = computed(() => activeSubjects.value.length);
 const archivedCount = computed(() => props.subjects.length - activeCount.value);
+
+// While adding (active subjects of an editable plan), every grade level shows,
+// even an empty one, so it always has its quick-entry field.
+const canAdd = computed(() => subjectStatus.value === 'active' && !archived.value);
 
 const groups = computed(() => {
     const visible = props.subjects.filter((s) => s.status === subjectStatus.value);
@@ -32,7 +40,7 @@ const groups = computed(() => {
 
     const result = props.gradeLevels
         .map((grade) => ({ id: grade.id, name: grade.name, subjects: visible.filter((s) => s.gradeLevelId === grade.id) }))
-        .filter((group) => group.subjects.length > 0);
+        .filter((group) => canAdd.value || group.subjects.length > 0);
 
     const orphans = visible.filter((s) => !known.has(s.gradeLevelId));
     if (orphans.length > 0) {
@@ -46,13 +54,45 @@ function weeklyTotal(subjects) {
     return subjects.reduce((sum, s) => sum + (s.weeklyHours ?? 0), 0);
 }
 
+// Summary strip: the plan in numbers, and where it runs this period.
+
+const coveredGrades = computed(() => new Set(activeSubjects.value.map((s) => s.gradeLevelId)).size);
+const totalHours = computed(() => weeklyTotal(activeSubjects.value));
+const activeUsage = computed(() => (props.activePeriod ? props.assignments.filter((a) => a.periodId === props.activePeriod.id) : []));
+
+// List reads subject by subject; columns show the whole plan side by side.
+
+const VIEW_KEY = 'subjects.plan.view';
+const viewOptions = [
+    { value: 'list', label: 'Lista', icon: 'i-lucide-list' },
+    { value: 'columns', label: 'Columnas', icon: 'i-lucide-columns-3' },
+];
+
+function storedView() {
+    try {
+        return localStorage.getItem(VIEW_KEY) === 'columns' ? 'columns' : 'list';
+    } catch {
+        return 'list';
+    }
+}
+
+const view = ref(storedView());
+
+watch(view, (value) => {
+    try {
+        localStorage.setItem(VIEW_KEY, value);
+    } catch {
+        // Storage can be unavailable (private mode); the view still switches.
+    }
+});
+
 const gradeItems = computed(() => props.gradeLevels.map((g) => ({ label: g.name, value: g.id })));
 
 // Plan edit
 
 const editPlanOpen = ref(false);
 
-// Subject create / edit
+// Subject create / edit (full form: name, grade, code, hours)
 
 const subjectOpen = ref(false);
 const editingSubject = ref(null);
@@ -161,6 +201,10 @@ function subjectActions(subject) {
             : { label: 'Archivar', icon: 'i-lucide-archive', onSelect: () => askArchiveSubject(subject) }],
     ];
 }
+
+function canAct(subject) {
+    return !archived.value || subject.status === 'archived';
+}
 </script>
 
 <template>
@@ -234,25 +278,57 @@ function subjectActions(subject) {
             description="Crea los años (grados) de la institución para poder agregar asignaturas."
         />
 
-        <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
-            <UCard class="shadow-card" :ui="{ body: 'p-0 sm:p-0' }">
+        <dl class="mb-6 grid grid-cols-2 overflow-hidden rounded-xl border border-default bg-default shadow-card lg:grid-cols-4">
+            <div class="border-b border-default px-5 py-4 lg:border-b-0 lg:border-e">
+                <dt class="text-xs font-medium text-muted">Asignaturas activas</dt>
+                <dd class="mt-1 text-2xl font-bold tabular-nums text-highlighted">{{ activeCount }}</dd>
+            </div>
+            <div class="border-b border-s border-default px-5 py-4 lg:border-b-0 lg:border-s-0 lg:border-e">
+                <dt class="text-xs font-medium text-muted">Años cubiertos</dt>
+                <dd class="mt-1 text-2xl font-bold tabular-nums text-highlighted">
+                    {{ coveredGrades }}<span class="text-base font-semibold text-muted"> de {{ gradeLevels.length }}</span>
+                </dd>
+            </div>
+            <div class="px-5 py-4 lg:border-e lg:border-default">
+                <dt class="text-xs font-medium text-muted">Horas semanales</dt>
+                <dd class="mt-1 text-2xl font-bold tabular-nums text-highlighted">{{ totalHours }}</dd>
+            </div>
+            <div class="border-s border-default px-5 py-4 lg:border-s-0" :class="activeUsage.length > 0 ? 'bg-primary/5' : ''">
+                <dt class="text-xs font-medium text-muted">{{ activePeriod ? `Uso en ${activePeriod.name}` : 'Uso' }}</dt>
+                <dd v-if="activeUsage.length > 0" class="mt-1 flex min-w-0 items-center gap-1.5 text-sm font-semibold text-primary">
+                    <UIcon name="i-lucide-circle-check" class="size-4 shrink-0" />
+                    <span class="truncate" :title="usageSummary(activeUsage)">{{ usageSummary(activeUsage) }}</span>
+                </dd>
+                <dd v-else class="mt-1 text-sm font-semibold text-muted">{{ activePeriod ? 'Sin asignar' : 'Sin periodo activo' }}</dd>
+            </div>
+        </dl>
+
+        <div class="grid items-start gap-6" :class="view === 'list' ? 'xl:grid-cols-[minmax(0,1fr)_22rem]' : ''">
+            <UCard class="min-w-0 shadow-card" :ui="{ body: view === 'columns' ? 'p-4 sm:p-5' : 'p-0 sm:p-0' }">
                 <template #header>
                     <div class="space-y-4">
-                        <PanelHeader kicker="Asignaturas" title="Asignaturas por año" />
-                        <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar asignaturas por estado">
-                            <UButton
-                                v-for="item in [{ value: 'active', label: 'Activas', count: activeCount }, { value: 'archived', label: 'Archivadas', count: archivedCount }]"
-                                :key="item.value"
-                                size="sm"
-                                :color="subjectStatus === item.value ? 'primary' : 'neutral'"
-                                :variant="subjectStatus === item.value ? 'solid' : 'outline'"
-                                class="rounded-full px-3"
-                                :aria-pressed="subjectStatus === item.value"
-                                @click="subjectStatus = item.value"
-                            >
-                                {{ item.label }}
-                                <span class="tabular-nums opacity-70">{{ item.count }}</span>
-                            </UButton>
+                        <PanelHeader kicker="Asignaturas" title="Asignaturas por año">
+                            <ViewToggle v-model="view" :options="viewOptions" label="Vista de las asignaturas" />
+                        </PanelHeader>
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap gap-2" role="group" aria-label="Filtrar asignaturas por estado">
+                                <UButton
+                                    v-for="item in [{ value: 'active', label: 'Activas', count: activeCount }, { value: 'archived', label: 'Archivadas', count: archivedCount }]"
+                                    :key="item.value"
+                                    size="sm"
+                                    :color="subjectStatus === item.value ? 'primary' : 'neutral'"
+                                    :variant="subjectStatus === item.value ? 'solid' : 'outline'"
+                                    class="rounded-full px-3"
+                                    :aria-pressed="subjectStatus === item.value"
+                                    @click="subjectStatus = item.value"
+                                >
+                                    {{ item.label }}
+                                    <span class="tabular-nums opacity-70">{{ item.count }}</span>
+                                </UButton>
+                            </div>
+                            <p v-if="canAdd && gradeLevels.length > 0" class="text-xs text-muted">
+                                Escribe y presiona Enter para agregar. Pega una lista para cargar varias.
+                            </p>
                         </div>
                     </div>
                 </template>
@@ -261,48 +337,80 @@ function subjectActions(subject) {
                     v-if="groups.length === 0"
                     :icon="subjectStatus === 'archived' ? 'i-lucide-archive' : 'i-lucide-notebook-pen'"
                     :title="subjectStatus === 'archived' ? 'No hay asignaturas archivadas' : 'Todavía no hay asignaturas'"
-                    :description="subjectStatus === 'archived' ? null : 'Agrega las asignaturas de cada año del plan.'"
-                    :actions="subjectStatus === 'active' && !archived && gradeLevels.length > 0 ? [{ label: 'Agregar asignatura', icon: 'i-lucide-plus', onClick: () => openSubject() }] : []"
+                    :description="subjectStatus === 'archived' ? null : 'Este plan no tiene asignaturas activas.'"
                 />
 
-                <div v-else class="divide-y divide-default">
+                <!-- List: one section per grade level. -->
+                <div v-else-if="view === 'list'" class="divide-y divide-default">
                     <section v-for="group in groups" :key="group.id" :aria-label="group.name">
                         <div class="flex items-center justify-between gap-3 bg-elevated/60 px-5 py-2.5">
-                            <h3 class="text-xs font-semibold uppercase tracking-wide text-muted">
+                            <h3 class="text-sm font-bold text-highlighted">
                                 {{ group.name }}
-                                <span class="ms-1 font-normal normal-case tracking-normal">· {{ group.subjects.length }} {{ group.subjects.length === 1 ? 'asignatura' : 'asignaturas' }}<template v-if="weeklyTotal(group.subjects) > 0"> · {{ weeklyTotal(group.subjects) }} h/semana</template></span>
+                                <span class="ms-1 text-xs font-normal text-muted">
+                                    {{ pluralize(group.subjects.length, 'asignatura', 'asignaturas') }}<template v-if="weeklyTotal(group.subjects) > 0"> · {{ weeklyTotal(group.subjects) }} h/semana</template>
+                                </span>
                             </h3>
-                            <UButton
-                                v-if="!archived && subjectStatus === 'active' && group.id !== 'none'"
-                                size="xs"
-                                color="neutral"
-                                variant="ghost"
-                                icon="i-lucide-plus"
-                                :aria-label="`Agregar asignatura a ${group.name}`"
-                                @click="openSubject(null, group.id)"
-                            />
                         </div>
-                        <ul class="divide-y divide-default">
-                            <li v-for="subject in group.subjects" :key="subject.id" class="flex items-center gap-3 px-5 py-3">
+                        <ul v-if="group.subjects.length > 0" class="divide-y divide-default">
+                            <li v-for="subject in group.subjects" :key="subject.id" class="flex items-center gap-3 px-5 py-2.5">
                                 <div class="min-w-0 flex-1">
                                     <p class="truncate text-sm font-semibold text-highlighted" :title="subject.name">{{ subject.name }}</p>
-                                    <p class="text-xs text-muted">
-                                        <template v-if="subject.code">Código {{ subject.code }}</template>
-                                        <template v-if="subject.code && subject.weeklyHours"> · </template>
-                                        <template v-if="subject.weeklyHours">{{ subject.weeklyHours }} h/semana</template>
-                                        <template v-if="!subject.code && !subject.weeklyHours">Sin código ni horas</template>
-                                    </p>
+                                    <p v-if="subject.code" class="text-xs text-muted">Código {{ subject.code }}</p>
                                 </div>
-                                <UDropdownMenu v-if="!archived || subject.status === 'archived'" :items="subjectActions(subject)" :content="{ align: 'end' }">
+                                <span
+                                    v-if="subject.weeklyHours"
+                                    class="shrink-0 rounded-md bg-elevated px-2 py-0.5 text-xs font-semibold tabular-nums text-default"
+                                >
+                                    {{ subject.weeklyHours }} h
+                                </span>
+                                <UDropdownMenu v-if="canAct(subject)" :items="subjectActions(subject)" :content="{ align: 'end' }">
                                     <UButton color="neutral" variant="ghost" icon="i-lucide-ellipsis" :aria-label="`Acciones para ${subject.name}`" />
                                 </UDropdownMenu>
                             </li>
                         </ul>
+                        <p v-else class="px-5 pt-3 text-xs text-muted">Sin asignaturas en este año.</p>
+                        <QuickAddSubjects v-if="canAdd && group.id !== 'none'" :plan-id="plan.id" :grade-level="group" />
                     </section>
+                </div>
+
+                <!-- Columns: the whole plan side by side, one column per grade level. -->
+                <div v-else class="-mx-4 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5">
+                    <div class="flex items-start gap-4">
+                        <section
+                            v-for="group in groups"
+                            :key="group.id"
+                            :aria-label="group.name"
+                            class="flex w-64 shrink-0 flex-col rounded-xl border border-default bg-elevated/40"
+                        >
+                            <header class="border-b border-default px-4 py-3">
+                                <h3 class="truncate text-sm font-bold text-highlighted">{{ group.name }}</h3>
+                                <p class="text-xs text-muted">
+                                    {{ pluralize(group.subjects.length, 'asignatura', 'asignaturas') }}<template v-if="weeklyTotal(group.subjects) > 0"> · {{ weeklyTotal(group.subjects) }} h</template>
+                                </p>
+                            </header>
+                            <ul class="space-y-1.5 p-2">
+                                <li
+                                    v-for="subject in group.subjects"
+                                    :key="subject.id"
+                                    class="flex items-center gap-2 rounded-lg bg-default px-3 py-2 ring-1 ring-default"
+                                >
+                                    <span class="min-w-0 flex-1 truncate text-sm font-medium text-highlighted" :title="subject.name">{{ subject.name }}</span>
+                                    <span v-if="subject.weeklyHours" class="shrink-0 text-xs font-semibold tabular-nums text-muted">{{ subject.weeklyHours }} h</span>
+                                    <UDropdownMenu v-if="canAct(subject)" :items="subjectActions(subject)" :content="{ align: 'end' }">
+                                        <UButton size="xs" color="neutral" variant="ghost" icon="i-lucide-ellipsis" :aria-label="`Acciones para ${subject.name}`" />
+                                    </UDropdownMenu>
+                                </li>
+                                <li v-if="group.subjects.length === 0" class="px-2 py-1 text-xs text-muted">Sin asignaturas.</li>
+                            </ul>
+                            <div v-if="canAdd && group.id !== 'none'" class="border-t border-default p-2">
+                                <QuickAddSubjects :plan-id="plan.id" :grade-level="group" compact />
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </UCard>
 
-            <UCard class="shadow-card xl:sticky xl:top-4">
+            <UCard v-if="view === 'list'" class="shadow-card xl:sticky xl:top-4">
                 <template #header>
                     <PanelHeader kicker="Uso" title="Asignaciones vigentes">
                         <UButton :to="route('subjects.assignments.index', undefined, false)" size="sm" color="neutral" variant="ghost" trailing-icon="i-lucide-arrow-right">
@@ -316,7 +424,9 @@ function subjectActions(subject) {
                         <UBadge color="neutral" variant="subtle" class="mt-0.5 shrink-0">{{ SCOPE_LABELS[assignment.scope] }}</UBadge>
                         <div class="min-w-0">
                             <p class="truncate text-sm font-semibold text-highlighted">{{ assignment.targetLabel }}</p>
-                            <p class="text-xs text-muted">{{ assignment.periodName }}</p>
+                            <p class="text-xs text-muted">
+                                {{ assignment.periodName }}<template v-if="activePeriod && assignment.periodId === activePeriod.id"> · periodo activo</template>
+                            </p>
                         </div>
                     </li>
                 </ul>

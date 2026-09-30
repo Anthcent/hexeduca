@@ -12,6 +12,7 @@ use Modules\Subjects\Application\Queries\AssignmentLabeler;
 use Modules\Subjects\Application\Services\OpenPeriods;
 use Modules\Subjects\Application\UseCases\ChangeSubjectStatus;
 use Modules\Subjects\Application\UseCases\CreateSubject;
+use Modules\Subjects\Application\UseCases\CreateSubjects;
 use Modules\Subjects\Application\UseCases\DeleteSubject;
 use Modules\Subjects\Application\UseCases\UpdateSubject;
 use Modules\Subjects\Domain\Entities\PlanAssignment;
@@ -19,6 +20,7 @@ use Modules\Subjects\Domain\Repositories\PlanAssignmentRepositoryInterface;
 use Modules\Subjects\Domain\Repositories\StudyPlanRepositoryInterface;
 use Modules\Subjects\Domain\Repositories\SubjectRepositoryInterface;
 use Modules\Subjects\Infrastructure\Http\Controllers\Concerns\HandlesDomainErrors;
+use Modules\Subjects\Infrastructure\Http\Requests\SubjectBatchRequest;
 use Modules\Subjects\Infrastructure\Http\Requests\SubjectRequest;
 
 class SubjectsController extends Controller
@@ -28,6 +30,16 @@ class SubjectsController extends Controller
     public function store(int $plan, SubjectRequest $request, CreateSubject $useCase, TenantContext $tenantContext): RedirectResponse
     {
         return $this->attempt(fn () => $useCase->handle($this->subjectData($plan, $request, $tenantContext)), 'Asignatura agregada.');
+    }
+
+    public function storeMany(int $plan, SubjectBatchRequest $request, CreateSubjects $useCase, TenantContext $tenantContext): RedirectResponse
+    {
+        $count = count($request->names());
+
+        return $this->attempt(
+            fn () => $useCase->handle($tenantContext->current()->id, $plan, $request->integer('grade_level_id'), $request->names()),
+            $count === 1 ? 'Asignatura agregada.' : "{$count} asignaturas agregadas.",
+        );
     }
 
     public function update(int $plan, int $subject, SubjectRequest $request, UpdateSubject $useCase, TenantContext $tenantContext): RedirectResponse

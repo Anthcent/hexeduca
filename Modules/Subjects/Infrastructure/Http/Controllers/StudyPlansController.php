@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Modules\AcademicPeriods\Public\Contracts\AcademicPeriodReader;
 use Modules\Subjects\Application\DTOs\StudyPlanData;
 use Modules\Subjects\Application\Queries\AssignmentLabeler;
 use Modules\Subjects\Application\Services\OpenPeriods;
@@ -30,6 +31,7 @@ use Modules\Subjects\Infrastructure\Http\Controllers\Concerns\HandlesDomainError
 use Modules\Subjects\Infrastructure\Http\Requests\ReactivateStudyPlanRequest;
 use Modules\Subjects\Infrastructure\Http\Requests\StudyPlanRequest;
 use Modules\Subjects\Infrastructure\Models\StudyPlanModel;
+use Modules\Subjects\Infrastructure\Models\SubjectModel;
 
 class StudyPlansController extends Controller
 {
@@ -37,11 +39,16 @@ class StudyPlansController extends Controller
 
     private const PER_PAGE = 15;
 
-    public function index(Request $request, TenantContext $tenantContext): Response
-    {
+    public function index(
+        Request $request,
+        TenantContext $tenantContext,
+        AcademicPeriodReader $periods,
+        PlanAssignmentRepositoryInterface $assignments,
+    ): Response {
         $schoolId = $tenantContext->current()->id;
         $status = $request->query('status') === RecordStatus::Archived->value ? RecordStatus::Archived : RecordStatus::Active;
         $search = trim((string) $request->query('search', ''));
+        $activePeriod = $periods->activeForSchool($schoolId);
 
         $plans = StudyPlanModel::query()
             ->where('school_id', $schoolId)
@@ -53,20 +60,34 @@ class StudyPlansController extends Controller
             ->when($search !== '', fn ($query) => $query->whereRaw("search_text LIKE ? ESCAPE '\\'", [
                 '%'.addcslashes(StudyPlanModel::searchText($search), '\\%_').'%',
             ]))
-            ->withCount('subjects')
+            ->withCount(['subjects' => fn ($query) => $query->where('status', RecordStatus::Active->value)])
+            // Plans in use in the active period come first.
+            ->when($activePeriod !== null, fn ($query) => $query
+                ->withExists(['assignments as in_use' => fn ($assigned) => $assigned
+                    ->where('academic_period_id', $activePeriod->id)
+                    ->whereNull('replaced_at')])
+                ->orderByDesc('in_use'))
             ->orderBy('code')
             ->orderBy('id')
             ->paginate(self::PER_PAGE)
             // The page links keep the filters: PaginationBar builds them from `path`.
-            ->withPath($request->fullUrlWithoutQuery(['page']))
-            ->through(fn (StudyPlanModel $plan): array => [
-                'id' => $plan->id,
-                'code' => $plan->code,
-                'observation' => $plan->observation,
-                'name' => $plan->name,
-                'status' => $plan->status,
-                'subjectCount' => $plan->subjects_count,
-            ]);
+            ->withPath($request->fullUrlWithoutQuery(['page']));
+
+        $planIds = $plans->getCollection()->pluck('id')->all();
+        $coverage = $this->gradeCoverage($schoolId, $planIds);
+        $usage = $activePeriod ? $this->usageInPeriod($schoolId, $activePeriod->id, $planIds, $assignments) : [];
+
+        $plans->through(fn (StudyPlanModel $plan): array => [
+            'id' => $plan->id,
+            'code' => $plan->code,
+            'observation' => $plan->observation,
+            'name' => $plan->name,
+            'status' => $plan->status,
+            'subjectCount' => $plan->subjects_count,
+            'weeklyHours' => array_sum(array_column($coverage[$plan->id] ?? [], 'weeklyHours')),
+            'grades' => $coverage[$plan->id] ?? [],
+            'usage' => $usage[$plan->id] ?? [],
+        ]);
 
         $counts = StudyPlanModel::query()->where('school_id', $schoolId)
             ->selectRaw('status, COUNT(*) as total')
@@ -81,6 +102,7 @@ class StudyPlansController extends Controller
                 'archived' => (int) ($counts[RecordStatus::Archived->value] ?? 0),
             ],
             'planCodes' => $this->planCodes($schoolId),
+            'activePeriod' => $activePeriod ? ['id' => $activePeriod->id, 'name' => $activePeriod->name] : null,
         ]);
     }
 
@@ -120,6 +142,7 @@ class StudyPlansController extends Controller
         }
 
         $currentAssignments = $assignments->currentForPlan($plan, $schoolId);
+        $activePeriod = array_values(array_filter($labels->periods(), fn ($period): bool => $period->isActive))[0] ?? null;
 
         return Inertia::render('Subjects::Show', [
             'plan' => AssignmentLabeler::plan($studyPlan),
@@ -139,6 +162,7 @@ class StudyPlansController extends Controller
             ], $planSubjects),
             'assignments' => array_map(fn (PlanAssignment $a): array => $labels->assignment($a), $currentAssignments),
             'planCodes' => $this->planCodes($schoolId),
+            'activePeriod' => $activePeriod ? ['id' => $activePeriod->id, 'name' => $activePeriod->name] : null,
         ]);
     }
 
@@ -237,6 +261,70 @@ class StudyPlansController extends Controller
             ->get(['id', 'code'])
             ->map(fn (StudyPlanModel $plan): array => ['id' => $plan->id, 'code' => $plan->code])
             ->all();
+    }
+
+    /**
+     * Active subjects per grade level for each plan, in grade level order.
+     *
+     * @param  list<int>  $planIds
+     * @return array<int, list<array{gradeLevelId: int, name: string, subjectCount: int, weeklyHours: int}>>
+     */
+    private function gradeCoverage(int $schoolId, array $planIds): array
+    {
+        if ($planIds === []) {
+            return [];
+        }
+
+        $gradeLevels = $this->labeler($schoolId)->gradeLevels();
+        $order = array_flip(array_keys($gradeLevels));
+        $coverage = [];
+
+        $rows = SubjectModel::query()
+            ->where('school_id', $schoolId)
+            ->whereIn('study_plan_id', $planIds)
+            ->where('status', RecordStatus::Active->value)
+            ->selectRaw('study_plan_id, grade_level_id, COUNT(*) as total, COALESCE(SUM(weekly_hours), 0) as hours')
+            ->groupBy('study_plan_id', 'grade_level_id')
+            ->get();
+
+        foreach ($rows as $row) {
+            $coverage[(int) $row->study_plan_id][] = [
+                'gradeLevelId' => (int) $row->grade_level_id,
+                'name' => $gradeLevels[(int) $row->grade_level_id]->name ?? '—',
+                'subjectCount' => (int) $row->total,
+                'weeklyHours' => (int) $row->hours,
+            ];
+        }
+
+        foreach ($coverage as &$grades) {
+            usort($grades, fn (array $a, array $b): int => ($order[$a['gradeLevelId']] ?? PHP_INT_MAX) <=> ($order[$b['gradeLevelId']] ?? PHP_INT_MAX));
+        }
+
+        return $coverage;
+    }
+
+    /**
+     * Where each plan is assigned in the given period: scope and target label.
+     *
+     * @param  list<int>  $planIds
+     * @return array<int, list<array{scope: string, targetLabel: string}>>
+     */
+    private function usageInPeriod(int $schoolId, int $periodId, array $planIds, PlanAssignmentRepositoryInterface $assignments): array
+    {
+        $wanted = array_flip($planIds);
+        $labels = $this->labeler($schoolId);
+        $usage = [];
+
+        foreach ($assignments->currentForPeriod($schoolId, $periodId) as $assignment) {
+            if (isset($wanted[$assignment->planId()])) {
+                $usage[$assignment->planId()][] = [
+                    'scope' => $assignment->scope()->value,
+                    'targetLabel' => $labels->targetLabel($assignment),
+                ];
+            }
+        }
+
+        return $usage;
     }
 
     private function labeler(int $schoolId): AssignmentLabeler

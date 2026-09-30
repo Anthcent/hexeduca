@@ -36,6 +36,7 @@ Route::middleware(['auth', 'module:subjects', 'permission:subjects.manage'])
 
             Route::prefix('subjects')->name('subjects.')->controller(SubjectsController::class)->group(function () {
                 Route::post('/', 'store')->name('store');
+                Route::post('/batch', 'storeMany')->name('store-many');
                 Route::put('/{subject}', 'update')->whereNumber('subject')->name('update');
                 Route::delete('/{subject}', 'destroy')->whereNumber('subject')->name('destroy');
                 Route::post('/{subject}/archive', 'archive')->whereNumber('subject')->name('archive');
