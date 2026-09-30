@@ -42,6 +42,8 @@ class AcademicMoment extends Model
         'order',
         'starts_on',
         'ends_on',
+        'grading_opens_on',
+        'grading_closes_on',
     ];
 
     protected function casts(): array
@@ -49,6 +51,8 @@ class AcademicMoment extends Model
         return [
             'starts_on' => 'date',
             'ends_on' => 'date',
+            'grading_opens_on' => 'date',
+            'grading_closes_on' => 'date',
         ];
     }
 

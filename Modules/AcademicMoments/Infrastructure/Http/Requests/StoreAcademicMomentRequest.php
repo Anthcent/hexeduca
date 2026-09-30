@@ -25,9 +25,30 @@ class StoreAcademicMomentRequest extends FormRequest
             'order' => ['required', 'integer', 'min:1'],
             'starts_on' => ['required', 'date'],
             'ends_on' => ['required', 'date', 'after_or_equal:starts_on'],
-            // Table-level FK validation only — see plan §5 note on
-            // school_id/academic_period_id as sanctioned root dependencies.
-            'academic_period_id' => ['required', 'integer', 'exists:periodos_academicos,id'],
+            // The grade-entry window: both dates or none.
+            'grading_opens_on' => ['nullable', 'date', 'required_with:grading_closes_on'],
+            'grading_closes_on' => ['nullable', 'date', 'required_with:grading_opens_on', 'after_or_equal:grading_opens_on'],
+            // No academic_period_id: the controller always uses the school's
+            // active period, never a period taken from the request.
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'El nombre es obligatorio.',
+            'order.required' => 'El orden es obligatorio.',
+            'order.min' => 'El orden debe ser 1 o mayor.',
+            'starts_on.required' => 'La fecha de inicio es obligatoria.',
+            'ends_on.required' => 'La fecha de fin es obligatoria.',
+            'ends_on.after_or_equal' => 'El fin debe ser igual o posterior al inicio.',
+            'grading_opens_on.required_with' => 'Indica desde cuándo se cargan notas.',
+            'grading_closes_on.required_with' => 'Indica hasta cuándo se cargan notas.',
+            'grading_closes_on.after_or_equal' => 'El cierre de carga debe ser igual o posterior a la apertura.',
+            '*.date' => 'La fecha no es válida.',
         ];
     }
 }

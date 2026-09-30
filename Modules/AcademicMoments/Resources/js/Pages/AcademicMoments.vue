@@ -26,33 +26,72 @@ const filtered = computed(() => {
 });
 
 const columns = [
-    { accessorKey: 'order', header: 'Orden', meta: { class: { th: 'w-24' } } },
+    { accessorKey: 'order', header: 'Orden', meta: { class: { th: 'w-20' } } },
     { accessorKey: 'name', header: 'Momento' },
     { id: 'range', header: 'Vigencia' },
-    { id: 'actions', header: '', meta: { class: { th: 'w-24', td: 'text-right' } } },
+    { id: 'grading', header: 'Carga de notas' },
+    { id: 'actions', header: '', meta: { class: { th: 'w-28', td: 'text-right' } } },
 ];
 
-// Create
+// Grade-entry window status, by the browser's date (display only; the
+// server decides whether a grade can be saved).
 
-const createOpen = ref(false);
-const form = useForm({ name: '', order: 1, starts_on: '', ends_on: '' });
+const today = new Date().toISOString().slice(0, 10);
 
-function openCreate() {
-    form.reset();
-    form.clearErrors();
-    createOpen.value = true;
+function day(value) {
+    return value ? String(value).slice(0, 10) : null;
 }
 
-function create() {
-    form
-        .transform((data) => ({ ...data, academic_period_id: props.activePeriod?.id }))
-        .post(route('academic-moments.store'), {
-            preserveScroll: true,
-            onSuccess: () => {
-                form.reset();
-                createOpen.value = false;
-            },
-        });
+function gradingStatus(moment) {
+    const opens = day(moment.grading_opens_on);
+    const closes = day(moment.grading_closes_on);
+
+    if (!opens || !closes) return { label: 'Sin definir', color: 'neutral', variant: 'outline', icon: 'i-lucide-calendar-off' };
+    if (today < opens) return { label: 'Próxima', color: 'info', variant: 'subtle', icon: 'i-lucide-calendar-clock' };
+    if (today > closes) return { label: 'Cerrada', color: 'neutral', variant: 'subtle', icon: 'i-lucide-lock' };
+
+    return { label: 'Abierta', color: 'success', variant: 'solid', icon: 'i-lucide-lock-open' };
+}
+
+// Create / edit: one form.
+
+const formOpen = ref(false);
+const editing = ref(null);
+const form = useForm({ name: '', order: 1, starts_on: '', ends_on: '', grading_opens_on: '', grading_closes_on: '' });
+
+function openForm(moment = null) {
+    editing.value = moment;
+    form.defaults({
+        name: moment?.name ?? '',
+        order: moment?.order ?? (props.moments.length + 1),
+        starts_on: day(moment?.starts_on) ?? '',
+        ends_on: day(moment?.ends_on) ?? '',
+        grading_opens_on: day(moment?.grading_opens_on) ?? '',
+        grading_closes_on: day(moment?.grading_closes_on) ?? '',
+    });
+    form.reset();
+    form.clearErrors();
+    formOpen.value = true;
+}
+
+function save() {
+    const options = {
+        preserveScroll: true,
+        onSuccess: () => {
+            formOpen.value = false;
+        },
+    };
+    const payload = form.transform((data) => ({
+        ...data,
+        grading_opens_on: data.grading_opens_on || null,
+        grading_closes_on: data.grading_closes_on || null,
+    }));
+
+    if (editing.value) {
+        payload.put(route('academic-moments.update', editing.value.id), options);
+    } else {
+        payload.post(route('academic-moments.store'), options);
+    }
 }
 
 // Delete
@@ -71,11 +110,11 @@ function confirmDelete() {
         <PageHeader
             eyebrow="Académico"
             title="Momentos académicos"
-            :description="activePeriod ? `Cortes de evaluación del período ${activePeriod.name}.` : 'Cortes de evaluación del período académico activo.'"
+            :description="activePeriod ? `Cortes de evaluación del período ${activePeriod.name} y sus ventanas de carga de notas.` : 'Cortes de evaluación del período académico activo.'"
             icon="i-lucide-milestone"
         >
             <template #notch>
-                <UButton icon="i-lucide-plus" size="lg" :disabled="!activePeriod" @click="openCreate">Nuevo momento</UButton>
+                <UButton icon="i-lucide-plus" size="lg" :disabled="!activePeriod" @click="openForm()">Nuevo momento</UButton>
             </template>
         </PageHeader>
 
@@ -106,7 +145,7 @@ function confirmDelete() {
                 :icon="search ? 'i-lucide-search-x' : 'i-lucide-calendar-range'"
                 :title="search ? 'Sin resultados' : 'Todavía no hay momentos académicos'"
                 :description="search ? 'Prueba con otro término.' : (activePeriod ? 'Crea el primero, por ejemplo 1.er momento.' : null)"
-                :actions="!search && activePeriod ? [{ label: 'Nuevo momento', icon: 'i-lucide-plus', onClick: openCreate }] : []"
+                :actions="!search && activePeriod ? [{ label: 'Nuevo momento', icon: 'i-lucide-plus', onClick: () => openForm() }] : []"
             />
 
             <template v-else>
@@ -114,7 +153,24 @@ function confirmDelete() {
                     <template #order-cell="{ row }"><span class="font-semibold tabular-nums text-highlighted">{{ row.original.order }}</span></template>
                     <template #name-cell="{ row }"><span class="font-semibold text-highlighted">{{ row.original.name }}</span></template>
                     <template #range-cell="{ row }">{{ formatDay(row.original.starts_on) }} – {{ formatDay(row.original.ends_on) }}</template>
+                    <template #grading-cell="{ row }">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <UBadge
+                                :color="gradingStatus(row.original).color"
+                                :variant="gradingStatus(row.original).variant"
+                                :icon="gradingStatus(row.original).icon"
+                            >
+                                {{ gradingStatus(row.original).label }}
+                            </UBadge>
+                            <span v-if="row.original.grading_opens_on" class="text-xs text-muted">
+                                {{ formatDay(row.original.grading_opens_on) }} – {{ formatDay(row.original.grading_closes_on) }}
+                            </span>
+                        </div>
+                    </template>
                     <template #actions-cell="{ row }">
+                        <UTooltip text="Editar">
+                            <UButton color="neutral" variant="ghost" icon="i-lucide-pencil" :aria-label="`Editar ${row.original.name}`" @click="openForm(row.original)" />
+                        </UTooltip>
                         <UTooltip text="Eliminar">
                             <UButton color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Eliminar ${row.original.name}`" @click="askDelete(row.original)" />
                         </UTooltip>
@@ -127,7 +183,9 @@ function confirmDelete() {
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-semibold text-highlighted">{{ moment.name }}</p>
                             <p class="text-sm text-muted">{{ formatDay(moment.starts_on) }} – {{ formatDay(moment.ends_on) }}</p>
+                            <p class="mt-1 text-xs text-muted">Carga de notas: {{ gradingStatus(moment).label.toLowerCase() }}</p>
                         </div>
+                        <UButton color="neutral" variant="ghost" icon="i-lucide-pencil" :aria-label="`Editar ${moment.name}`" @click="openForm(moment)" />
                         <UButton color="error" variant="ghost" icon="i-lucide-trash-2" :aria-label="`Eliminar ${moment.name}`" @click="askDelete(moment)" />
                     </li>
                 </ul>
@@ -135,13 +193,13 @@ function confirmDelete() {
         </UCard>
 
         <UModal
-            v-model:open="createOpen"
-            title="Nuevo momento académico"
-            :description="activePeriod ? `Se agregará al período ${activePeriod.name}.` : undefined"
+            v-model:open="formOpen"
+            :title="editing ? 'Editar momento académico' : 'Nuevo momento académico'"
+            :description="!editing && activePeriod ? `Se agregará al período ${activePeriod.name}.` : undefined"
             :dismissible="!form.processing"
         >
             <template #body>
-                <form id="form-moment" class="space-y-5" novalidate @submit.prevent="create">
+                <form id="form-moment" class="space-y-5" novalidate @submit.prevent="save">
                     <div class="grid gap-5 sm:grid-cols-[minmax(0,1fr)_8rem]">
                         <UFormField label="Nombre" name="name" required :error="form.errors.name">
                             <UInput v-model="form.name" placeholder="Ej.: 1.er momento" size="lg" class="w-full" autofocus />
@@ -158,13 +216,27 @@ function confirmDelete() {
                             <DateInput v-model="form.ends_on" />
                         </UFormField>
                     </div>
-                    <p v-if="form.errors.academic_period_id" class="text-sm text-error">{{ form.errors.academic_period_id }}</p>
+
+                    <fieldset class="space-y-3 rounded-lg border border-default p-4">
+                        <legend class="px-1 text-sm font-semibold text-highlighted">Carga de notas</legend>
+                        <p class="text-xs text-muted">Fechas en las que los docentes pueden cargar las notas de este momento. Opcional: puedes definirlas después.</p>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            <UFormField label="Desde" name="grading_opens_on" :error="form.errors.grading_opens_on">
+                                <DateInput v-model="form.grading_opens_on" />
+                            </UFormField>
+                            <UFormField label="Hasta" name="grading_closes_on" :error="form.errors.grading_closes_on">
+                                <DateInput v-model="form.grading_closes_on" />
+                            </UFormField>
+                        </div>
+                    </fieldset>
                 </form>
             </template>
             <template #footer>
                 <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                    <UButton color="neutral" variant="ghost" class="justify-center" @click="createOpen = false">Cancelar</UButton>
-                    <UButton type="submit" form="form-moment" icon="i-lucide-check" class="justify-center" :loading="form.processing">Crear</UButton>
+                    <UButton color="neutral" variant="ghost" class="justify-center" @click="formOpen = false">Cancelar</UButton>
+                    <UButton type="submit" form="form-moment" icon="i-lucide-check" class="justify-center" :loading="form.processing">
+                        {{ editing ? 'Guardar cambios' : 'Crear' }}
+                    </UButton>
                 </div>
             </template>
         </UModal>

@@ -4,7 +4,9 @@ namespace Modules\AcademicMoments\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\AcademicMoments\Domain\Repositories\AcademicMomentRepositoryInterface;
+use Modules\AcademicMoments\Infrastructure\Persistence\EloquentAcademicMomentReader;
 use Modules\AcademicMoments\Infrastructure\Persistence\EloquentAcademicMomentRepository;
+use Modules\AcademicMoments\Public\Contracts\AcademicMomentReader;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -37,6 +39,7 @@ class AcademicMomentsServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(AcademicMomentRepositoryInterface::class, EloquentAcademicMomentRepository::class);
+        $this->app->bind(AcademicMomentReader::class, EloquentAcademicMomentReader::class);
 
         $this->app->register(EventServiceProvider::class);
         $this->app->register(RouteServiceProvider::class);
