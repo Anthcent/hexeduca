@@ -18,6 +18,13 @@ interface TeachingAssignmentReader
     public function forTeacher(int $schoolId, int $periodId, int $teacherId): array;
 
     /**
+     * Every active assignment of a period, for overviews.
+     *
+     * @return list<TeachingAssignmentDTO>
+     */
+    public function forPeriod(int $schoolId, int $periodId): array;
+
+    /**
      * The active assignments of one offer's subject (titular and substitute).
      *
      * @return list<TeachingAssignmentDTO>

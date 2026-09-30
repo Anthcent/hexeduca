@@ -16,6 +16,11 @@ final class EloquentTeachingAssignmentReader implements TeachingAssignmentReader
             ->where('teacher_id', $teacherId));
     }
 
+    public function forPeriod(int $schoolId, int $periodId): array
+    {
+        return $this->dtos($this->active($schoolId)->where('academic_period_id', $periodId));
+    }
+
     public function forOfferSubject(int $schoolId, int $offerId, int $subjectId): array
     {
         return $this->dtos($this->active($schoolId)
