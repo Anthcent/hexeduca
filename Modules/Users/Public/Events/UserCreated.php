@@ -25,6 +25,11 @@ final readonly class UserCreated implements IntegrationEvent
         public ?int $schoolId = null,
         /** @var list<string>|null Null means a legacy role-less payload. */
         public ?array $roles = null,
+        /**
+         * A `UserType` value. Null with `roles: []` marks a deleted user;
+         * null with roles set is a payload from before types existed.
+         */
+        public ?string $type = null,
         int $version = 1,
         ?string $eventId = null,
         ?DateTimeImmutable $occurredAt = null,
@@ -55,6 +60,7 @@ final readonly class UserCreated implements IntegrationEvent
             'email' => $this->email,
             'schoolId' => $this->schoolId,
             'roles' => $this->roles,
+            'type' => $this->type,
             'version' => $this->version,
             'eventId' => $this->eventId,
             'occurredAt' => $this->occurredAt->format(DATE_ATOM),
@@ -69,6 +75,7 @@ final readonly class UserCreated implements IntegrationEvent
             email: $payload['email'],
             schoolId: $payload['schoolId'] ?? null,
             roles: array_key_exists('roles', $payload) ? $payload['roles'] : null,
+            type: $payload['type'] ?? null,
             version: $payload['version'] ?? 1,
             eventId: $payload['eventId'] ?? null,
             occurredAt: isset($payload['occurredAt']) ? new DateTimeImmutable($payload['occurredAt']) : null,

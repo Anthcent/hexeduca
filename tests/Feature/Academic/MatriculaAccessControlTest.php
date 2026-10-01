@@ -42,7 +42,7 @@ test('an authenticated user without academic.manage is rejected with 403', funct
     $school = School::factory()->create();
     // The module gate runs first (404), so the module must be available.
     $this->seed(ModulePlatformSeeder::class);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $this->actingAs($student)

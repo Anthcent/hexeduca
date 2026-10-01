@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 
 uses(RefreshDatabase::class);
 
@@ -31,7 +32,7 @@ function notificationsUrl(School $school, string $path = ''): string
 
 function notificationsUser(School $school, string $role, ?string $name = null): User
 {
-    $user = User::factory()->create(array_filter(['school_id' => $school->id, 'name' => $name]));
+    $user = User::factory()->create(array_filter(['school_id' => $school->id, 'name' => $name, 'type' => UserType::forRole($role)->value]));
     $user->assignRole($role);
 
     return $user;

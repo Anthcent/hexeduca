@@ -28,9 +28,9 @@ test('legacy and new enrollment HTTP paths emit equivalent events consumed by Gr
         'school_id' => $school->id,
         'periodo_academico_id' => $period->id,
     ]);
-    $legacyStudent = User::factory()->create(['school_id' => $school->id]);
+    $legacyStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $legacyStudent->assignRole('student');
-    $newStudent = User::factory()->create(['school_id' => $school->id]);
+    $newStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $newStudent->assignRole('student');
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');

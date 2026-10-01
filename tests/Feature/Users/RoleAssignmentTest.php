@@ -29,7 +29,7 @@ test('staff/admin reassigns a student to teacher in their own school', function 
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($admin)
@@ -47,7 +47,7 @@ test('staff/admin cannot edit or update a user in a different school', function 
     $schoolB = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $schoolA->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $schoolB->id]);
+    $target = User::factory()->create(['school_id' => $schoolB->id, 'type' => 'student']);
     $target->assignRole('student');
 
     // TenantScope excludes the school-B user entirely from a lookup made on
@@ -68,7 +68,7 @@ test('staff/admin attempting to grant super-admin is rejected with 403', functio
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($admin)
@@ -84,7 +84,7 @@ test('super-admin can grant super-admin to any user in any tenant', function () 
     $school = School::factory()->create();
     $superAdmin = User::factory()->create(['school_id' => null]);
     $superAdmin->assignRole('super-admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($superAdmin)
@@ -97,9 +97,9 @@ test('super-admin can grant super-admin to any user in any tenant', function () 
 
 test('a non-admin user hitting the edit route is rejected with 403', function () {
     $school = School::factory()->create();
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $target->assignRole('teacher');
 
     $this->actingAs($student)
@@ -111,7 +111,7 @@ test('student to teacher HTTP reassignment updates both projections through the 
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
     (new ProjectStudentListener)->handle(new UserCreated(
         userId: $target->id,
@@ -138,7 +138,7 @@ test('teacher to student HTTP reassignment updates both projections through the 
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $target->assignRole('teacher');
     (new ProjectTeacherListener)->handle(new UserCreated(
         userId: $target->id,
@@ -164,7 +164,7 @@ test('role reassignment rolls back when the UserUpdated outbox write fails', fun
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
     ForcedInsertFailure::install('fail_role_update_outbox', 'integration_outbox_events', 'forced role update outbox failure', 'user.updated');
 

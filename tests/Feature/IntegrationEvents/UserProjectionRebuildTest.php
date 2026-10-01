@@ -16,7 +16,7 @@ beforeEach(function () {
 
 test('teacher projection rebuild backfills existing teachers and tombstones stale rows', function () {
     $school = School::factory()->create();
-    $teacher = User::factory()->create(['school_id' => $school->id]);
+    $teacher = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
     DB::table('academic_offers_teacher_projection')->insert([
         'source_teacher_id' => 999,
@@ -42,7 +42,7 @@ test('teacher projection rebuild backfills existing teachers and tombstones stal
 
 test('student projection rebuild backfills existing students and tombstones stale rows', function () {
     $school = School::factory()->create();
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     DB::table('enrollments_student_projection')->insert([
         'source_student_id' => 999,

@@ -3,6 +3,7 @@
 namespace Modules\Users\Domain\Entities;
 
 use Modules\Users\Domain\ValueObjects\Email;
+use Modules\Users\Public\Enums\UserType;
 
 /**
  * Framework-agnostic domain entity. No Eloquent, no framework dependencies.
@@ -15,6 +16,7 @@ final class User
         private Email $email,
         private readonly ?string $passwordHash = null,
         private readonly ?int $schoolId = null,
+        private readonly UserType $type = UserType::Student,
     ) {}
 
     public function id(): ?int
@@ -40,6 +42,11 @@ final class User
     public function schoolId(): ?int
     {
         return $this->schoolId;
+    }
+
+    public function type(): UserType
+    {
+        return $this->type;
     }
 
     public function renameTo(string $name): void

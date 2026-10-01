@@ -30,7 +30,7 @@ test('authenticated requests share the user identity and single role name', func
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
-    $target = User::factory()->create(['school_id' => $school->id]);
+    $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($admin)
@@ -45,7 +45,7 @@ test('authenticated requests share the user identity and single role name', func
 
 test('auth.user role reflects a role change on the next request', function () {
     $school = School::factory()->create();
-    $user = User::factory()->create(['school_id' => $school->id]);
+    $user = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $user->assignRole('student');
 
     $this->actingAs($user)

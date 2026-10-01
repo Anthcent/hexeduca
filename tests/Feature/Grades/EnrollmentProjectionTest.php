@@ -32,7 +32,7 @@ test('CreateEnrollment writes to the outbox, and running the worker projects the
     $school = School::factory()->create();
     $periodo = PeriodoAcademico::factory()->create(['school_id' => $school->id, 'is_active' => true]);
     $offer = AcademicOffer::factory()->create(['school_id' => $school->id, 'periodo_academico_id' => $periodo->id]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $this->seed(RoleAndPermissionSeeder::class);
     $student->assignRole('student');
 

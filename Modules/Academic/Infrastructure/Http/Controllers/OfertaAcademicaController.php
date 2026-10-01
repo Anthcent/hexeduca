@@ -16,6 +16,7 @@ use Modules\Academic\Infrastructure\Http\Requests\StoreOfertaRequest;
 use Modules\Academic\Infrastructure\Models\Grado;
 use Modules\Academic\Infrastructure\Models\Seccion;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 
 /**
  * Backs the Create Oferta Académica screen. Only maps request input into
@@ -32,7 +33,7 @@ class OfertaAcademicaController extends Controller
         return Inertia::render('Academic::OfertaCreate', [
             'grados' => Grado::orderBy('name')->get(['id', 'name']),
             'secciones' => Seccion::orderBy('name')->get(['id', 'name']),
-            'teachers' => User::role('teacher')->orderBy('name')->get(['id', 'name']),
+            'teachers' => User::where('type', UserType::Teacher)->orderBy('name')->get(['id', 'name']),
             'hasActivePeriodo' => $periodContext->hasPeriod(),
             'periodoName' => $periodo?->name,
         ]);

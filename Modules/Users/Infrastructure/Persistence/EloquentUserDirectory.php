@@ -19,6 +19,7 @@ final class EloquentUserDirectory implements UserDirectory
             ->where('school_id', $schoolId)
             ->whereIn('id', array_values(array_unique($userIds)))
             ->with('roles:id,name')
+            ->orderBy('id')
             ->get(['id', 'name'])
             ->each(function (User $user) use (&$names): void {
                 $names[$user->id] = ['name' => $user->name, 'role' => $user->roles->first()?->name];

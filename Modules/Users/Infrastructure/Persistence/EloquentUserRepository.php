@@ -29,6 +29,7 @@ final class EloquentUserRepository implements UserRepositoryInterface
 
         $model->name = $user->name();
         $model->email = $user->email()->value();
+        $model->type = $user->type();
 
         if ($user->passwordHash() !== null) {
             $model->password = $user->passwordHash();
@@ -61,6 +62,7 @@ final class EloquentUserRepository implements UserRepositoryInterface
             email: new Email($model->email),
             passwordHash: $model->password,
             schoolId: $model->school_id,
+            type: $model->type,
         );
     }
 }

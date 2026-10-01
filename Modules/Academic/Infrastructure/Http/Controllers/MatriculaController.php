@@ -13,6 +13,7 @@ use Modules\Academic\Application\UseCases\MatricularEstudiante;
 use Modules\Academic\Infrastructure\Http\Requests\StoreMatriculaRequest;
 use Modules\Academic\Infrastructure\Models\OfertaAcademica;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 
 /**
  * Backs the Matricular Estudiante screen. Only maps request input into
@@ -26,7 +27,7 @@ class MatriculaController extends Controller
     {
         return Inertia::render('Academic::MatriculaCreate', [
             'ofertas' => OfertaAcademica::with(['grado', 'seccion'])->get(['id', 'grado_id', 'seccion_id']),
-            'students' => User::role('student')->orderBy('name')->get(['id', 'name']),
+            'students' => User::where('type', UserType::Student)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

@@ -38,7 +38,7 @@ test('a valid submission enrolls the student and derives school/periodo from the
         'periodo_academico_id' => $periodo->id,
         'capacity' => 10,
     ]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     $staff = matriculaStaffAdminFor($school);
 
@@ -66,9 +66,9 @@ test('a submission against a full-capacity offering surfaces as a form error', f
         'periodo_academico_id' => $periodo->id,
         'capacity' => 1,
     ]);
-    $enrolledStudent = User::factory()->create(['school_id' => $school->id]);
+    $enrolledStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $enrolledStudent->assignRole('student');
-    $newStudent = User::factory()->create(['school_id' => $school->id]);
+    $newStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $newStudent->assignRole('student');
     $staff = matriculaStaffAdminFor($school);
 
@@ -93,7 +93,7 @@ test('a cross-school student is rejected on student_id without creating a legacy
         'school_id' => $school->id,
         'periodo_academico_id' => $periodo->id,
     ]);
-    $student = User::factory()->create(['school_id' => $otherSchool->id]);
+    $student = User::factory()->create(['school_id' => $otherSchool->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $this->actingAs(matriculaStaffAdminFor($school))
@@ -113,7 +113,7 @@ test('a same-school non-student is rejected on student_id without creating a leg
         'school_id' => $school->id,
         'periodo_academico_id' => $periodo->id,
     ]);
-    $teacher = User::factory()->create(['school_id' => $school->id]);
+    $teacher = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
 
     $this->actingAs(matriculaStaffAdminFor($school))

@@ -225,7 +225,7 @@ test('CreateEnrollment rolls back source and domain event when outbox recording 
         'school_id' => $school->id,
         'periodo_academico_id' => $period->id,
     ]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     app(TenantContext::class)->set($school);
     app(AcademicPeriodContext::class)->set(new ActivePeriod(

@@ -45,7 +45,7 @@ test('CreateEnrollment rejects a student from another school', function () {
     $school = School::factory()->create();
     $otherSchool = School::factory()->create();
     $offer = enrollmentOfferFor($school);
-    $student = User::factory()->create(['school_id' => $otherSchool->id]);
+    $student = User::factory()->create(['school_id' => $otherSchool->id, 'type' => 'student']);
     $student->assignRole('student');
 
     expect(fn () => app(CreateEnrollment::class)->handle(new CreateEnrollmentData(
@@ -59,7 +59,7 @@ test('CreateEnrollment rejects a student from another school', function () {
 test('CreateEnrollment rejects a same-school user without the student role', function () {
     $school = School::factory()->create();
     $offer = enrollmentOfferFor($school);
-    $teacher = User::factory()->create(['school_id' => $school->id]);
+    $teacher = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
 
     expect(fn () => app(CreateEnrollment::class)->handle(new CreateEnrollmentData(
@@ -91,7 +91,7 @@ test('POST enrollments maps student authorization failures to student_id without
 test('POST enrollments succeeds for a same-school student and records exactly one outbox event', function () {
     $school = School::factory()->create();
     $offer = enrollmentOfferFor($school);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');
@@ -114,9 +114,9 @@ test('CreateEnrollment enforces capacity and does not write a second enrollment 
     $school = School::factory()->create();
     $offer = enrollmentOfferFor($school);
     $offer->update(['capacity' => 1]);
-    $first = User::factory()->create(['school_id' => $school->id]);
+    $first = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $first->assignRole('student');
-    $second = User::factory()->create(['school_id' => $school->id]);
+    $second = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $second->assignRole('student');
     $useCase = app(CreateEnrollment::class);
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\Users\Public\Enums\UserType;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -37,6 +38,7 @@ class User extends Authenticatable
         'email',
         'password',
         'school_id',
+        'type',
     ];
 
     /**
@@ -59,6 +61,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'type' => UserType::class,
         ];
     }
 }

@@ -30,9 +30,9 @@ test('rejects enrollment past capacity', function () {
     ]);
 
     $useCase = app(MatricularEstudiante::class);
-    $firstStudent = User::factory()->create(['school_id' => $school->id]);
+    $firstStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $firstStudent->assignRole('student');
-    $secondStudent = User::factory()->create(['school_id' => $school->id]);
+    $secondStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $secondStudent->assignRole('student');
 
     $useCase->handle(new MatricularEstudianteData(
@@ -54,7 +54,7 @@ test('rejects a duplicate (oferta, student) enrollment', function () {
         'periodo_academico_id' => $periodo->id,
         'capacity' => 10,
     ]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $useCase = app(MatricularEstudiante::class);
@@ -74,7 +74,7 @@ test('succeeds and stamps school_id and periodo_academico_id from the offering',
         'periodo_academico_id' => $periodo->id,
         'capacity' => 10,
     ]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $matricula = app(MatricularEstudiante::class)->handle(new MatricularEstudianteData(
@@ -96,9 +96,9 @@ test('a withdrawn matricula does not count toward capacity, freeing the seat for
         'capacity' => 1,
     ]);
 
-    $firstStudent = User::factory()->create(['school_id' => $school->id]);
+    $firstStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $firstStudent->assignRole('student');
-    $secondStudent = User::factory()->create(['school_id' => $school->id]);
+    $secondStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $secondStudent->assignRole('student');
 
     $useCase = app(MatricularEstudiante::class);
@@ -131,7 +131,7 @@ test('legacy enrollment rolls back source and domain event when outbox recording
         'school_id' => $school->id,
         'periodo_academico_id' => $period->id,
     ]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     Event::fake([EstudianteMatriculado::class]);
     ForcedInsertFailure::install('fail_legacy_enrollment_outbox', 'integration_outbox_events', 'forced outbox failure', 'enrollment.created');

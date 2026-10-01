@@ -37,7 +37,7 @@ function academicOfferDataWithTeacher(int $schoolId, int $teacherId): CreateAcad
 test('CreateAcademicOffer rejects a teacher from another school', function () {
     $targetSchool = School::factory()->create();
     $otherSchool = School::factory()->create();
-    $teacher = User::factory()->create(['school_id' => $otherSchool->id]);
+    $teacher = User::factory()->create(['school_id' => $otherSchool->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
 
     expect(fn () => app(CreateAcademicOffer::class)->handle(
@@ -49,7 +49,7 @@ test('CreateAcademicOffer rejects a teacher from another school', function () {
 
 test('CreateAcademicOffer rejects a same-school user without the teacher role', function () {
     $school = School::factory()->create();
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     expect(fn () => app(CreateAcademicOffer::class)->handle(
@@ -133,7 +133,7 @@ test('POST academic offers succeeds with same-school references and records exac
     PeriodoAcademico::factory()->active()->create(['school_id' => $school->id]);
     $gradeLevel = Grado::factory()->create(['school_id' => $school->id]);
     $section = Seccion::factory()->create(['school_id' => $school->id]);
-    $teacher = User::factory()->create(['school_id' => $school->id]);
+    $teacher = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
     $admin = User::factory()->create(['school_id' => $school->id]);
     $admin->assignRole('staff/admin');

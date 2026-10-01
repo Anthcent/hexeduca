@@ -17,6 +17,7 @@ use Modules\Users\Domain\Exceptions\UserCannotBeDeleted;
 use Modules\Users\Infrastructure\Http\Requests\StoreUserRequest;
 use Modules\Users\Infrastructure\Http\Requests\UpdateUserRoleRequest;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 use Modules\Users\Public\Events\UserUpdated;
 
 class UsersController extends Controller
@@ -92,6 +93,7 @@ class UsersController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $role,
+                'type' => $user->type->label(),
                 'school' => $user->school_id === null ? null : School::query()->find($user->school_id)?->name,
                 'created_at' => $user->created_at?->toIso8601String(),
             ],
@@ -152,6 +154,7 @@ class UsersController extends Controller
             $this->authorize('assignRole', [$user, $role]);
 
             $user->syncRoles([$role]);
+            $user->update(['type' => UserType::forRole($role)]);
 
             $latestPayload = DB::table('integration_outbox_events')
                 ->where('aggregate_type', 'User')
@@ -169,6 +172,7 @@ class UsersController extends Controller
                 email: $user->email,
                 schoolId: $user->school_id,
                 roles: $user->getRoleNames()->values()->all(),
+                type: $user->type->value,
                 version: $latestVersion + 1,
             ));
         });

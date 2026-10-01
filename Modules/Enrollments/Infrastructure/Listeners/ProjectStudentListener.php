@@ -6,6 +6,7 @@ use App\IntegrationEvents\IntegrationEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Users\Public\Enums\UserType;
 use Modules\Users\Public\Events\UserCreated;
 use Modules\Users\Public\Events\UserUpdated;
 use Throwable;
@@ -31,10 +32,16 @@ class ProjectStudentListener implements ShouldQueue
 
     public function handle(UserCreated|UserUpdated $event): void
     {
-        // Legacy role-less payloads cannot safely drive a role projection.
-        // Ignore them; projection rebuilds must use Users' role-qualified
-        // public readers as the authoritative source.
-        if ($event->roles === null) {
+        // The person's type decides. Payloads from before types existed fall
+        // back to their roles; role-less legacy payloads are ignored, and
+        // projection rebuilds use Users' public readers as the source.
+        $isActive = match (true) {
+            $event->type !== null => $event->type === UserType::Student->value,
+            $event->roles !== null => in_array('student', $event->roles, true),
+            default => null,
+        };
+
+        if ($isActive === null) {
             return;
         }
 
@@ -43,7 +50,7 @@ class ProjectStudentListener implements ShouldQueue
             'school_id' => $event->schoolId,
             'name' => $event->name,
             'email' => $event->email,
-            'is_active' => in_array('student', $event->roles, true),
+            'is_active' => $isActive,
             'source_updated_at' => $event->occurredAt(),
             'last_event_version' => $event->version(),
             'created_at' => now(),

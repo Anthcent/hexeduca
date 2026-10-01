@@ -27,6 +27,7 @@ final class RegisterUser
             email: new Email($data->email),
             passwordHash: Hash::make($data->password),
             schoolId: $data->schoolId,
+            type: $data->type(),
         );
 
         $saved = DB::transaction(function () use ($user, $data) {
@@ -39,6 +40,7 @@ final class RegisterUser
                 email: (string) $saved->email(),
                 schoolId: $saved->schoolId(),
                 roles: [$data->role],
+                type: $saved->type()->value,
             ));
 
             return $saved;

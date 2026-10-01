@@ -5,12 +5,13 @@ namespace Modules\Users\Infrastructure\Persistence;
 use Modules\Users\Infrastructure\Models\User;
 use Modules\Users\Public\Contracts\TeacherReader;
 use Modules\Users\Public\DTOs\TeacherDTO;
+use Modules\Users\Public\Enums\UserType;
 
 final class EloquentTeacherReader implements TeacherReader
 {
     public function find(int $id): ?TeacherDTO
     {
-        $model = User::withoutTenantScope()->role('teacher')->find($id);
+        $model = User::withoutTenantScope()->where('type', UserType::Teacher)->find($id);
 
         return $model ? $this->toDTO($model) : null;
     }
@@ -18,7 +19,7 @@ final class EloquentTeacherReader implements TeacherReader
     public function findForSchool(int $id, int $schoolId): ?TeacherDTO
     {
         $model = User::withoutTenantScope()
-            ->role('teacher')
+            ->where('type', UserType::Teacher)
             ->where('school_id', $schoolId)
             ->find($id);
 
@@ -27,7 +28,7 @@ final class EloquentTeacherReader implements TeacherReader
 
     public function all(): array
     {
-        return User::withoutTenantScope()->role('teacher')
+        return User::withoutTenantScope()->where('type', UserType::Teacher)
             ->orderBy('id')
             ->get()
             ->map(fn (User $model): TeacherDTO => $this->toDTO($model))
@@ -39,7 +40,7 @@ final class EloquentTeacherReader implements TeacherReader
      */
     public function allForSchool(int $schoolId): array
     {
-        return User::withoutTenantScope()->role('teacher')
+        return User::withoutTenantScope()->where('type', UserType::Teacher)
             ->where('school_id', $schoolId)
             ->orderBy('name')
             ->get()

@@ -6,6 +6,7 @@ use App\Tenancy\Models\School;
 use Illuminate\Support\Facades\DB;
 use Modules\Subjects\Infrastructure\Models\StudyPlanModel;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 
 /**
  * Row builders for the Subjects feature tests. Sibling-module rows
@@ -21,7 +22,7 @@ final class SubjectsFixtures
 
     public static function user(School $school, string $role): User
     {
-        $user = User::factory()->create(['school_id' => $school->id]);
+        $user = User::factory()->create(['school_id' => $school->id, 'type' => UserType::forRole($role)]);
         $user->assignRole($role);
 
         return $user;

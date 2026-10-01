@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Modules\Users\Infrastructure\Models\User;
+use Modules\Users\Public\Enums\UserType;
 
 uses(RefreshDatabase::class);
 
@@ -20,7 +21,7 @@ beforeEach(function () {
 
 function userWithRole(?School $school, string $role): User
 {
-    $user = User::factory()->create(['school_id' => $school?->id]);
+    $user = User::factory()->create(['school_id' => $school?->id, 'type' => UserType::forRole($role)]);
     $user->assignRole($role);
 
     return $user;

@@ -105,6 +105,7 @@ class AcademicDatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
                 'school_id' => $school->id,
+                'type' => 'teacher',
             ],
         );
 
@@ -121,6 +122,7 @@ class AcademicDatabaseSeeder extends Seeder
                         'password' => Hash::make('password'),
                         'email_verified_at' => now(),
                         'school_id' => $school->id,
+                        'type' => 'student',
                     ],
                 );
 

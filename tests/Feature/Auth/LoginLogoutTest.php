@@ -53,7 +53,7 @@ test('wrong password is rejected without authenticating', function () {
 
 test('excessive login attempts are throttled', function () {
     $school = School::factory()->create();
-    $user = User::factory()->create(['school_id' => $school->id, 'password' => 'password123']);
+    $user = User::factory()->create(['school_id' => $school->id, 'password' => 'password123', 'type' => 'student']);
     $user->assignRole('student');
 
     $maxAttempts = (int) config('security.rate_limits.login_per_minute');
@@ -75,7 +75,7 @@ test('excessive login attempts are throttled', function () {
 
 test('logout invalidates the session', function () {
     $school = School::factory()->create();
-    $user = User::factory()->create(['school_id' => $school->id]);
+    $user = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $user->assignRole('student');
 
     $this->actingAs($user)

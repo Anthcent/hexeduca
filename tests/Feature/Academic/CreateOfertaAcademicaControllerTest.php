@@ -85,7 +85,7 @@ test('a cross-school teacher is rejected on teacher_id without creating a legacy
     PeriodoAcademico::factory()->active()->create(['school_id' => $school->id]);
     $grado = Grado::factory()->create(['school_id' => $school->id]);
     $seccion = Seccion::factory()->create(['school_id' => $school->id]);
-    $teacher = User::factory()->create(['school_id' => $otherSchool->id]);
+    $teacher = User::factory()->create(['school_id' => $otherSchool->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
 
     $this->actingAs(staffAdminFor($school))
@@ -105,7 +105,7 @@ test('a same-school non-teacher is rejected on teacher_id without creating a leg
     PeriodoAcademico::factory()->active()->create(['school_id' => $school->id]);
     $grado = Grado::factory()->create(['school_id' => $school->id]);
     $seccion = Seccion::factory()->create(['school_id' => $school->id]);
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $this->actingAs(staffAdminFor($school))

@@ -39,7 +39,7 @@ test('staff/admin still passes the Academic gate', function () {
 
 test('student is still rejected by the Academic gate with 403', function () {
     $school = School::factory()->create();
-    $student = User::factory()->create(['school_id' => $school->id]);
+    $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
 
     $this->actingAs($student)

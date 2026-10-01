@@ -14,7 +14,7 @@ beforeEach(function () {
 test('login, and logout are reachable on a tenant subdomain (not 404)', function () {
     $school = School::factory()->create();
     $baseDomain = config('tenancy.base_domain');
-    $user = User::factory()->create(['school_id' => $school->id]);
+    $user = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $user->assignRole('student');
 
     $this->get("http://{$school->subdomain}.{$baseDomain}/login")->assertOk();

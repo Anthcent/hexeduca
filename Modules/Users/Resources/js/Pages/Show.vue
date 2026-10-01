@@ -31,6 +31,7 @@ const initials = computed(() => (props.user.name ?? '')
 const details = computed(() => [
     { label: 'Nombre completo', value: props.user.name, icon: 'i-lucide-user-round' },
     { label: 'Email', value: props.user.email, icon: 'i-lucide-mail' },
+    { label: 'Tipo de persona', value: props.user.type, icon: 'i-lucide-id-card' },
     { label: 'Institución', value: props.user.school ?? 'Plataforma (sin institución)', icon: 'i-lucide-school' },
     { label: 'Alta en el sistema', value: createdAt.value, icon: 'i-lucide-calendar' },
 ]);
