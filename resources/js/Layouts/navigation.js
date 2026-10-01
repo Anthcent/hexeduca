@@ -5,17 +5,17 @@ import { usePage } from '@inertiajs/vue3';
  * Sidebar, command palette and quick actions for DashboardLayout.vue.
  *
  * Every entry is filtered by what the current user can actually open, so no
- * link leads to a 403: core entries by role (mirroring the `role:` middleware
- * of their routes) and module availability (the `modules` shared prop);
- * module entries (`moduleNav`) arrive already filtered by the backend.
+ * link leads to a 403: core entries by permission (mirroring the
+ * `permission:` middleware of their routes) and module availability (the
+ * `modules` shared prop); module entries (`moduleNav`) arrive already
+ * filtered by the backend. Only the landlord items check a role: the
+ * super-admin is an identity, not a permission set.
  *
  * Icon names must stay literal `i-lucide-*` strings: Vite bundles only the
  * names it finds in the source, and anything else is fetched at runtime from
  * api.iconify.design.
  */
 
-const STAFF = 'staff/admin';
-const TEACHER = 'teacher';
 const SUPER_ADMIN = 'super-admin';
 
 // Sidebar groups, in display order. Groups flagged `separated` render after a
@@ -31,33 +31,33 @@ const GROUPS = [
 ];
 const DEFAULT_MODULE_GROUP = 'mas';
 
-// `roles` mirrors each route's `role:` middleware (see Modules/*/routes/web.php);
-// `module` is the module key the route is gated by.
+// `permission` mirrors each route's `permission:` middleware (see
+// Modules/*/routes/web.php); `module` is the module key the route is gated by.
 const TENANT_ITEMS = [
     { key: 'resumen', label: 'Inicio', icon: 'i-lucide-layout-dashboard', route: 'dashboard', group: 'inicio' },
-    { key: 'matriculas', label: 'Matrículas', icon: 'i-lucide-list-checks', route: 'academic.matriculas.create', group: 'academico', roles: [STAFF], module: 'academic' },
-    { key: 'academico', label: 'Base académica', icon: 'i-lucide-library', route: 'academic.catalogos', group: 'academico', roles: [STAFF], module: 'academic' },
-    { key: 'ofertas', label: 'Ofertas académicas', icon: 'i-lucide-book-open', route: 'academic.ofertas.create', group: 'academico', roles: [STAFF], module: 'academic' },
-    { key: 'momentos', label: 'Momentos académicos', icon: 'i-lucide-calendar-range', route: 'academic-moments.index', group: 'academico', roles: [STAFF], module: 'academicmoments' },
-    { key: 'notas', label: 'Notas', icon: 'i-lucide-clipboard-check', route: 'grades.index', group: 'academico', roles: [TEACHER, STAFF], module: 'grades' },
-    { key: 'usuarios', label: 'Usuarios', icon: 'i-lucide-users', route: 'users.index', group: 'administracion', roles: [STAFF, SUPER_ADMIN] },
+    { key: 'matriculas', label: 'Matrículas', icon: 'i-lucide-list-checks', route: 'academic.matriculas.create', group: 'academico', permission: 'academic.manage', module: 'academic' },
+    { key: 'academico', label: 'Base académica', icon: 'i-lucide-library', route: 'academic.catalogos', group: 'academico', permission: 'academic.manage', module: 'academic' },
+    { key: 'ofertas', label: 'Ofertas académicas', icon: 'i-lucide-book-open', route: 'academic.ofertas.create', group: 'academico', permission: 'academic.manage', module: 'academic' },
+    { key: 'momentos', label: 'Momentos académicos', icon: 'i-lucide-calendar-range', route: 'academic-moments.index', group: 'academico', permission: 'academicmoments.view', module: 'academicmoments' },
+    { key: 'notas', label: 'Notas', icon: 'i-lucide-clipboard-check', route: 'grades.index', group: 'academico', permission: 'grades.manage', module: 'grades' },
+    { key: 'usuarios', label: 'Usuarios', icon: 'i-lucide-users', route: 'users.index', group: 'administracion', permission: 'users.view' },
 ];
 
 const LANDLORD_ITEMS = [
     { key: 'resumen', label: 'Inicio', icon: 'i-lucide-layout-dashboard', route: 'dashboard', group: 'inicio' },
     { key: 'instituciones', label: 'Instituciones', icon: 'i-lucide-school', route: 'admin.schools.index', group: 'plataforma', roles: [SUPER_ADMIN] },
     { key: 'modulos', label: 'Módulos', icon: 'i-lucide-blocks', route: 'admin.modules.index', group: 'plataforma', roles: [SUPER_ADMIN] },
-    { key: 'usuarios', label: 'Usuarios', icon: 'i-lucide-users', route: 'users.index', group: 'administracion', roles: [STAFF, SUPER_ADMIN] },
+    { key: 'usuarios', label: 'Usuarios', icon: 'i-lucide-users', route: 'users.index', group: 'administracion', roles: [SUPER_ADMIN] },
 ];
 
 // Create actions for the "Acción rápida" menu and the command palette.
 const QUICK_ACTIONS = [
     { label: 'Nuevo anuncio', description: 'Publicar un aviso', icon: 'i-lucide-megaphone', route: 'notifications.create', module: 'notifications', permission: 'notifications.send' },
     { label: 'Subir archivo', description: 'Agregar al repositorio', icon: 'i-lucide-upload', route: 'files.index', module: 'files', permission: 'files.upload' },
-    { label: 'Nueva matrícula', description: 'Inscribir a un estudiante', icon: 'i-lucide-list-plus', route: 'academic.matriculas.create', module: 'academic', roles: [STAFF] },
-    { label: 'Nueva oferta académica', description: 'Abrir una oferta', icon: 'i-lucide-book-plus', route: 'academic.ofertas.create', module: 'academic', roles: [STAFF] },
-    { label: 'Cargar notas', description: 'Planes de evaluación y carga por momento', icon: 'i-lucide-clipboard-pen', route: 'grades.index', module: 'grades', roles: [TEACHER, STAFF] },
-    { label: 'Nuevo usuario', description: 'Crear una cuenta', icon: 'i-lucide-user-plus', route: 'users.create', roles: [STAFF, SUPER_ADMIN] },
+    { label: 'Nueva matrícula', description: 'Inscribir a un estudiante', icon: 'i-lucide-list-plus', route: 'academic.matriculas.create', module: 'academic', permission: 'academic.manage' },
+    { label: 'Nueva oferta académica', description: 'Abrir una oferta', icon: 'i-lucide-book-plus', route: 'academic.ofertas.create', module: 'academic', permission: 'academic.manage' },
+    { label: 'Cargar notas', description: 'Planes de evaluación y carga por momento', icon: 'i-lucide-clipboard-pen', route: 'grades.index', module: 'grades', permission: 'grades.manage' },
+    { label: 'Nuevo usuario', description: 'Crear una cuenta', icon: 'i-lucide-user-plus', route: 'users.create', permission: 'users.manage' },
 ];
 
 // Module manifests name icons in PascalCase (module.json `navigation[].icon`).
@@ -84,8 +84,8 @@ const MODULE_ICONS = {
 const FALLBACK_MODULE_ICON = 'i-lucide-blocks';
 
 export const ROLE_LABELS = {
-    [STAFF]: 'Administración',
-    [TEACHER]: 'Docente',
+    'staff/admin': 'Administración',
+    teacher: 'Docente',
     student: 'Estudiante',
     [SUPER_ADMIN]: 'Superadministrador',
 };

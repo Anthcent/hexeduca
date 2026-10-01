@@ -1,6 +1,7 @@
 <?php
 
 use App\Tenancy\Models\School;
+use Database\Seeders\ModulePlatformSeeder;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Users\Infrastructure\Models\User;
@@ -37,8 +38,10 @@ test('guest is redirected to login when submitting an oferta', function () {
     $this->post(ofertaStoreUrl($school), [])->assertRedirect(route('login'));
 });
 
-test('an authenticated user without the staff/admin role is rejected with 403', function () {
+test('an authenticated user without academic.manage is rejected with 403', function () {
     $school = School::factory()->create();
+    // The module gate runs first (404), so the module must be available.
+    $this->seed(ModulePlatformSeeder::class);
     $student = User::factory()->create(['school_id' => $school->id]);
     $student->assignRole('student');
 

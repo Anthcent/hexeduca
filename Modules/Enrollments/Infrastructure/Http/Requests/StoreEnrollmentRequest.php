@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreEnrollmentRequest extends FormRequest
 {
     /**
-     * Route-level `auth` + `role:staff/admin` middleware already gates
+     * Route-level `auth` + `permission:` middleware already gates
      * access — no additional per-request authorization is needed here.
      */
     public function authorize(): bool

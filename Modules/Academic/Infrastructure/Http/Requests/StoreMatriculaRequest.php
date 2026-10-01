@@ -9,7 +9,7 @@ class StoreMatriculaRequest extends FormRequest
     /**
      * Determine if the user is authorized to make this request.
      *
-     * Route-level `auth` + `role:staff/admin` middleware already gates
+     * Route-level `auth` + `permission:` middleware already gates
      * access — no additional per-request authorization is needed here.
      */
     public function authorize(): bool

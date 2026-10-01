@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 class UpdateUserRoleRequest extends FormRequest
 {
     /**
-     * Route-level `['auth', 'role:staff/admin|super-admin']` middleware
+     * Route-level `permission:users.manage` middleware
      * already restricts who can reach this endpoint. The finer-grained
      * tenant-ownership and super-admin-escalation checks are enforced by
      * `UserPolicy::assignRole` in the controller, not here.
