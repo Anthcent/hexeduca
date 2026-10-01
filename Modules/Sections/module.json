@@ -8,8 +8,8 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        "sections.view",
-        "sections.manage"
+        {"name": "sections.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
+        {"name": "sections.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
     ],
     "providers": [
         "Modules\\Sections\\Infrastructure\\Providers\\SectionsServiceProvider"

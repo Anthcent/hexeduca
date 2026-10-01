@@ -15,10 +15,10 @@ use Modules\AcademicPeriods\Infrastructure\Http\Controllers\AcademicPeriodContro
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin', 'module:academicperiods'])->prefix('academic-periods')->name('academic-periods.')->group(function () {
-    Route::get('/', [AcademicPeriodController::class, 'index'])->name('index');
-    Route::post('/', [AcademicPeriodController::class, 'store'])->name('store');
-    Route::put('/{academic_period}', [AcademicPeriodController::class, 'update'])->name('update');
-    Route::delete('/{academic_period}', [AcademicPeriodController::class, 'destroy'])->name('destroy');
-    Route::post('/{academic_period}/activate', [AcademicPeriodController::class, 'activate'])->name('activate');
+Route::middleware(['auth', 'module:academicperiods'])->prefix('academic-periods')->name('academic-periods.')->group(function () {
+    Route::get('/', [AcademicPeriodController::class, 'index'])->name('index')->middleware('permission:academicperiods.view');
+    Route::post('/', [AcademicPeriodController::class, 'store'])->name('store')->middleware('permission:academicperiods.manage');
+    Route::put('/{academic_period}', [AcademicPeriodController::class, 'update'])->name('update')->middleware('permission:academicperiods.manage');
+    Route::delete('/{academic_period}', [AcademicPeriodController::class, 'destroy'])->name('destroy')->middleware('permission:academicperiods.manage');
+    Route::post('/{academic_period}/activate', [AcademicPeriodController::class, 'activate'])->name('activate')->middleware('permission:academicperiods.manage');
 });

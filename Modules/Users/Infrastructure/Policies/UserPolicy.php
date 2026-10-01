@@ -34,9 +34,9 @@ class UserPolicy
     }
 
     /**
-     * A super-admin may create users anywhere. A staff/admin may only do so
-     * on their own school's subdomain: the new user is stamped with the
-     * bound tenant, so a mismatched (or missing) tenant is refused.
+     * A super-admin may create users anywhere. Anyone holding `users.manage`
+     * may only do so on their own school's subdomain: the new user is stamped
+     * with the bound tenant, so a mismatched (or missing) tenant is refused.
      */
     public function create(User $actor): bool
     {
@@ -46,7 +46,7 @@ class UserPolicy
 
         $tenant = current_tenant();
 
-        return $actor->hasRole('staff/admin')
+        return $actor->can('users.manage')
             && $actor->school_id !== null
             && $tenant !== null
             && $tenant->id === $actor->school_id;

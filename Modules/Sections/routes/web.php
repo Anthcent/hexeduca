@@ -15,9 +15,9 @@ use Modules\Sections\Infrastructure\Http\Controllers\SectionController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin', 'module:sections'])->prefix('sections')->name('sections.')->group(function () {
-    Route::get('/', [SectionController::class, 'index'])->name('index');
-    Route::post('/', [SectionController::class, 'store'])->name('store');
-    Route::put('/{section}', [SectionController::class, 'update'])->name('update');
-    Route::delete('/{section}', [SectionController::class, 'destroy'])->name('destroy');
+Route::middleware(['auth', 'module:sections'])->prefix('sections')->name('sections.')->group(function () {
+    Route::get('/', [SectionController::class, 'index'])->name('index')->middleware('permission:sections.view');
+    Route::post('/', [SectionController::class, 'store'])->name('store')->middleware('permission:sections.manage');
+    Route::put('/{section}', [SectionController::class, 'update'])->name('update')->middleware('permission:sections.manage');
+    Route::delete('/{section}', [SectionController::class, 'destroy'])->name('destroy')->middleware('permission:sections.manage');
 });

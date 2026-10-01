@@ -8,8 +8,8 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        "users.view",
-        "users.manage"
+        {"name": "users.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
+        {"name": "users.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
     ],
     "providers": [
         "Modules\\Users\\Infrastructure\\Providers\\UsersServiceProvider"

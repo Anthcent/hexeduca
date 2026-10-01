@@ -15,9 +15,9 @@ use Modules\AcademicMoments\Infrastructure\Http\Controllers\AcademicMomentContro
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin', 'module:academicmoments'])->prefix('academic-moments')->name('academic-moments.')->group(function () {
-    Route::get('/', [AcademicMomentController::class, 'index'])->name('index');
-    Route::post('/', [AcademicMomentController::class, 'store'])->name('store');
-    Route::put('/{academic_moment}', [AcademicMomentController::class, 'update'])->name('update');
-    Route::delete('/{academic_moment}', [AcademicMomentController::class, 'destroy'])->name('destroy');
+Route::middleware(['auth', 'module:academicmoments'])->prefix('academic-moments')->name('academic-moments.')->group(function () {
+    Route::get('/', [AcademicMomentController::class, 'index'])->name('index')->middleware('permission:academicmoments.view');
+    Route::post('/', [AcademicMomentController::class, 'store'])->name('store')->middleware('permission:academicmoments.manage');
+    Route::put('/{academic_moment}', [AcademicMomentController::class, 'update'])->name('update')->middleware('permission:academicmoments.manage');
+    Route::delete('/{academic_moment}', [AcademicMomentController::class, 'destroy'])->name('destroy')->middleware('permission:academicmoments.manage');
 });

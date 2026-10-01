@@ -22,10 +22,19 @@ use Modules\Users\Infrastructure\Http\Controllers\UsersController;
 // screen). See design.md "Decision: super-admin escalation guarded by a
 // UserPolicy". Gating the whole resource, not just edit/update: listing
 // every user's name/email is itself sensitive directory data.
-Route::middleware(['auth', 'role:staff/admin|super-admin'])->group(function () {
-    Route::resource('users', UsersController::class)->names('users')->except(['edit', 'update']);
-    Route::get('/users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
-    Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
+Route::middleware(['auth'])->group(function () {
+    Route::middleware('permission:users.view')->group(function () {
+        Route::get('/users', [UsersController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [UsersController::class, 'show'])->name('users.show')->whereNumber('user');
+    });
+
+    Route::middleware('permission:users.manage')->group(function () {
+        Route::get('/users/create', [UsersController::class, 'create'])->name('users.create');
+        Route::post('/users', [UsersController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+    });
 });
 
 // Login/logout: host-unconstrained (reachable both on a tenant subdomain and

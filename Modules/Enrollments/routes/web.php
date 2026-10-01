@@ -15,7 +15,7 @@ use Modules\Enrollments\Infrastructure\Http\Controllers\EnrollmentController;
 |
 */
 
-Route::middleware(['auth', 'role:staff/admin', 'module:enrollments'])->prefix('enrollments')->name('enrollments.')->group(function () {
-    Route::get('/create', [EnrollmentController::class, 'create'])->name('create');
-    Route::post('/', [EnrollmentController::class, 'store'])->name('store');
+Route::middleware(['auth', 'module:enrollments'])->prefix('enrollments')->name('enrollments.')->group(function () {
+    Route::get('/create', [EnrollmentController::class, 'create'])->name('create')->middleware('permission:enrollments.manage');
+    Route::post('/', [EnrollmentController::class, 'store'])->name('store')->middleware('permission:enrollments.manage');
 });
