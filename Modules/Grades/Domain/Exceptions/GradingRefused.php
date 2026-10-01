@@ -60,9 +60,9 @@ final class GradingRefused extends DomainException
         return new self('El plan de evaluación no existe.', 404);
     }
 
-    public static function staffOnly(): self
+    public static function correctionNotAllowed(): self
     {
-        return new self('Solo el personal administrativo puede abrir o cerrar una corrección.', 403);
+        return new self('No tienes permiso para abrir o cerrar una corrección.', 403);
     }
 
     public static function correctionReasonRequired(): self

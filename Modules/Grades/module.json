@@ -16,7 +16,11 @@
         "Users"
     ],
     "permissions": [
-        {"name": "grades.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin", "teacher"]}
+        {"name": "grades.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin", "teacher"]},
+        {"name": "grades.scope.all", "label": "Todas las secciones", "kind": "scope", "roles": ["staff/admin"]},
+        {"name": "grades.monitor", "label": "Monitor de carga", "kind": "function", "roles": ["staff/admin"]},
+        {"name": "grades.results", "label": "Resultado del año", "kind": "function", "roles": ["staff/admin"]},
+        {"name": "grades.correction", "label": "Corrección fuera de plazo", "kind": "function", "roles": ["staff/admin"]}
     ],
     "navigation": [],
     "providers": [

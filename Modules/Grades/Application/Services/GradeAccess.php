@@ -77,17 +77,17 @@ final class GradeAccess
     }
 
     /**
-     * Convivir belongs to the offer's homeroom teacher (orientador); staff
-     * may always record it.
+     * Convivir belongs to the offer's homeroom teacher (orientador); anyone who
+     * sees all sections may always record it.
      */
     public function canManageConduct(Actor $actor, AcademicOfferSummary $offer): bool
     {
-        return $actor->isStaff || ($offer->teacherId !== null && $offer->teacherId === $actor->id);
+        return $actor->seesAllSections || ($offer->teacherId !== null && $offer->teacherId === $actor->id);
     }
 
     public function canManage(Actor $actor, int $offerId, int $subjectId): bool
     {
-        return $actor->isStaff || $this->teaching->teaches($actor->schoolId, $actor->id, $offerId, $subjectId);
+        return $actor->seesAllSections || $this->teaching->teaches($actor->schoolId, $actor->id, $offerId, $subjectId);
     }
 
     /**

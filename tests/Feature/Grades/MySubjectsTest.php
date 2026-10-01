@@ -25,7 +25,8 @@ test('a teacher sees only the subjects they are assigned to', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('Grades::Index')
             ->where('period.id', $this->period)
-            ->where('isStaff', false)
+            ->where('seesAllSections', false)
+            ->where('can', ['monitor' => false, 'results' => false])
             ->has('cards', 1)
             ->where('cards.0.subjectName', 'Matemática')
             ->where('cards.0.offerLabel', 'Primer año · Sección A')
@@ -49,7 +50,8 @@ test('staff sees every subject of every offer, with the plan and loading progres
 
     $this->actingAs($this->staff)->get(G::url($this->school))
         ->assertInertia(fn (Assert $page) => $page
-            ->where('isStaff', true)
+            ->where('seesAllSections', true)
+            ->where('can', ['monitor' => true, 'results' => true])
             ->where('cards', function ($cards) use ($plan) {
                 $cards = collect($cards);
                 $math = $cards->firstWhere('subjectName', 'Matemática');

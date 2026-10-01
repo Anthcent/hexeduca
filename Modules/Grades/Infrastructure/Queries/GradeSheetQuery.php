@@ -109,7 +109,7 @@ final class GradeSheetQuery
                 'expiresAt' => $correction['expiresAt'],
                 'openedBy' => $this->users->namesFor($schoolId, [$correction['openedBy']])[$correction['openedBy']]['name'] ?? null,
             ] : null,
-            'isStaff' => $actor->isStaff,
+            'canCorrect' => $actor->canCorrect,
             'moment' => $moment ? [
                 'id' => $moment->id,
                 'name' => $moment->name,

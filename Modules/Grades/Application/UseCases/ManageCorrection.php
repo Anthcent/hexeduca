@@ -29,8 +29,8 @@ final class ManageCorrection
     {
         $plan = $this->book->findPlan($planId, $actor->schoolId) ?? throw GradingRefused::planNotFound();
 
-        if (! $actor->isStaff) {
-            throw GradingRefused::staffOnly();
+        if (! $actor->canCorrect) {
+            throw GradingRefused::correctionNotAllowed();
         }
 
         $reason = trim($reason);
@@ -58,8 +58,8 @@ final class ManageCorrection
     {
         $this->book->findPlan($planId, $actor->schoolId) ?? throw GradingRefused::planNotFound();
 
-        if (! $actor->isStaff) {
-            throw GradingRefused::staffOnly();
+        if (! $actor->canCorrect) {
+            throw GradingRefused::correctionNotAllowed();
         }
 
         return $this->book->closeCorrection($planId, $actor->schoolId, $actor->id);

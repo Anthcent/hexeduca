@@ -8,7 +8,8 @@ import EmptyState from '@/Components/EmptyState.vue';
 const props = defineProps({
     periods: { type: Array, default: () => [] },
     period: { type: Object, default: null },
-    isStaff: { type: Boolean, default: false },
+    seesAllSections: { type: Boolean, default: false },
+    can: { type: Object, default: () => ({}) },
     cards: { type: Array, default: () => [] },
     homerooms: { type: Array, default: () => [] },
 });
@@ -52,19 +53,19 @@ function planUrl(card, moment) {
     <DashboardLayout active="notas">
         <PageHeader
             eyebrow="Académico"
-            :title="isStaff ? 'Notas' : 'Mis materias'"
-            :description="isStaff ? 'Planes de evaluación y carga de notas de todas las asignaturas del periodo.' : 'Tus asignaturas del periodo: arma el plan de cada momento y carga las notas.'"
+            :title="seesAllSections ? 'Notas' : 'Mis materias'"
+            :description="seesAllSections ? 'Planes de evaluación y carga de notas de todas las asignaturas del periodo.' : 'Tus asignaturas del periodo: arma el plan de cada momento y carga las notas.'"
             icon="i-lucide-clipboard-check"
         >
-            <template v-if="isStaff" #notch>
+            <template v-if="seesAllSections || can.monitor || can.results" #notch>
                 <div class="flex flex-wrap gap-2">
-                    <UButton v-if="period" :to="route('grades.conduct', { period: period.id }, false)" icon="i-lucide-handshake" size="lg" color="neutral" variant="outline">
+                    <UButton v-if="period && seesAllSections" :to="route('grades.conduct', { period: period.id }, false)" icon="i-lucide-handshake" size="lg" color="neutral" variant="outline">
                         Convivir
                     </UButton>
-                    <UButton v-if="period" :to="route('grades.results', { period: period.id }, false)" icon="i-lucide-graduation-cap" size="lg" color="neutral" variant="outline">
+                    <UButton v-if="period && can.results" :to="route('grades.results', { period: period.id }, false)" icon="i-lucide-graduation-cap" size="lg" color="neutral" variant="outline">
                         Resultado del año
                     </UButton>
-                    <UButton :to="route('grades.monitor', undefined, false)" icon="i-lucide-gauge" size="lg">Monitor de carga</UButton>
+                    <UButton v-if="can.monitor" :to="route('grades.monitor', undefined, false)" icon="i-lucide-gauge" size="lg">Monitor de carga</UButton>
                 </div>
             </template>
         </PageHeader>
@@ -104,8 +105,8 @@ function planUrl(card, moment) {
         <EmptyState
             v-else-if="cards.length === 0"
             icon="i-lucide-book-open"
-            :title="isStaff ? 'No hay asignaturas en el periodo' : 'No tienes asignaturas asignadas'"
-            :description="isStaff ? 'Asigna un plan de estudios a las secciones del periodo.' : 'Cuando te asignen una asignatura en Asignación docente, aparecerá aquí.'"
+            :title="seesAllSections ? 'No hay asignaturas en el periodo' : 'No tienes asignaturas asignadas'"
+            :description="seesAllSections ? 'Asigna un plan de estudios a las secciones del periodo.' : 'Cuando te asignen una asignatura en Asignación docente, aparecerá aquí.'"
         />
         <p v-else-if="visible.length === 0" class="rounded-xl border border-dashed border-default px-5 py-10 text-center text-sm text-muted">
             Nada coincide con la búsqueda.

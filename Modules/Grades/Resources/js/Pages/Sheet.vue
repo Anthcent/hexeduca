@@ -276,7 +276,7 @@ function formatDate(value) {
             icon="i-lucide-pencil-ruler"
             :title="`Corrección abierta hasta el ${formatDateTime(sheet.correction.expiresAt)}`"
             :description="`Motivo: ${sheet.correction.reason}${sheet.correction.openedBy ? ` · Abierta por ${sheet.correction.openedBy}` : ''}. Cada cambio queda registrado con este motivo.`"
-            :actions="sheet.isStaff ? [{ label: 'Cerrar corrección', color: 'neutral', variant: 'outline', icon: 'i-lucide-lock', onClick: closeCorrection }] : []"
+            :actions="sheet.canCorrect ? [{ label: 'Cerrar corrección', color: 'neutral', variant: 'outline', icon: 'i-lucide-lock', onClick: closeCorrection }] : []"
         />
         <UAlert
             v-else-if="!sheet.periodOpen"
@@ -297,7 +297,7 @@ function formatDate(value) {
                 ? `La ventana de carga es del ${formatDate(sheet.moment.gradingOpensOn)} al ${formatDate(sheet.moment.gradingClosesOn)}.`
                 : 'El momento todavía no tiene fechas de carga. Se definen en Momentos académicos.'"
         />
-        <div v-if="sheet.isStaff && !sheet.correction && (!sheet.periodOpen || !sheet.windowOpen)" class="-mt-3 mb-5">
+        <div v-if="sheet.canCorrect && !sheet.correction && (!sheet.periodOpen || !sheet.windowOpen)" class="-mt-3 mb-5">
             <UButton color="warning" variant="soft" icon="i-lucide-pencil-ruler" @click="correctionOpen = true">
                 Abrir corrección para este plan
             </UButton>

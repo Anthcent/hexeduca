@@ -3,14 +3,17 @@
 namespace Modules\Grades\Application\DTOs;
 
 /**
- * Who is acting: staff may manage every subject; a teacher only the ones
- * they are assigned to.
+ * Who is acting and which grade permissions they hold: `seesAllSections`
+ * (`grades.scope.all`) manages every subject, otherwise only the assigned
+ * ones; `canCorrect` (`grades.correction`) runs correction windows and
+ * records Convivir after its window closed.
  */
 final readonly class Actor
 {
     public function __construct(
         public int $id,
         public int $schoolId,
-        public bool $isStaff,
+        public bool $seesAllSections,
+        public bool $canCorrect,
     ) {}
 }

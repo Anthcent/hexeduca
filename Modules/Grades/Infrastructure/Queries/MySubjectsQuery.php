@@ -45,7 +45,7 @@ final class MySubjectsQuery
         $subjectsByOffer = $this->offerSubjects->forPeriod($schoolId, $periodId);
         $slots = [];
 
-        if ($actor->isStaff) {
+        if ($actor->seesAllSections) {
             foreach ($subjectsByOffer as $offerId => $subjects) {
                 foreach ($subjects as $subject) {
                     $slots["{$offerId}-{$subject->id}"] = ['offerId' => $offerId, 'subject' => $subject, 'role' => null];

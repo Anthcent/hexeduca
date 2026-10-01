@@ -183,12 +183,12 @@ test('the sheet shows the open correction and lets the teacher edit outside the 
                 'expiresAt' => Carbon::parse('2026-10-05')->endOfDay()->toIso8601String(),
                 'openedBy' => $this->staff->name,
             ])
-            ->where('sheet.isStaff', false)
+            ->where('sheet.canCorrect', false)
             ->where('sheet.windowOpen', false)
             ->where('sheet.canEdit', true));
 
     $this->actingAs($this->staff)->get(G::url($this->school, "/sheets/{$this->plan}"))
-        ->assertInertia(fn (Assert $page) => $page->where('sheet.isStaff', true));
+        ->assertInertia(fn (Assert $page) => $page->where('sheet.canCorrect', true));
 });
 
 test('the sheet flags the cells changed after their first entry', function () {

@@ -14,7 +14,7 @@ const props = defineProps({
     moment: { type: Object, default: null },
     periodOpen: { type: Boolean, default: true },
     canEdit: { type: Boolean, default: false },
-    isStaff: { type: Boolean, default: false },
+    canCorrect: { type: Boolean, default: false },
     scale: { type: Array, default: () => [] },
     rows: { type: Array, default: () => [] },
     edited: { type: Array, default: () => [] },
@@ -149,8 +149,8 @@ const readOnlyReason = computed(() => {
         <template v-else>
             <UAlert v-if="readOnlyReason" :description="readOnlyReason" icon="i-lucide-lock" color="neutral" variant="subtle" class="mb-4" />
             <UAlert
-                v-else-if="isStaff && !moment.windowOpen"
-                description="La carga de este momento está cerrada; como personal administrativo puedes corregirla. Cada cambio queda registrado."
+                v-else-if="canCorrect && !moment.windowOpen"
+                description="La carga de este momento está cerrada; con tu permiso de corrección puedes modificarla. Cada cambio queda registrado."
                 icon="i-lucide-pencil-ruler"
                 color="warning"
                 variant="subtle"

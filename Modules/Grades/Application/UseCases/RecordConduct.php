@@ -39,7 +39,7 @@ final class RecordConduct
             throw GradingRefused::notYourSection();
         }
 
-        if (! $actor->isStaff) {
+        if (! $actor->canCorrect) {
             $this->access->assertPeriodOpen($moment->periodId, $actor->schoolId);
 
             if (! $this->access->windowOpen($moment)) {

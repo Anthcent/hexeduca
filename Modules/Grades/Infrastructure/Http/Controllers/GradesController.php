@@ -54,10 +54,14 @@ class GradesController extends Controller
         return Inertia::render('Grades::Index', [
             'periods' => array_map(fn (AcademicPeriodDTO $p): array => ['id' => $p->id, 'name' => $p->name, 'isActive' => $p->isActive], $all),
             'period' => $selected ? ['id' => $selected->id, 'name' => $selected->name] : null,
-            'isStaff' => $actor->isStaff,
+            'seesAllSections' => $actor->seesAllSections,
+            'can' => [
+                'monitor' => $request->user()->can('grades.monitor'),
+                'results' => $request->user()->can('grades.results'),
+            ],
             'cards' => $selected ? $query->forPeriod($actor, $selected->id) : [],
             // Sections whose Convivir the teacher gives, as their orientador.
-            'homerooms' => $selected && ! $actor->isStaff ? array_values(array_map(
+            'homerooms' => $selected && ! $actor->seesAllSections ? array_values(array_map(
                 fn (AcademicOfferSummary $o): array => ['id' => $o->id, 'label' => "{$o->gradeLevelName} · Sección {$o->sectionName}"],
                 array_filter($offers->allForPeriod($actor->schoolId, $selected->id), fn (AcademicOfferSummary $o): bool => $o->teacherId === $actor->id),
             )) : [],
@@ -169,8 +173,6 @@ class GradesController extends Controller
     public function monitor(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicMomentReader $moments, GradeAccess $access, GradeMonitorQuery $query): Response
     {
         $actor = $this->actor($request, $tenantContext);
-        abort_unless($actor->isStaff, 403);
-
         $period = $periods->activeForSchool($actor->schoolId);
         $all = $period ? $moments->forPeriod($actor->schoolId, $period->id) : [];
         $requested = (int) $request->query('moment', 0);
@@ -217,8 +219,6 @@ class GradesController extends Controller
     public function results(Request $request, TenantContext $tenantContext, AcademicPeriodReader $periods, AcademicOfferReader $offers, OfferSubjectsReader $offerSubjects, YearSummaryQuery $query): Response
     {
         $actor = $this->actor($request, $tenantContext);
-        abort_unless($actor->isStaff, 403);
-
         $period = $periods->findForSchool((int) $request->query('period'), $actor->schoolId) ?? abort(404);
         $all = $offers->allForPeriod($actor->schoolId, $period->id);
         usort($all, fn (AcademicOfferSummary $a, AcademicOfferSummary $b): int => [$a->gradeLevelName, $a->sectionName] <=> [$b->gradeLevelName, $b->sectionName]);
@@ -279,8 +279,8 @@ class GradesController extends Controller
             'moments' => array_map(fn ($m): array => ['id' => $m->id, 'name' => $m->name], $allMoments),
             'moment' => $moment ? ['id' => $moment->id, 'name' => $moment->name, 'windowOpen' => $windowOpen] : null,
             'periodOpen' => $periodOpen,
-            'canEdit' => $moment !== null && ($actor->isStaff || ($windowOpen && $periodOpen)),
-            'isStaff' => $actor->isStaff,
+            'canEdit' => $moment !== null && ($actor->canCorrect || ($windowOpen && $periodOpen)),
+            'canCorrect' => $actor->canCorrect,
             'scale' => array_map(fn (string $letter, string $label): array => ['letter' => $letter, 'label' => $label], array_keys($this->conductScale()), $this->conductScale()),
             'rows' => array_map(fn (array $student): array => $student + ['letter' => $letters[$student['id']] ?? null], $roster->forOffer($actor->schoolId, $offer->id)),
             'edited' => $moment ? $conduct->editedStudents($actor->schoolId, $offer->id, $moment->id) : [],
@@ -343,7 +343,8 @@ class GradesController extends Controller
         return new Actor(
             id: (int) $user->id,
             schoolId: $tenantContext->current()->id,
-            isStaff: $user->hasRole('staff/admin'),
+            seesAllSections: $user->can('grades.scope.all'),
+            canCorrect: $user->can('grades.correction'),
         );
     }
 
