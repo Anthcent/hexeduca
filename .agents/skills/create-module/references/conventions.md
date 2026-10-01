@@ -54,9 +54,22 @@ Full field spec in `stubs/modules/module-md.stub` (copied to each module's `MODU
 ```json
 "maturity": "mature",
 "dependencies": ["users"],
-"permissions": [{"name": "billing.view", "roles": ["staff/admin"]}],
+"permissions": [
+    {"name": "billing.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
+    {"name": "billing.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+],
 "navigation": [{"label": "Billing", "route": "billing.index", "icon": "Receipt", "group": "administracion", "permission": "billing.view"}]
 ```
+
+Permissions, not roles. Routes check `permission:{alias}.*` and never `role:`, so schools can build their own roles later.
+
+- Every module declares `{alias}.view` (read routes) and `{alias}.manage` (write routes). A role that manages also gets `view`.
+- `kind` is one of:
+  - `view` or `manage`: the baseline;
+  - `function`: a screen or action inside the module, such as `grades.correction`;
+  - `scope`: which records the user sees, such as `grades.scope.all` versus only the user's own sections.
+- `label` is the Spanish UI copy shown in the role editor. `ModuleRegistry::sync()` rejects an object entry without a `label` or a valid `kind`.
+- The super-admin passes every permission check through `Gate::before`. Policies keep their own rules.
 
 `icon` is a lucide name in PascalCase, but only the names mapped in `resources/js/Layouts/navigation.js` render (see Gotchas). `group` is optional. Role names must already exist (see `database/seeders`): `staff/admin`, `teacher`, `student`, `super-admin`.
 

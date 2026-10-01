@@ -3,6 +3,7 @@
 use App\ModulePlatform\Models\ModuleRecord;
 use App\ModulePlatform\Services\ModuleRegistry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Nwidart\Modules\Facades\Module;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
@@ -42,4 +43,27 @@ test('re-syncing preserves the active state of already-registered modules', func
     $registry->sync();
 
     expect(ModuleRecord::query()->findOrFail('sections')->active)->toBeTrue();
+});
+
+test('every object-form manifest permission declares a label and a known kind', function () {
+    foreach (Module::all() as $module) {
+        foreach ((array) $module->get('permissions', []) as $permission) {
+            if (is_string($permission)) {
+                continue;
+            }
+
+            expect($permission['label'] ?? null)->not->toBeEmpty("{$permission['name']} has no label")
+                ->and(ModuleRegistry::PERMISSION_KINDS)->toContain($permission['kind'] ?? null);
+        }
+    }
+});
+
+test('sync rejects an object-form permission without a valid kind', function () {
+    $registry = app(ModuleRegistry::class);
+
+    expect(fn () => (fn () => $this->syncPermission(['name' => 'demo.view', 'label' => 'Ver', 'kind' => 'read']))->call($registry))
+        ->toThrow(InvalidArgumentException::class, 'demo.view');
+
+    expect(fn () => (fn () => $this->syncPermission(['name' => 'demo.view', 'kind' => 'view']))->call($registry))
+        ->toThrow(InvalidArgumentException::class, 'demo.view');
 });

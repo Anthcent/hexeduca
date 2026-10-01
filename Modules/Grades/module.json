@@ -16,7 +16,7 @@
         "Users"
     ],
     "permissions": [
-        {"name": "grades.manage", "roles": ["staff/admin", "teacher"]}
+        {"name": "grades.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin", "teacher"]}
     ],
     "navigation": [],
     "providers": [

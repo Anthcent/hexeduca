@@ -11,6 +11,7 @@ use App\ModulePlatform\Models\ModuleRecord;
 use App\ModulePlatform\Models\SchoolModule;
 use App\Tenancy\Models\School;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 use Nwidart\Modules\Facades\Module as NwidartModule;
 use Nwidart\Modules\Module as NwidartModuleInstance;
 use Spatie\Permission\Models\Permission;
@@ -58,8 +59,17 @@ class ModuleRegistry
     }
 
     /**
+     * The kinds a manifest permission can declare. `view` and `manage` are
+     * the per-module baseline; `function` gates a screen or action inside
+     * the module; `scope` widens which records the user sees.
+     *
+     * @var list<string>
+     */
+    public const PERMISSION_KINDS = ['view', 'manage', 'function', 'scope'];
+
+    /**
      * Accepts either the plain-string permission format (kept for backward
-     * compatibility) or `{"name": "...", "roles": ["..."]}`, which also
+     * compatibility) or `{"name", "label", "kind", "roles"}`, which also
      * grants the permission to those existing Spatie roles. Manual grants
      * on other roles are never touched — this only ever adds, never revokes.
      */
@@ -75,6 +85,15 @@ class ModuleRegistry
 
         if ($name === null) {
             return;
+        }
+
+        $kind = $permission['kind'] ?? null;
+
+        if (! in_array($kind, self::PERMISSION_KINDS, true) || blank($permission['label'] ?? null)) {
+            throw new InvalidArgumentException(
+                "Permission [{$name}] must declare a label and a kind ("
+                .implode(', ', self::PERMISSION_KINDS).').'
+            );
         }
 
         $record = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);

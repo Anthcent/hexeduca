@@ -14,7 +14,7 @@
         "Users"
     ],
     "permissions": [
-        {"name": "teachingassignments.manage", "roles": ["staff/admin"]}
+        {"name": "teachingassignments.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
     ],
     "navigation": [
         {"label": "Asignación docente", "route": "teachingassignments.index", "icon": "Users", "group": "academico", "permission": "teachingassignments.manage"}

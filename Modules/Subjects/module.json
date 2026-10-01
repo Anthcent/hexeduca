@@ -12,7 +12,7 @@
         "GradeLevels"
     ],
     "permissions": [
-        {"name": "subjects.manage", "roles": ["staff/admin"]}
+        {"name": "subjects.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
     ],
     "navigation": [
         {"label": "Planes de estudio", "route": "subjects.index", "icon": "BookOpen", "group": "academico", "permission": "subjects.manage"}

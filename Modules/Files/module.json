@@ -8,9 +8,9 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        {"name": "files.view", "roles": ["staff/admin", "teacher"]},
-        {"name": "files.upload", "roles": ["staff/admin", "teacher"]},
-        {"name": "files.delete-any", "roles": ["staff/admin"]}
+        {"name": "files.view", "label": "Ver", "kind": "view", "roles": ["staff/admin", "teacher"]},
+        {"name": "files.upload", "label": "Subir archivos", "kind": "function", "roles": ["staff/admin", "teacher"]},
+        {"name": "files.delete-any", "label": "Eliminar archivos de otros", "kind": "function", "roles": ["staff/admin"]}
     ],
     "navigation": [
         {"label": "Archivos", "route": "files.index", "icon": "FolderOpen", "group": "documentos", "permission": "files.view"}
