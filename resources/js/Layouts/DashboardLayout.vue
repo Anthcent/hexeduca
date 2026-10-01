@@ -4,7 +4,7 @@ import { Link, router, usePage } from '@inertiajs/vue3';
 import { useToast } from '@nuxt/ui/composables/useToast';
 import SchoolContextBar from '@/Components/school/SchoolContextBar.vue';
 import { useTheme } from '@/composables/useTheme';
-import { ROLE_LABELS, toPath, useShellNavigation } from './navigation';
+import { toPath, useShellNavigation } from './navigation';
 
 const props = defineProps({
     // Key of the nav entry to highlight when the current URL matches none
@@ -22,7 +22,7 @@ const { dark, toggleTheme } = useTheme();
 const school = computed(() => page.props.school ?? null);
 const brandName = computed(() => school.value?.name ?? (isLandlord.value ? 'Panel central' : 'Gestión escolar'));
 const homePath = computed(() => route('dashboard', undefined, false));
-const roleLabel = computed(() => ROLE_LABELS[user.value?.role] ?? user.value?.role ?? '');
+const roleLabel = computed(() => user.value?.roleLabel ?? user.value?.role ?? '');
 
 // Shared by the Notifications module only when it is usable for this user;
 // absent or null otherwise, and then the bell stays disabled.

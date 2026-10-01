@@ -33,7 +33,7 @@ test('legacy and new enrollment HTTP paths emit equivalent events consumed by Gr
     $newStudent = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $newStudent->assignRole('student');
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $baseUrl = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain');
 
     $this->actingAs($admin)->post($baseUrl.'/academic/matriculas', [

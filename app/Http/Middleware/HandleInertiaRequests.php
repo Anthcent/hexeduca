@@ -49,7 +49,8 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'role' => $request->user()->getRoleNames()->first(),
+                    'role' => $request->user()->is_super_admin ? 'super-admin' : $request->user()->roles->first()?->name,
+                    'roleLabel' => $request->user()->is_super_admin ? 'Superadministrador' : $request->user()->roles->first()?->label,
                     // Lets the shell show only the actions the user may take
                     // (quick actions); routes still enforce every check.
                     'permissions' => $request->user()->getAllPermissions()->pluck('name')->values()->all(),

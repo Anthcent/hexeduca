@@ -11,8 +11,8 @@
         "Users"
     ],
     "permissions": [
-        {"name": "enrollments.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "enrollments.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "enrollments.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "enrollments.manage", "label": "Gestionar", "kind": "manage", "roles": ["administrative"]}
     ],
     "providers": [
         "Modules\\Enrollments\\Infrastructure\\Providers\\EnrollmentsServiceProvider"

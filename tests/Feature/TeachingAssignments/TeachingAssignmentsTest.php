@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->otherSchool = School::factory()->create();
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = S::user($this->school, 'staff/admin');
+    $this->staff = S::user($this->school, 'director');
     $this->ana = S::user($this->school, 'teacher');
     $this->beto = S::user($this->school, 'teacher');
     $this->student = S::user($this->school, 'student');

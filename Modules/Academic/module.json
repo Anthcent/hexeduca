@@ -13,7 +13,7 @@
         "Users"
     ],
     "permissions": [
-        {"name": "academic.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "academic.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\Academic\\Infrastructure\\Providers\\AcademicServiceProvider"

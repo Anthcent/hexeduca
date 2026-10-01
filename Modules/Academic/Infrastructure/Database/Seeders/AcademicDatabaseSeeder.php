@@ -94,8 +94,8 @@ class AcademicDatabaseSeeder extends Seeder
             ],
         );
 
-        if (! $staffAdmin->hasRole('staff/admin')) {
-            $staffAdmin->assignRole('staff/admin');
+        if (! $staffAdmin->hasRole('director')) {
+            $staffAdmin->assignRole('director');
         }
 
         $teacher = User::firstOrCreate(

@@ -25,10 +25,10 @@ beforeEach(function () {
 // (Pest loads all Feature test files into one process, so helper functions
 // with the same signature must not be redeclared here).
 
-test('staff/admin reassigns a student to teacher in their own school', function () {
+test('director reassigns a student to teacher in their own school', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
@@ -42,11 +42,11 @@ test('staff/admin reassigns a student to teacher in their own school', function 
     expect($target->getRoleNames())->toHaveCount(1);
 });
 
-test('staff/admin cannot edit or update a user in a different school', function () {
+test('director cannot edit or update a user in a different school', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $schoolA->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $schoolB->id, 'type' => 'student']);
     $target->assignRole('student');
 
@@ -64,35 +64,36 @@ test('staff/admin cannot edit or update a user in a different school', function 
     expect($target->hasRole('student'))->toBeTrue();
 });
 
-test('staff/admin attempting to grant super-admin is rejected with 403', function () {
+test('super-admin is not a role anyone can grant', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($admin)
         ->put(tenantUrl($school, "/users/{$target->id}"), ['role' => 'super-admin'])
-        ->assertForbidden();
+        ->assertSessionHasErrors(['role']);
 
     $target->refresh();
-    expect($target->hasRole('student'))->toBeTrue();
-    expect($target->hasRole('super-admin'))->toBeFalse();
+    expect($target->hasRole('student'))->toBeTrue()
+        ->and($target->isSuperAdmin())->toBeFalse();
 });
 
-test('super-admin can grant super-admin to any user in any tenant', function () {
+test('super-admin can change the role of a user in any school', function () {
     $school = School::factory()->create();
     $superAdmin = User::factory()->create(['school_id' => null]);
-    $superAdmin->assignRole('super-admin');
+    $superAdmin->forceFill(['is_super_admin' => true])->save();
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
     $this->actingAs($superAdmin)
-        ->put(tenantUrl($school, "/users/{$target->id}"), ['role' => 'super-admin'])
+        ->put(tenantUrl($school, "/users/{$target->id}"), ['role' => 'teacher'])
         ->assertRedirect();
 
     $target->refresh();
-    expect($target->hasRole('super-admin'))->toBeTrue();
+    expect($target->hasRole('teacher'))->toBeTrue()
+        ->and($target->isSuperAdmin())->toBeFalse();
 });
 
 test('a non-admin user hitting the edit route is rejected with 403', function () {
@@ -110,7 +111,7 @@ test('a non-admin user hitting the edit route is rejected with 403', function ()
 test('student to teacher HTTP reassignment updates both projections through the outbox', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
     (new ProjectStudentListener)->handle(new UserCreated(
@@ -137,7 +138,7 @@ test('student to teacher HTTP reassignment updates both projections through the 
 test('teacher to student HTTP reassignment updates both projections through the outbox', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $target->assignRole('teacher');
     (new ProjectTeacherListener)->handle(new UserCreated(
@@ -163,7 +164,7 @@ test('teacher to student HTTP reassignment updates both projections through the 
 test('role reassignment rolls back when the UserUpdated outbox write fails', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
     ForcedInsertFailure::install('fail_role_update_outbox', 'integration_outbox_events', 'forced role update outbox failure', 'user.updated');

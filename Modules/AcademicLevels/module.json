@@ -8,8 +8,8 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        {"name": "academiclevels.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "academiclevels.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "academiclevels.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "academiclevels.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\AcademicLevels\\Infrastructure\\Providers\\AcademicLevelsServiceProvider"

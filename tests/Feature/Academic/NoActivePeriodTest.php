@@ -26,7 +26,7 @@ function noActivePeriodUrl(School $school, string $path): string
 test('the create oferta screen reports no active period without raising an exception', function () {
     $school = School::factory()->create();
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->get(noActivePeriodUrl($school, '/academic/ofertas/create'))
@@ -42,7 +42,7 @@ test('submitting an oferta with no active period surfaces a session error instea
     $grado = Grado::factory()->create(['school_id' => $school->id]);
     $seccion = Seccion::factory()->create(['school_id' => $school->id]);
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->post(noActivePeriodUrl($school, '/academic/ofertas'), [

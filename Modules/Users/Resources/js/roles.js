@@ -1,9 +1,11 @@
 import { ROLE_LABELS } from '@/Layouts/navigation';
 
-// Badge color per Spatie role, shared by the Users pages.
+// Badge color per template role, shared by the Users pages.
 const ROLE_COLORS = {
     'super-admin': 'warning',
-    'staff/admin': 'primary',
+    director: 'primary',
+    'academic-control': 'primary',
+    administrative: 'success',
     teacher: 'info',
     student: 'neutral',
 };

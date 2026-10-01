@@ -38,10 +38,10 @@ test('the history lists every change newest first, with names, cell labels and t
 
     $changes = collect($response->json('changes'));
     expect($changes->map(fn ($c) => [$c['student'], $c['cell'], $c['old'], $c['new'], $c['by'], $c['role'], $c['correction']])->all())->toBe([
-        [$this->s1->name, 'Extra', null, 1, $this->teacher->name, 'teacher', 'Nota mal cargada'],
-        [$this->s1->name, 'R1-A', 5, 9, $this->staff->name, 'staff/admin', 'Nota mal cargada'],
-        [$this->s2->name, 'R2-B', null, 7, $this->teacher->name, 'teacher', null],
-        [$this->s1->name, 'R1-A', null, 5, $this->teacher->name, 'teacher', null],
+        [$this->s1->name, 'Extra', null, 1, $this->teacher->name, 'Docente', 'Nota mal cargada'],
+        [$this->s1->name, 'R1-A', 5, 9, $this->staff->name, 'Dirección', 'Nota mal cargada'],
+        [$this->s2->name, 'R2-B', null, 7, $this->teacher->name, 'Docente', null],
+        [$this->s1->name, 'R1-A', null, 5, $this->teacher->name, 'Docente', null],
     ])
         ->and($changes->pluck('id')->all())->toBe(DB::table('grade_changes')->orderByDesc('id')->pluck('id')->all())
         ->and($changes->first()['at'])->toBe(now()->toIso8601String());

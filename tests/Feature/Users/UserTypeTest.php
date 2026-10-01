@@ -26,7 +26,7 @@ beforeEach(function () {
 
 test('the readers find people by type, whatever roles they hold', function () {
     $teachingDirector = User::factory()->create(['school_id' => $this->school->id, 'type' => 'teacher']);
-    $teachingDirector->assignRole('staff/admin');
+    $teachingDirector->assignRole('director');
     $roleOnlyTeacher = User::factory()->create(['school_id' => $this->school->id, 'type' => 'staff']);
     $roleOnlyTeacher->assignRole('teacher');
 
@@ -40,7 +40,7 @@ test('registering a user stores the type implied by the role, or an explicit one
     $register = app(RegisterUser::class);
 
     $teacher = $register->handle(new UserData('Ada', 'ada@example.test', 'secret-password', $this->school->id, 'teacher'));
-    $director = $register->handle(new UserData('Grace', 'grace@example.test', 'secret-password', $this->school->id, 'staff/admin', UserType::Teacher));
+    $director = $register->handle(new UserData('Grace', 'grace@example.test', 'secret-password', $this->school->id, 'director', UserType::Teacher));
 
     expect(User::find($teacher->id())->type)->toBe(UserType::Teacher)
         ->and(User::find($director->id())->type)->toBe(UserType::Teacher);
@@ -49,7 +49,7 @@ test('registering a user stores the type implied by the role, or an explicit one
         ->where('aggregate_id', (string) $director->id())->value('payload'), true);
 
     expect($payload['type'])->toBe('teacher')
-        ->and($payload['roles'])->toBe(['staff/admin']);
+        ->and($payload['roles'])->toBe(['director']);
 });
 
 test('the projections follow the type over the roles', function (?string $type, ?array $roles, ?bool $teacherActive, ?bool $studentActive) {
@@ -64,7 +64,7 @@ test('the projections follow the type over the roles', function (?string $type, 
     expect($active('academic_offers_teacher_projection', 'source_teacher_id'))->toBe($teacherActive)
         ->and($active('enrollments_student_projection', 'source_student_id'))->toBe($studentActive);
 })->with([
-    'teacher type with a staff role' => ['teacher', ['staff/admin'], true, false],
+    'teacher type with a staff role' => ['teacher', ['director'], true, false],
     'student type' => ['student', ['student'], false, true],
     'staff type with a teacher role' => ['staff', ['teacher'], false, false],
     'deleted user' => [null, [], false, false],
@@ -84,7 +84,7 @@ test('the migration backfills the type from the roles users already hold', funct
     };
     $teacher = $make(['teacher']);
     $student = $make(['student']);
-    $staff = $make(['staff/admin']);
+    $staff = $make(['director']);
     $both = $make(['student', 'teacher']);
 
     $migration->up();

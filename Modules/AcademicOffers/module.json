@@ -12,8 +12,8 @@
         "Users"
     ],
     "permissions": [
-        {"name": "academicoffers.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "academicoffers.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "academicoffers.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "academicoffers.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\AcademicOffers\\Infrastructure\\Providers\\AcademicOffersServiceProvider"

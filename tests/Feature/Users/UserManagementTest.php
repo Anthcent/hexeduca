@@ -22,7 +22,12 @@ beforeEach(function () {
 function userWithRole(?School $school, string $role): User
 {
     $user = User::factory()->create(['school_id' => $school?->id, 'type' => UserType::forRole($role)]);
-    $user->assignRole($role);
+
+    if ($role === 'super-admin') {
+        $user->forceFill(['is_super_admin' => true])->save();
+    } else {
+        $user->assignRole($role);
+    }
 
     return $user;
 }
@@ -43,24 +48,24 @@ function landlordUrl(string $path): string
     return 'http://'.config('tenancy.landlord_hosts')[0].$path;
 }
 
-test('staff/admin sees the create form with only assignable roles', function () {
+test('director sees the create form with the school template roles', function () {
     $school = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
 
     $this->actingAs($admin)
         ->get(tenantUrl($school, '/users/create'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('Users::Create', false)
-            ->where('roles', ['student', 'teacher', 'staff/admin'])
+            ->where('roles', ['director', 'academic-control', 'administrative', 'teacher', 'student'])
             ->where('school.id', $school->id)
             ->where('schools', []));
 });
 
-test('staff/admin creates a user in their own school, ignoring a submitted school_id', function () {
+test('director creates a user in their own school, ignoring a submitted school_id', function () {
     $school = School::factory()->create();
     $otherSchool = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
 
     $response = $this->actingAs($admin)
         ->post(tenantUrl($school, '/users'), newUserPayload(['school_id' => $otherSchool->id]));
@@ -84,7 +89,7 @@ test('staff/admin creates a user in their own school, ignoring a submitted schoo
 
 test('store rejects invalid input', function (array $overrides, array $errors) {
     $school = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
     User::factory()->create(['email' => 'taken@example.test', 'school_id' => School::factory()->create()->id]);
     $before = User::withoutTenantScope()->count();
 
@@ -111,12 +116,12 @@ test('nobody can create a super-admin, not even a super-admin', function (string
         ->assertSessionHasErrors(['role']);
 
     expect(User::withoutTenantScope()->where('email', 'ada@example.test')->exists())->toBeFalse();
-})->with(['staff/admin', 'super-admin']);
+})->with(['director', 'super-admin']);
 
-test('staff/admin authenticated on another school host cannot create users there', function () {
+test('director authenticated on another school host cannot create users there', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
-    $admin = userWithRole($schoolA, 'staff/admin');
+    $admin = userWithRole($schoolA, 'director');
 
     $this->actingAs($admin)
         ->post(tenantUrl($schoolB, '/users'), newUserPayload())
@@ -141,9 +146,9 @@ test('super-admin on the landlord host picks the school', function () {
     expect(User::withoutTenantScope()->where('email', 'ada@example.test')->value('school_id'))->toBe($school->id);
 });
 
-test('staff/admin views a user of their own school', function () {
+test('director views a user of their own school', function () {
     $school = School::factory()->create(['name' => 'Colegio Demo']);
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
     $target = userWithRole($school, 'student');
 
     $this->actingAs($admin)
@@ -163,7 +168,7 @@ test('staff/admin views a user of their own school', function () {
 test('show and destroy of a user from another school are 404', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
-    $admin = userWithRole($schoolA, 'staff/admin');
+    $admin = userWithRole($schoolA, 'director');
     $target = userWithRole($schoolB, 'student');
 
     $this->actingAs($admin)
@@ -177,9 +182,9 @@ test('show and destroy of a user from another school are 404', function () {
     expect(User::withoutTenantScope()->whereKey($target->id)->exists())->toBeTrue();
 });
 
-test('staff/admin deletes a user of their own school and projections are told the roles are gone', function () {
+test('director deletes a user of their own school and projections are told the roles are gone', function () {
     $school = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
     $target = userWithRole($school, 'teacher');
 
     $this->actingAs($admin)
@@ -197,9 +202,9 @@ test('staff/admin deletes a user of their own school and projections are told th
         ->and($payload['version'])->toBe(2);
 });
 
-test('staff/admin cannot delete themselves', function () {
+test('director cannot delete themselves', function () {
     $school = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
 
     $this->actingAs($admin)
         ->delete(tenantUrl($school, "/users/{$admin->id}"))
@@ -210,7 +215,7 @@ test('staff/admin cannot delete themselves', function () {
 
 test('a super-admin cannot be deleted', function () {
     $school = School::factory()->create();
-    $admin = userWithRole($school, 'staff/admin');
+    $admin = userWithRole($school, 'director');
     $superAdminInSchool = userWithRole($school, 'super-admin');
 
     $this->actingAs($admin)
@@ -242,4 +247,4 @@ test('the user directory is not reachable through an api route', function (strin
 
     $this->actingAs($actor)->get(tenantUrl($school, '/api/v1/users'))->assertNotFound();
     $this->actingAs($actor)->get(tenantUrl($school, "/api/v1/users/{$target->id}"))->assertNotFound();
-})->with(['student', 'staff/admin']);
+})->with(['student', 'director']);

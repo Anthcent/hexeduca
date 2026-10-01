@@ -4,6 +4,7 @@ use App\AcademicPeriod\Http\Middleware\ResolveActivePeriod;
 use App\Http\Middleware\AddStrictTransportSecurity;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\ModuleGateMiddleware;
+use App\Http\Middleware\RequireSuperAdmin;
 use App\Support\SecurityPolicy;
 use App\Tenancy\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
@@ -47,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'module' => ModuleGateMiddleware::class,
+            'super-admin' => RequireSuperAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

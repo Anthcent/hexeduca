@@ -36,7 +36,7 @@ final class GradesFixtures
         $test->otherSchool = School::factory()->create();
         $test->seed(ModulePlatformSeeder::class);
 
-        $test->staff = S::user($test->school, 'staff/admin');
+        $test->staff = S::user($test->school, 'director');
         $test->teacher = S::user($test->school, 'teacher');
         $test->otherTeacher = S::user($test->school, 'teacher');
         $test->student = S::user($test->school, 'student');
@@ -152,7 +152,7 @@ final class GradesFixtures
         S::assignment($test->otherSchool, $period, $studyPlan, 'school');
         $moment = M::moment($period, 'Primer momento', 1, '2026-09-01', '2026-10-15');
 
-        $test->actingAs(S::user($test->otherSchool, 'staff/admin'))
+        $test->actingAs(S::user($test->otherSchool, 'director'))
             ->put(self::url($test->otherSchool, '/plan'), self::planPayload($offer, $subject, $moment))
             ->assertSessionHasNoErrors();
 

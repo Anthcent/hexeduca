@@ -16,7 +16,7 @@ use Modules\Admin\Infrastructure\Http\Controllers\SchoolController;
 |
 */
 
-Route::middleware(['auth', 'role:super-admin', RequireLandlordHost::class])
+Route::middleware(['auth', 'super-admin', RequireLandlordHost::class])
     ->prefix('instituciones')
     ->name('admin.schools.')
     ->group(function () {
@@ -36,7 +36,7 @@ Route::middleware(['auth', 'role:super-admin', RequireLandlordHost::class])
 |
 */
 
-Route::middleware(['auth', 'role:super-admin', RequireLandlordHost::class])
+Route::middleware(['auth', 'super-admin', RequireLandlordHost::class])
     ->prefix('modulos')
     ->name('admin.modules.')
     ->group(function () {

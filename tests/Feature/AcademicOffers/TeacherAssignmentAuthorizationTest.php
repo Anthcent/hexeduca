@@ -66,7 +66,7 @@ test('POST academic offers maps teacher authorization failures to teacher_id wit
     $gradeLevel = Grado::factory()->create(['school_id' => $school->id]);
     $section = Seccion::factory()->create(['school_id' => $school->id]);
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $assignee = User::factory()->create(['school_id' => $assignedSchool->id]);
     $assignee->assignRole($assignment === 'cross-school' ? 'teacher' : 'student');
     $url = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain').'/academic-offers';
@@ -115,7 +115,7 @@ test('POST academic offers maps cross-school catalogs to their fields without pe
         'school_id' => $field === 'section_id' ? $otherSchool->id : $school->id,
     ]);
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $url = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain').'/academic-offers';
 
     $this->actingAs($admin)->post($url, [
@@ -136,7 +136,7 @@ test('POST academic offers succeeds with same-school references and records exac
     $teacher = User::factory()->create(['school_id' => $school->id, 'type' => 'teacher']);
     $teacher->assignRole('teacher');
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $url = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain').'/academic-offers';
 
     $this->actingAs($admin)->post($url, [

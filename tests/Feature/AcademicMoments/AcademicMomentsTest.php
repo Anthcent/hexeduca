@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->otherSchool = School::factory()->create();
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = S::user($this->school, 'staff/admin');
+    $this->staff = S::user($this->school, 'director');
     $this->period = S::period($this->school, '2026', true);
     $this->foreignPeriod = S::period($this->otherSchool, '2026', true);
 });

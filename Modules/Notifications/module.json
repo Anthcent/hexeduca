@@ -10,8 +10,8 @@
         "Users"
     ],
     "permissions": [
-        {"name": "notifications.view", "label": "Ver", "kind": "view", "roles": ["staff/admin", "teacher", "student"]},
-        {"name": "notifications.send", "label": "Enviar comunicados", "kind": "function", "roles": ["staff/admin"]}
+        {"name": "notifications.view", "label": "Ver", "kind": "view", "roles": ["administrative", "teacher", "student"]},
+        {"name": "notifications.send", "label": "Enviar comunicados", "kind": "function", "roles": ["administrative"]}
     ],
     "navigation": [
         {"label": "Notificaciones", "route": "notifications.index", "icon": "Bell", "group": "comunicacion", "permission": "notifications.view"}

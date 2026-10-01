@@ -31,11 +31,11 @@ function demoUrl(string $path): string
     return "http://demo.{$baseDomain}{$path}";
 }
 
-test('the demo staff/admin can create an offering and enroll a student using only seeded data', function () {
+test('the demo director can create an offering and enroll a student using only seeded data', function () {
     $school = School::where('subdomain', 'demo')->firstOrFail();
     $staff = User::where('email', 'staff@demo.test')->firstOrFail();
 
-    expect($staff->hasRole('staff/admin'))->toBeTrue();
+    expect($staff->hasRole('director'))->toBeTrue();
 
     $createResponse = $this->actingAs($staff)->get(demoUrl('/academic/ofertas/create'));
 

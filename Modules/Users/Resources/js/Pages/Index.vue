@@ -20,7 +20,7 @@ const currentUserId = computed(() => page.props.auth?.user?.id);
 const search = ref('');
 const role = ref('all');
 
-const ROLE_ORDER = ['staff/admin', 'teacher', 'student', 'super-admin'];
+const ROLE_ORDER = ['director', 'academic-control', 'administrative', 'teacher', 'student'];
 
 const statuses = computed(() => {
     const counts = props.users.reduce((acc, user) => {

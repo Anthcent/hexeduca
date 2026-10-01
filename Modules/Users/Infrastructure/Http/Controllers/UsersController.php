@@ -4,6 +4,7 @@ namespace Modules\Users\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\IntegrationEvents\Outbox\OutboxEventRecorder;
+use App\ModulePlatform\Services\RoleTemplates;
 use App\Tenancy\Models\School;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class UsersController extends Controller
      * Display a listing of the resource.
      *
      * `User::all()` is scoped by `TenantScope` automatically: a tenant
-     * staff/admin sees only their own school's users, while the landlord
+     * school user sees only their own school's users, while the landlord
      * (no tenant bound on the landlord host) sees every user across every
      * school — matching super-admin's cross-tenant role-assignment reach.
      */
@@ -37,7 +38,7 @@ class UsersController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->getRoleNames()->first(),
+                'role' => $user->isSuperAdmin() ? 'super-admin' : $user->getRoleNames()->first(),
             ]),
         ]);
     }
@@ -55,7 +56,7 @@ class UsersController extends Controller
         $tenant = current_tenant();
 
         return Inertia::render('Users::Create', [
-            'roles' => StoreUserRequest::ASSIGNABLE_ROLES,
+            'roles' => array_keys(RoleTemplates::TEMPLATES),
             'school' => $tenant?->only(['id', 'name']),
             'schools' => $tenant === null
                 ? School::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])
@@ -105,14 +106,6 @@ class UsersController extends Controller
     }
 
     /**
-     * The 4 fixed seeded Spatie roles a single-select role dropdown is
-     * limited to. See `RoleAndPermissionSeeder`.
-     *
-     * @var list<string>
-     */
-    private const ROLES = ['student', 'teacher', 'staff/admin', 'super-admin'];
-
-    /**
      * Show the form for editing the specified resource.
      *
      * `User::findOrFail($id)` is scoped by `TenantScope` to the acting
@@ -134,7 +127,7 @@ class UsersController extends Controller
                 'email' => $user->email,
                 'role' => $user->getRoleNames()->first(),
             ],
-            'roles' => self::ROLES,
+            'roles' => array_keys(RoleTemplates::TEMPLATES),
         ]);
     }
 

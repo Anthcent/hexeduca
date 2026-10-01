@@ -18,11 +18,11 @@ final class EloquentUserDirectory implements UserDirectory
         User::withoutTenantScope()
             ->where('school_id', $schoolId)
             ->whereIn('id', array_values(array_unique($userIds)))
-            ->with('roles:id,name')
+            ->with('roles:id,name,label')
             ->orderBy('id')
             ->get(['id', 'name'])
             ->each(function (User $user) use (&$names): void {
-                $names[$user->id] = ['name' => $user->name, 'role' => $user->roles->first()?->name];
+                $names[$user->id] = ['name' => $user->name, 'role' => $user->roles->first()?->label ?? $user->roles->first()?->name];
             });
 
         return $names;

@@ -75,7 +75,7 @@ test('POST enrollments maps student authorization failures to student_id without
     $assignedSchool = $assignment === 'cross-school' ? School::factory()->create() : $school;
     $offer = enrollmentOfferFor($school);
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $assignee = User::factory()->create(['school_id' => $assignedSchool->id]);
     $assignee->assignRole($assignment === 'cross-school' ? 'student' : 'teacher');
     $url = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain').'/enrollments';
@@ -94,7 +94,7 @@ test('POST enrollments succeeds for a same-school student and records exactly on
     $student = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $student->assignRole('student');
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $url = 'http://'.$school->subdomain.'.'.config('tenancy.base_domain').'/enrollments';
 
     $this->actingAs($admin)->post($url, [

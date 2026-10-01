@@ -2,6 +2,7 @@
 
 namespace Modules\Users\Infrastructure\Http\Requests;
 
+use App\ModulePlatform\Services\RoleTemplates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -10,15 +11,7 @@ use Modules\Users\Infrastructure\Models\User;
 class StoreUserRequest extends FormRequest
 {
     /**
-     * Roles a user may be created with. `super-admin` is never assignable
-     * from this screen, not even by another super-admin.
-     *
-     * @var list<string>
-     */
-    public const ASSIGNABLE_ROLES = ['student', 'teacher', 'staff/admin'];
-
-    /**
-     * Delegates to `UserPolicy::create`: a staff/admin may only create users
+     * Delegates to `UserPolicy::create`: a school user may only create users
      * on their own school's subdomain; a super-admin may create anywhere.
      */
     public function authorize(): bool
@@ -34,7 +27,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'role' => ['required', 'string', Rule::in(self::ASSIGNABLE_ROLES)],
+            'role' => ['required', 'string', Rule::in(array_keys(RoleTemplates::TEMPLATES))],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
             // Only a super-admin on the landlord host (no tenant bound) picks
             // the school; otherwise any submitted school_id is discarded.

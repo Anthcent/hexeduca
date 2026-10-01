@@ -4,6 +4,7 @@ namespace App\Tenancy\Observers;
 
 use App\ModulePlatform\Models\ModuleRecord;
 use App\ModulePlatform\Services\ModuleRegistry;
+use App\ModulePlatform\Services\RoleTemplates;
 use App\Tenancy\Models\School;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,13 +26,17 @@ use Illuminate\Support\Facades\Cache;
 class SchoolCacheObserver
 {
     /**
-     * A new school is entitled to every currently active, optional module —
+     * A new school gets its own copy of the template roles.
+     *
+     * It is also entitled to every currently active, optional module —
      * mature modules already shipped to other schools are not "opt-in" for
      * onboarding, only genuinely new modules an operator later builds are.
      * See sdd/module-developer-platform R2.6.
      */
     public function created(School $school): void
     {
+        app(RoleTemplates::class)->seedSchool($school->id);
+
         $registry = app(ModuleRegistry::class);
 
         $activeOptionalKeys = ModuleRecord::query()

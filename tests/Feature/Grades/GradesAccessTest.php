@@ -106,7 +106,7 @@ test('another school\'s plan is 404 and its offer or moment cannot be planned', 
     $foreignSubject = S::subject($this->otherSchool, $foreignStudyPlan, $foreignGrade, 'Física');
     S::assignment($this->otherSchool, $foreignPeriod, $foreignStudyPlan, 'school');
     $foreignMoment = M::moment($foreignPeriod, 'Primer momento', 1, '2026-09-01', '2026-10-15');
-    $foreignStaff = S::user($this->otherSchool, 'staff/admin');
+    $foreignStaff = S::user($this->otherSchool, 'director');
 
     $this->actingAs($foreignStaff)
         ->put(G::url($this->otherSchool, '/plan'), G::planPayload($foreignOffer, $foreignSubject, $foreignMoment))

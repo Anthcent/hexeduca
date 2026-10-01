@@ -17,14 +17,14 @@ beforeEach(function () {
 function actingSuperAdmin(): User
 {
     $admin = User::factory()->create();
-    $admin->assignRole('super-admin');
+    $admin->forceFill(['is_super_admin' => true])->save();
 
     return $admin;
 }
 
 test('a non-super-admin gets 403 on the modules index', function () {
-    $staff = User::factory()->create();
-    $staff->assignRole('staff/admin');
+    $staff = User::factory()->create(['school_id' => School::factory()->create()->id]);
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->get(route('admin.modules.index'))

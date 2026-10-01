@@ -9,8 +9,8 @@ use Modules\Users\Infrastructure\Models\User;
 /**
  * Confirms this change (Gate::policy registration, base Controller gaining
  * AuthorizesRequests, new routes) does not alter the existing
- * `role:staff/admin` gate on Academic Offering routes. See spec
- * "Requirement: Existing role:staff/admin gate on Academic routes keeps
+ * `role:director` gate on Academic Offering routes. See spec
+ * "Requirement: Existing role:director gate on Academic routes keeps
  * working unchanged".
  */
 uses(RefreshDatabase::class);
@@ -27,10 +27,10 @@ function academicOfertaCreateUrl(School $school): string
     return "http://{$school->subdomain}.{$baseDomain}/academic/ofertas/create";
 }
 
-test('staff/admin still passes the Academic gate', function () {
+test('director still passes the Academic gate', function () {
     $school = School::factory()->create();
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->get(academicOfertaCreateUrl($school))

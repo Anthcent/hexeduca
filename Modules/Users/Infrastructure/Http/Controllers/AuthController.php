@@ -74,7 +74,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        if ($this->onLandlordHost($request) && ! $request->user()->hasRole('super-admin')) {
+        if ($this->onLandlordHost($request) && ! $request->user()->isSuperAdmin()) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

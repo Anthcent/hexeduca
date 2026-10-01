@@ -8,8 +8,8 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        {"name": "academicmoments.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "academicmoments.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "academicmoments.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "academicmoments.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\AcademicMoments\\Infrastructure\\Providers\\AcademicMomentsServiceProvider"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Tenancy\Models\School;
 use Database\Seeders\RoleAndPermissionSeeder;
 use Database\Seeders\SuperAdminUserSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,7 +29,7 @@ test('sanctum issues csrf cookies and authenticates a stateful request', functio
     // (see AuthController::login / design.md "Landlord-host login
     // restricted to super-admin").
     $user = User::factory()->create(['password' => bcrypt('correct-password')]);
-    $user->assignRole('super-admin');
+    $user->forceFill(['is_super_admin' => true])->save();
     $token = urldecode($csrfResponse->getCookie('XSRF-TOKEN', false)->getValue());
 
     $this->withHeaders([
@@ -63,15 +64,19 @@ test('login rejects missing and invalid csrf tokens', function () {
     ])->assertStatus(419);
 });
 
-test('role seeder creates only the four baseline roles without permissions', function () {
+test('role seeder gives each school its own template roles', function () {
+    $schools = School::factory()->count(2)->create();
+    Role::query()->where('team_id', $schools[0]->id)->delete();
+
     $this->seed(RoleAndPermissionSeeder::class);
 
-    expect(Role::query()->orderBy('name')->pluck('name')->all())->toBe([
-        'staff/admin',
-        'student',
-        'super-admin',
-        'teacher',
-    ])->and(Permission::query()->count())->toBe(0);
+    foreach ($schools as $school) {
+        expect(Role::query()->where('team_id', $school->id)->orderBy('name')->pluck('name')->all())
+            ->toBe(['academic-control', 'administrative', 'director', 'student', 'teacher']);
+    }
+
+    expect(Role::query()->whereNull('team_id')->exists())->toBeFalse()
+        ->and(Permission::query()->count())->toBe(0);
 });
 
 test('super-admin seeder fails closed without explicit credentials', function () {
@@ -100,7 +105,7 @@ test('super-admin seeder uses explicit strong bootstrap credentials', function (
 
     expect($user->name)->toBe('Foundation Administrator')
         ->and(Hash::check('Foundation!Admin2026', $user->password))->toBeTrue()
-        ->and($user->hasRole('super-admin'))->toBeTrue();
+        ->and($user->isSuperAdmin())->toBeTrue();
 });
 
 test('super-admin seeder rejects weak bootstrap passwords', function () {

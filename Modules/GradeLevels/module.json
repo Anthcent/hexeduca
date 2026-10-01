@@ -10,8 +10,8 @@
         "AcademicLevels"
     ],
     "permissions": [
-        {"name": "gradelevels.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "gradelevels.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "gradelevels.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "gradelevels.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\GradeLevels\\Infrastructure\\Providers\\GradeLevelsServiceProvider"

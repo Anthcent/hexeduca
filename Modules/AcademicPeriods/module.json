@@ -8,8 +8,8 @@
     "maturity": "mature",
     "dependencies": [],
     "permissions": [
-        {"name": "academicperiods.view", "label": "Ver", "kind": "view", "roles": ["staff/admin"]},
-        {"name": "academicperiods.manage", "label": "Gestionar", "kind": "manage", "roles": ["staff/admin"]}
+        {"name": "academicperiods.view", "label": "Ver", "kind": "view", "roles": ["administrative"]},
+        {"name": "academicperiods.manage", "label": "Gestionar", "kind": "manage"}
     ],
     "providers": [
         "Modules\\AcademicPeriods\\Infrastructure\\Providers\\AcademicPeriodsServiceProvider"

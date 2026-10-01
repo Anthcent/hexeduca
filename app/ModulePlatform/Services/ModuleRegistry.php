@@ -15,7 +15,6 @@ use InvalidArgumentException;
 use Nwidart\Modules\Facades\Module as NwidartModule;
 use Nwidart\Modules\Module as NwidartModuleInstance;
 use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
@@ -31,7 +30,10 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class ModuleRegistry
 {
-    public function __construct(private readonly ModuleAccess $moduleAccess) {}
+    public function __construct(
+        private readonly ModuleAccess $moduleAccess,
+        private readonly RoleTemplates $roleTemplates,
+    ) {}
 
     /**
      * Upserts a `modules` row per manifest and syncs Spatie permissions
@@ -69,14 +71,19 @@ class ModuleRegistry
 
     /**
      * Accepts either the plain-string permission format (kept for backward
-     * compatibility) or `{"name", "label", "kind", "roles"}`, which also
-     * grants the permission to those existing Spatie roles. Manual grants
-     * on other roles are never touched — this only ever adds, never revokes.
+     * compatibility) or `{"name", "label", "kind", "roles"}`, where `roles`
+     * lists the template roles that get it by default. Defaults apply only
+     * when the permission is first created: re-applying them on every sync
+     * would undo a school that took the permission away from a role.
      */
     private function syncPermission(string|array $permission): void
     {
         if (is_string($permission)) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+            $record = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+
+            if ($record->wasRecentlyCreated) {
+                $this->roleTemplates->grantNewPermission($record, []);
+            }
 
             return;
         }
@@ -98,10 +105,8 @@ class ModuleRegistry
 
         $record = Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
 
-        foreach ((array) ($permission['roles'] ?? []) as $roleName) {
-            $role = Role::where('name', $roleName)->where('guard_name', 'web')->first();
-
-            $role?->givePermissionTo($record);
+        if ($record->wasRecentlyCreated) {
+            $this->roleTemplates->grantNewPermission($record, (array) ($permission['roles'] ?? []));
         }
     }
 

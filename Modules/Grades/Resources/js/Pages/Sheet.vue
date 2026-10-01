@@ -65,7 +65,6 @@ async function showHistory() {
     }
 }
 
-const ROLE_LABELS = { 'staff/admin': 'Personal', teacher: 'Docente' };
 
 // Rows are local state: each save answers with the student's recomputed
 // standing, which replaces the row's totals and final grade.
@@ -497,7 +496,7 @@ function formatDate(value) {
                             <span class="font-semibold text-highlighted">{{ change.new ?? 'borrada' }}</span>
                         </p>
                         <p class="mt-1 text-xs text-muted">
-                            {{ formatDateTime(change.at) }} · {{ change.by }}<template v-if="change.role"> ({{ ROLE_LABELS[change.role] ?? change.role }})</template>
+                            {{ formatDateTime(change.at) }} · {{ change.by }}<template v-if="change.role"> ({{ change.role }})</template>
                         </p>
                         <p v-if="change.correction !== null" class="mt-1.5 rounded-md bg-warning/10 px-2 py-1 text-xs text-warning">
                             En corrección: {{ change.correction }}

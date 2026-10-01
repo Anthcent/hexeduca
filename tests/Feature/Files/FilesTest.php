@@ -30,7 +30,7 @@ beforeEach(function () {
     // and entitles the schools created above.
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = filesUser($this->school, 'staff/admin', 'Ana Directora');
+    $this->staff = filesUser($this->school, 'director', 'Ana Directora');
     $this->teacher = filesUser($this->school, 'teacher', 'Luis Docente');
 });
 
@@ -86,7 +86,7 @@ function storedPathOf(int $id): string
     return DB::table('school_files')->where('id', $id)->value('storage_path');
 }
 
-test('staff/admin and teachers upload a file stored under their school with a generated name', function (string $who) {
+test('director and teachers upload a file stored under their school with a generated name', function (string $who) {
     $user = $this->{$who};
 
     $response = $this->actingAs($user)->post(filesUrl($this->school), [
@@ -204,7 +204,7 @@ test('a file whose physical copy is missing is not found', function () {
 test('the list shows only this school\'s files, newest first, with who may delete each one', function () {
     $older = storedFileRow($this->school, $this->staff, ['original_name' => 'Antiguo.pdf', 'created_at' => now()->subDays(2)]);
     $newer = storedFileRow($this->school, $this->teacher, ['original_name' => 'Reciente.docx', 'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'storage_path' => 'schools/'.$this->school->id.'/files/'.str_repeat('a', 40).'.docx', 'size_bytes' => 5 * 1024 * 1024]);
-    storedFileRow($this->otherSchool, filesUser($this->otherSchool, 'staff/admin'), ['original_name' => 'Ajeno.pdf']);
+    storedFileRow($this->otherSchool, filesUser($this->otherSchool, 'director'), ['original_name' => 'Ajeno.pdf']);
 
     $this->actingAs($this->teacher)
         ->get(filesUrl($this->school))
@@ -246,7 +246,7 @@ test('the list is paginated', function () {
 });
 
 test('another school\'s file is not found for download or delete', function () {
-    $foreignStaff = filesUser($this->otherSchool, 'staff/admin');
+    $foreignStaff = filesUser($this->otherSchool, 'director');
     $id = storedFileRow($this->otherSchool, $foreignStaff);
     // Even a row claiming this school's user but owned by the other school stays hidden.
     $mislabeled = storedFileRow($this->otherSchool, $this->staff);
@@ -278,7 +278,7 @@ test('students have no access and no navigation entry', function () {
         ->assertInertia(fn (Assert $page) => $page->where('moduleNav', fn ($items) => collect($items)->doesntContain('label', 'Archivos')));
 });
 
-test('staff/admin and teachers see the navigation entry', function (string $who) {
+test('director and teachers see the navigation entry', function (string $who) {
     $this->actingAs($this->{$who})
         ->get(filesUrl($this->school))
         ->assertInertia(fn (Assert $page) => $page->where(
@@ -313,7 +313,7 @@ test('a teacher cannot delete a file someone else uploaded', function (string $u
     Storage::assertExists(storedPathOf($id));
 })->with(['staff', 'another teacher']);
 
-test('staff/admin deletes any file of their school, row and physical file', function () {
+test('director deletes any file of their school, row and physical file', function () {
     $id = storedFileRow($this->school, $this->teacher);
     $orphan = storedFileRow($this->school, null);
     $paths = [storedPathOf($id), storedPathOf($orphan)];

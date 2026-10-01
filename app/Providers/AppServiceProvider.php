@@ -36,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
         // abilities (plain permission names) are bypassed: policy checks
         // always receive a model or class and keep their own rules.
         Gate::before(function ($user, string $ability, array $arguments) {
-            return $arguments === [] && $user->hasRole('super-admin') ? true : null;
+            return $arguments === [] && (bool) $user->is_super_admin ? true : null;
         });
 
         RateLimiter::for('login', function (Request $request) {

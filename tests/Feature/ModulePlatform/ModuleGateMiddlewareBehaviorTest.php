@@ -23,7 +23,7 @@ function sectionsIndexUrl(School $school): string
 test('the module gate returns 404 when the module is not active', function () {
     $school = School::factory()->create();
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     // Sections is registered but not enabled and the school isn't entitled.
     $this->actingAs($staff)
@@ -38,7 +38,7 @@ test('the module gate returns 404 when the module is active but the school is no
     // that predates the module's activation.
     $school = School::factory()->create();
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     app(ModuleRegistry::class)->enable('sections');
 
@@ -54,7 +54,7 @@ test('the module gate allows the request when active and the school is entitled'
     $registry->entitle('sections', $school);
 
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->get(sectionsIndexUrl($school))
@@ -72,7 +72,7 @@ test('per-school isolation: a different school entitled to sections does not unl
     $registry->entitle('sections', $entitledSchool);
 
     $staff = User::factory()->create(['school_id' => $otherSchool->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     $this->actingAs($staff)
         ->get(sectionsIndexUrl($otherSchool))

@@ -17,7 +17,7 @@ beforeEach(function () {
     $this->otherSchool = School::factory()->create();
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = F::user($this->school, 'staff/admin');
+    $this->staff = F::user($this->school, 'director');
     $this->grade1 = F::gradeLevel($this->school, 'Primer año', 1);
     $this->grade2 = F::gradeLevel($this->school, 'Segundo año', 2);
     $this->plan = F::plan($this->school, '31060');

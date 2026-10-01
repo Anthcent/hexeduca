@@ -20,7 +20,7 @@ beforeEach(function () {
 
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = F::user($this->school, 'staff/admin');
+    $this->staff = F::user($this->school, 'director');
     $this->teacher = F::user($this->school, 'teacher');
     $this->student = F::user($this->school, 'student');
     $this->grade1 = F::gradeLevel($this->school, 'Primer año', 1);

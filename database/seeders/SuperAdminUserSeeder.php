@@ -18,10 +18,8 @@ class SuperAdminUserSeeder extends Seeder
      * This account operates outside the tenant scope entirely: `school_id`
      * is explicitly NULL, marking it as the landlord identity (see
      * App\Tenancy\Concerns\BelongsToTenant / TenantContext). It is distinct
-     * from any per-tenant `staff/admin` account, which is fully
+     * from any per-school director account, which is fully
      * tenant-scoped with a non-null `school_id`.
-     *
-     * Must run after RoleAndPermissionSeeder so the "super-admin" role exists.
      */
     public function run(): void
     {
@@ -58,8 +56,6 @@ class SuperAdminUserSeeder extends Seeder
             ]
         );
 
-        if (! $user->hasRole('super-admin')) {
-            $user->assignRole('super-admin');
-        }
+        $user->forceFill(['is_super_admin' => true])->save();
     }
 }

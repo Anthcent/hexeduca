@@ -29,7 +29,7 @@ test('guest requests share a null auth.user prop', function () {
 test('authenticated requests share the user identity and single role name', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $target = User::factory()->create(['school_id' => $school->id, 'type' => 'student']);
     $target->assignRole('student');
 
@@ -40,7 +40,7 @@ test('authenticated requests share the user identity and single role name', func
             ->where('auth.user.id', $admin->id)
             ->where('auth.user.name', $admin->name)
             ->where('auth.user.email', $admin->email)
-            ->where('auth.user.role', 'staff/admin'));
+            ->where('auth.user.role', 'director'));
 });
 
 test('auth.user role reflects a role change on the next request', function () {

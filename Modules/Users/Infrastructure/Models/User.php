@@ -8,13 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Modules\Users\Infrastructure\Models\Concerns\HasSchoolRoles;
 use Modules\Users\Public\Enums\UserType;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use BelongsToTenant, HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use BelongsToTenant, HasApiTokens, HasFactory, HasSchoolRoles, Notifiable;
 
     /**
      * Create a new factory instance for the model.
@@ -62,6 +62,16 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'type' => UserType::class,
+            'is_super_admin' => 'boolean',
         ];
+    }
+
+    /**
+     * The landlord operator: holds every permission and belongs to no
+     * school's roles. Never mass assignable; set it explicitly.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return (bool) $this->is_super_admin;
     }
 }

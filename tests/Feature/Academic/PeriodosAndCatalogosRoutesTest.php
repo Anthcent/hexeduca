@@ -44,12 +44,12 @@ function academicRouteUrl(School $school, string $path): string
 function staffAdminForSchool(School $school): User
 {
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     return $staff;
 }
 
-test('GET academic/catalogos renders the four catalogs for an authenticated staff/admin', function () {
+test('GET academic/catalogos renders the four catalogs for an authenticated director', function () {
     $school = School::factory()->create();
     $staff = staffAdminForSchool($school);
     PeriodoAcademico::factory()->create(['school_id' => $school->id]);
@@ -177,7 +177,7 @@ test('DELETE academic/periodos/{id} removes a period with no associated data', f
     $this->assertDatabaseMissing('periodos_academicos', ['id' => $periodo->id]);
 });
 
-test('academic/periodos routes reject a non staff/admin authenticated user', function () {
+test('academic/periodos routes reject a non director authenticated user', function () {
     $school = School::factory()->create();
     $plainUser = User::factory()->create(['school_id' => $school->id]);
     $periodo = PeriodoAcademico::factory()->create(['school_id' => $school->id]);

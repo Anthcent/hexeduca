@@ -84,7 +84,9 @@ const MODULE_ICONS = {
 const FALLBACK_MODULE_ICON = 'i-lucide-blocks';
 
 export const ROLE_LABELS = {
-    'staff/admin': 'Administración',
+    director: 'Dirección',
+    'academic-control': 'Control de Estudio',
+    administrative: 'Administrativo',
     teacher: 'Docente',
     student: 'Estudiante',
     [SUPER_ADMIN]: 'Superadministrador',

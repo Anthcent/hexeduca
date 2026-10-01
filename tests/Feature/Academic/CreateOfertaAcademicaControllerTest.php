@@ -27,7 +27,7 @@ function ofertaAcademicUrl(School $school, string $path): string
 function staffAdminFor(School $school): User
 {
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     return $staff;
 }

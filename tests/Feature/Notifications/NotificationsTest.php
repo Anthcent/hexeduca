@@ -22,7 +22,7 @@ beforeEach(function () {
     // and entitles the schools created above.
     $this->seed(ModulePlatformSeeder::class);
 
-    $this->staff = notificationsUser($this->school, 'staff/admin', 'Ana Directora');
+    $this->staff = notificationsUser($this->school, 'director', 'Ana Directora');
 });
 
 function notificationsUrl(School $school, string $path = ''): string
@@ -66,7 +66,7 @@ function announcementPayload(array $overrides = []): array
     ], $overrides);
 }
 
-test('staff/admin sends an announcement to the chosen audience of their own school only', function (string $audience, int $expected) {
+test('director sends an announcement to the chosen audience of their own school only', function (string $audience, int $expected) {
     notificationsUser($this->school, 'teacher');
     notificationsUser($this->school, 'teacher');
     notificationsUser($this->school, 'student');
@@ -115,7 +115,7 @@ test('the school always comes from the tenant, never from the request', function
     expect(DB::table('school_notifications')->pluck('school_id')->all())->toBe([$this->school->id]);
 });
 
-test('staff/admin sees the send form', function () {
+test('director sees the send form', function () {
     $this->actingAs($this->staff)
         ->get(notificationsUrl($this->school, '/create'))
         ->assertOk()
@@ -187,8 +187,8 @@ test('the inbox lists only the current user\'s notifications, unread first then 
             ->where('inbox.data.0.senderName', 'Dirección')
             // The page prop must not shadow the shared bell count.
             ->where('notifications.unreadCount', 2)
-            ->where('canSend', $role === 'staff/admin'));
-})->with(['staff/admin', 'teacher', 'student']);
+            ->where('canSend', $role === 'director'));
+})->with(['director', 'teacher', 'student']);
 
 test('the inbox is paginated', function () {
     $teacher = notificationsUser($this->school, 'teacher');
@@ -303,7 +303,7 @@ test('the sidebar shows the inbox entry to every school role', function (string 
                 && $item['icon'] === 'Bell'
                 && $item['href'] === route('notifications.index')),
         ));
-})->with(['staff/admin', 'teacher', 'student']);
+})->with(['director', 'teacher', 'student']);
 
 test('the module returns 404 and shares no count when it is disabled', function () {
     $teacher = notificationsUser($this->school, 'teacher');

@@ -2,6 +2,7 @@
 
 namespace Modules\Users\Infrastructure\Http\Requests;
 
+use App\ModulePlatform\Services\RoleTemplates;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,7 +11,7 @@ class UpdateUserRoleRequest extends FormRequest
     /**
      * Route-level `permission:users.manage` middleware
      * already restricts who can reach this endpoint. The finer-grained
-     * tenant-ownership and super-admin-escalation checks are enforced by
+     * tenant-ownership check is enforced by
      * `UserPolicy::assignRole` in the controller, not here.
      */
     public function authorize(): bool
@@ -24,7 +25,7 @@ class UpdateUserRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['required', Rule::in(['student', 'teacher', 'staff/admin', 'super-admin'])],
+            'role' => ['required', Rule::in(array_keys(RoleTemplates::TEMPLATES))],
         ];
     }
 }

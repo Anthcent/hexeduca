@@ -21,9 +21,9 @@ beforeEach(function () {
 
 test('super-admin can assign any role to a user in any tenant', function () {
     $superAdmin = User::factory()->create(['school_id' => null]);
-    $superAdmin->assignRole('super-admin');
+    $superAdmin->forceFill(['is_super_admin' => true])->save();
 
-    foreach (['student', 'teacher', 'staff/admin', 'super-admin'] as $role) {
+    foreach (['student', 'teacher', 'director'] as $role) {
         $school = School::factory()->create();
         $target = User::factory()->create(['school_id' => $school->id]);
 
@@ -31,40 +31,30 @@ test('super-admin can assign any role to a user in any tenant', function () {
     }
 });
 
-test('staff/admin can assign a non-super-admin role within their own school', function () {
+test('director can assign a role within their own school', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $sameSchoolTarget = User::factory()->create(['school_id' => $school->id]);
 
-    foreach (['student', 'teacher', 'staff/admin'] as $role) {
+    foreach (['student', 'teacher', 'director'] as $role) {
         expect($this->policy->assignRole($admin, $sameSchoolTarget, $role))->toBeTrue();
     }
 });
 
-test('staff/admin cannot assign super-admin even within their own school', function () {
-    $school = School::factory()->create();
-    $admin = User::factory()->create(['school_id' => $school->id]);
-    $admin->assignRole('staff/admin');
-    $sameSchoolTarget = User::factory()->create(['school_id' => $school->id]);
-
-    expect($this->policy->assignRole($admin, $sameSchoolTarget, 'super-admin'))->toBeFalse();
-});
-
-test('staff/admin cannot assign a role to a user in a different school', function () {
+test('director cannot assign a role to a user in a different school', function () {
     $schoolA = School::factory()->create();
     $schoolB = School::factory()->create();
     $admin = User::factory()->create(['school_id' => $schoolA->id]);
-    $admin->assignRole('staff/admin');
+    $admin->assignRole('director');
     $otherSchoolTarget = User::factory()->create(['school_id' => $schoolB->id]);
 
     expect($this->policy->assignRole($admin, $otherSchoolTarget, 'teacher'))->toBeFalse();
 });
 
-test('an actor with no school_id and no super-admin role cannot assign any role', function () {
+test('an actor with no school_id who is not a super-admin cannot assign any role', function () {
     $school = School::factory()->create();
     $admin = User::factory()->create(['school_id' => null]);
-    $admin->assignRole('staff/admin');
     $target = User::factory()->create(['school_id' => $school->id]);
 
     expect($this->policy->assignRole($admin, $target, 'teacher'))->toBeFalse();

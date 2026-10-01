@@ -24,13 +24,12 @@ class UserPolicy
      */
     public function assignRole(User $actor, User $target, string $role): bool
     {
-        if ($actor->hasRole('super-admin')) {
+        if ($actor->isSuperAdmin()) {
             return true;
         }
 
         return $actor->school_id !== null
-            && $actor->school_id === $target->school_id
-            && $role !== 'super-admin';
+            && $actor->school_id === $target->school_id;
     }
 
     /**
@@ -40,7 +39,7 @@ class UserPolicy
      */
     public function create(User $actor): bool
     {
-        if ($actor->hasRole('super-admin')) {
+        if ($actor->isSuperAdmin()) {
             return true;
         }
 
@@ -58,7 +57,7 @@ class UserPolicy
      */
     public function view(User $actor, User $target): bool
     {
-        if ($actor->hasRole('super-admin')) {
+        if ($actor->isSuperAdmin()) {
             return true;
         }
 
@@ -73,6 +72,6 @@ class UserPolicy
     {
         return $this->view($actor, $target)
             && ! $actor->is($target)
-            && ! $target->hasRole('super-admin');
+            && ! $target->isSuperAdmin();
     }
 }

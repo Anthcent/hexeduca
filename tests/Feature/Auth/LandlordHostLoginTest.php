@@ -17,7 +17,7 @@ beforeEach(function () {
 test('non-super-admin valid credentials on the landlord host are rejected', function () {
     $school = School::factory()->create();
     $user = User::factory()->create(['school_id' => $school->id, 'password' => 'password123']);
-    $user->assignRole('staff/admin');
+    $user->assignRole('director');
 
     $this->post('/login', [
         'email' => $user->email,
@@ -29,7 +29,7 @@ test('non-super-admin valid credentials on the landlord host are rejected', func
 
 test('seeded super-admin on the landlord host is authenticated', function () {
     $superAdmin = User::factory()->create(['school_id' => null, 'password' => 'password123']);
-    $superAdmin->assignRole('super-admin');
+    $superAdmin->forceFill(['is_super_admin' => true])->save();
 
     $response = $this->post('/login', [
         'email' => $superAdmin->email,
@@ -43,7 +43,7 @@ test('seeded super-admin on the landlord host is authenticated', function () {
 test('super-admin login on a tenant subdomain fails naturally via TenantScope', function () {
     $school = School::factory()->create();
     $superAdmin = User::factory()->create(['school_id' => null, 'password' => 'password123']);
-    $superAdmin->assignRole('super-admin');
+    $superAdmin->forceFill(['is_super_admin' => true])->save();
 
     $baseDomain = config('tenancy.base_domain');
 

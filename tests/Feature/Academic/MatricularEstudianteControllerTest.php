@@ -25,7 +25,7 @@ function matriculaAcademicUrl(School $school, string $path): string
 function matriculaStaffAdminFor(School $school): User
 {
     $staff = User::factory()->create(['school_id' => $school->id]);
-    $staff->assignRole('staff/admin');
+    $staff->assignRole('director');
 
     return $staff;
 }
