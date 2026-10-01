@@ -75,6 +75,13 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Database migration failed.'
 }
 
+# Module manifests own the permission catalog: renamed or new permissions
+# must reach the database before any route checks them.
+& $php artisan modules:sync
+if ($LASTEXITCODE -ne 0) {
+    throw 'Module sync failed.'
+}
+
 # A stale hot file makes every page point at a Vite server that is not running.
 Remove-Item -ErrorAction SilentlyContinue (Join-Path $root 'public\hot')
 
