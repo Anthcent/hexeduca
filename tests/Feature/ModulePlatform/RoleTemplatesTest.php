@@ -1,10 +1,13 @@
 <?php
 
 use App\ModulePlatform\Services\ModuleRegistry;
+use App\ModulePlatform\Services\RoleTemplates;
 use App\Tenancy\Models\School;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Modules\Users\Infrastructure\Models\User;
 use Spatie\Permission\Exceptions\RoleDoesNotExist;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
@@ -96,6 +99,64 @@ test('a user\'s roles resolve to their own school outside any request', function
         ->and($loaded[0]->can('users.manage'))->toBeTrue()
         ->and($loaded[1]->roles->pluck('team_id')->all())->toBe([$schoolB->id])
         ->and($loaded[1]->can('users.manage'))->toBeFalse();
+});
+
+test('a role or permission row from another school grants nothing', function () {
+    app(ModuleRegistry::class)->sync();
+    $schoolA = School::factory()->create();
+    $schoolB = School::factory()->create();
+    $teacher = schoolUser($schoolA, 'teacher');
+
+    // Stray rows, e.g. left behind when a user changes school.
+    DB::table('model_has_roles')->insert([
+        'role_id' => schoolRole($schoolB, 'director')->id,
+        'model_type' => $teacher->getMorphClass(),
+        'model_id' => $teacher->id,
+        'team_id' => $schoolB->id,
+    ]);
+    DB::table('model_has_permissions')->insert([
+        'permission_id' => Permission::findByName('users.manage')->id,
+        'model_type' => $teacher->getMorphClass(),
+        'model_id' => $teacher->id,
+        'team_id' => $schoolB->id,
+    ]);
+
+    $eager = User::withoutTenantScope()->with(['roles', 'permissions'])->whereKey($teacher->id)->first();
+
+    foreach ([$teacher->fresh(), $eager] as $user) {
+        expect($user->getRoleNames()->all())->toBe(['teacher'])
+            ->and($user->permissions)->toBeEmpty()
+            ->and($user->can('users.manage'))->toBeFalse()
+            ->and($user->can('grades.correction'))->toBeFalse()
+            ->and($user->can('grades.manage'))->toBeTrue();
+    }
+});
+
+test('a role object from another school grants nothing', function () {
+    app(ModuleRegistry::class)->sync();
+    $schoolA = School::factory()->create();
+    $schoolB = School::factory()->create();
+    $teacher = schoolUser($schoolA, 'teacher');
+
+    $teacher->assignRole(schoolRole($schoolB, 'director'));
+
+    $user = $teacher->fresh();
+
+    expect($user->getRoleNames()->all())->toBe(['teacher'])
+        ->and($user->can('users.manage'))->toBeFalse()
+        ->and($user->can('grades.correction'))->toBeFalse();
+});
+
+test('a permission granted to the templates is checkable right away', function () {
+    app(ModuleRegistry::class)->sync();
+    $school = School::factory()->create();
+    $director = schoolUser($school, 'director');
+    $permission = Permission::create(['name' => 'grades.new-feature', 'guard_name' => 'web']);
+    expect($director->can('grades.new-feature'))->toBeFalse(); // warms the permission cache
+
+    app(RoleTemplates::class)->grantNewPermission($permission, []);
+
+    expect($director->fresh()->can('grades.new-feature'))->toBeTrue();
 });
 
 test('a user without a school cannot hold a role', function () {

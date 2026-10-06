@@ -23,7 +23,7 @@ beforeEach(function () {
  */
 function userWithPermissions(School $school, array $permissions): User
 {
-    $role = Role::create(['name' => 'custom-'.uniqid(), 'guard_name' => 'web']);
+    $role = Role::create(['team_id' => $school->id, 'name' => 'custom-'.uniqid(), 'guard_name' => 'web']);
     $role->givePermissionTo($permissions);
 
     $user = User::factory()->create(['school_id' => $school->id]);

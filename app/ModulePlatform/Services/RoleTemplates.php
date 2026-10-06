@@ -79,6 +79,8 @@ class RoleTemplates
             ->whereNotNull('team_id')
             ->whereIn('name', array_values(array_unique([...self::FULL_ACCESS, ...$templates])))
             ->each(fn (Role $role) => $role->permissions()->syncWithoutDetaching([$permission->id]));
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 
     /**

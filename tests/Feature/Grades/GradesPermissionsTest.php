@@ -54,7 +54,7 @@ test('the correction function lets a teacher open a correction', function () {
 });
 
 test('managing grades without the scope keeps a user to their assignments', function () {
-    $role = Role::create(['name' => 'coordinator', 'guard_name' => 'web']);
+    $role = Role::create(['team_id' => $this->school->id, 'name' => 'coordinator', 'guard_name' => 'web']);
     $role->givePermissionTo('grades.manage');
     $coordinator = User::factory()->create(['school_id' => $this->school->id]);
     $coordinator->assignRole($role);
